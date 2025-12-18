@@ -1,0 +1,7 @@
+.file-icon {
+    font-size: var(--go-ui-font-size-2xl);
+}
+
+.icon {
+    font-size: var(--go-ui-height-icon-multiplier);
+}
