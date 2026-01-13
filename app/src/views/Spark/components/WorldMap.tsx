@@ -34,7 +34,6 @@ export function WorldMap({
         y: number;
     } | null>(null);
 
-    // Load GeoJSON and country metadata
     useEffect(() => {
         let mounted = true;
 
@@ -74,7 +73,6 @@ export function WorldMap({
         };
     }, []);
 
-    // Redraw map when highlighted countries or dimensions change
     useEffect(() => {
         if (worldRef.current) {
             draw(worldRef.current, countriesMeta);
