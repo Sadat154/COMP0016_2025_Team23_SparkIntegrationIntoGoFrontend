@@ -1,14 +1,24 @@
-import { useMemo } from 'react';
+import {
+    useCallback,
+    useMemo,
+    useState,
+} from 'react';
 import {
     Table,
     Container,
+    SelectInput,
+    Button,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
     createStringColumn,
     numericIdSelector,
 } from '@ifrc-go/ui/utils';
-import { isNotDefined } from '@togglecorp/fujs';
+import {
+    isDefined,
+    isNotDefined,
+    unique,
+} from '@togglecorp/fujs';
 
 import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
@@ -30,6 +40,9 @@ interface ApiResponse {
 }
 
 function ProBonoServicesTable() {
+    const [filterCompany, setFilterCompany] = useState<string | undefined>();
+    const [filterService, setFilterService] = useState<string | undefined>();
+
     const {
         sortState,
     } = useFilterState({
@@ -42,6 +55,49 @@ function ProBonoServicesTable() {
     } = useRequest({
         url: '/api/v1/pro-bono-services/',
     } as any);
+
+    const tableData = (response as ApiResponse | undefined)?.results ?? [];
+
+    // Generate filter options for Company
+    const companyOptions = useMemo(() => {
+        const companies = tableData.map((item) => item.company).filter(isDefined);
+        const uniqueCompanies = unique(companies, (c) => c).sort();
+        return uniqueCompanies.map((company) => ({ key: company, label: company }));
+    }, [tableData]);
+
+    // Generate filter options for Transport Services
+    // Split by "/" and create individual categories
+    const serviceOptions = useMemo(() => {
+        const allServices: string[] = [];
+        tableData.forEach((item) => {
+            if (item.services) {
+                // Split by "/" and trim whitespace
+                const services = item.services.split('/').map((s) => s.trim());
+                allServices.push(...services);
+            }
+        });
+        const uniqueServices = unique(allServices, (s) => s.toLowerCase()).sort();
+        return uniqueServices.map((service) => ({ key: service, label: service }));
+    }, [tableData]);
+
+    // Apply filters
+    const filteredData = useMemo(() => {
+        let filtered = tableData;
+
+        if (filterCompany) {
+            filtered = filtered.filter((item) => item.company === filterCompany);
+        }
+
+        if (filterService) {
+            filtered = filtered.filter((item) => {
+                if (!item.services) return false;
+                const services = item.services.toLowerCase();
+                return services.includes(filterService.toLowerCase());
+            });
+        }
+
+        return filtered;
+    }, [tableData, filterCompany, filterService]);
 
     const columns = useMemo(
         () => [
@@ -90,25 +146,61 @@ function ProBonoServicesTable() {
         [],
     );
 
-    const tableData = (response as ApiResponse | undefined)?.results ?? [];
-
     // Client-side sorting
     const sortedData = useMemo(() => {
-        if (isNotDefined(tableData) || !sortState.sorting) {
-            return tableData;
+        if (isNotDefined(filteredData) || !sortState.sorting) {
+            return filteredData;
         }
 
         const columnToSort = columns.find((column) => column.id === sortState.sorting?.name);
         if (!columnToSort?.valueComparator) {
-            return tableData;
+            return filteredData;
         }
 
-        const sorted = [...tableData].sort(columnToSort.valueComparator);
+        const sorted = [...filteredData].sort(columnToSort.valueComparator);
         return sortState.sorting.direction === 'dsc' ? sorted.reverse() : sorted;
-    }, [tableData, sortState.sorting, columns]);
+    }, [filteredData, sortState.sorting, columns]);
+
+    const stringKeySelector = useCallback((option: { key: string }) => option.key, []);
+    const stringLabelSelector = useCallback((option: { label: string }) => option.label, []);
+
+    const handleClearFilters = useCallback(() => {
+        setFilterCompany(undefined);
+        setFilterService(undefined);
+    }, []);
 
     return (
         <Container>
+            <div className={styles.filters}>
+                <SelectInput
+                    placeholder="All Companies"
+                    label="Company"
+                    name={undefined}
+                    value={filterCompany}
+                    onChange={setFilterCompany}
+                    keySelector={stringKeySelector}
+                    labelSelector={stringLabelSelector}
+                    options={companyOptions}
+                />
+                <SelectInput
+                    placeholder="All Transport Services"
+                    label="Transport Means & Services"
+                    name={undefined}
+                    value={filterService}
+                    onChange={setFilterService}
+                    keySelector={stringKeySelector}
+                    labelSelector={stringLabelSelector}
+                    options={serviceOptions}
+                />
+                {(filterCompany || filterService) && (
+                    <Button
+                        name={undefined}
+                        onClick={handleClearFilters}
+                    >
+                        Clear Filters
+                    </Button>
+                )}
+            </div>
             <div className={styles.tableContainer}>
                 <SortContext.Provider value={sortState}>
                     <Table
