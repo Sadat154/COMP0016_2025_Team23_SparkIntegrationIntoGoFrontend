@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Page from '#components/Page';
 import styles from './styles.module.css';
 import { WorldMap } from './components/WorldMap';
+import ProBonoServicesTable from './ProBonoServicesTable';
 /** @knipignore */
 
 export function Component() {
@@ -52,10 +53,7 @@ export function Component() {
 
                     <TabPanel name="pro-bono-services">
                         <div className={styles.tabContent}>
-                            <div className={styles.placeholder}>
-                                <h2 className={styles.placeholderTitle}>Pro Bono Services</h2>
-                                <p className={styles.placeholderText}>Placeholder for pro bono services content.</p>
-                            </div>
+                            <ProBonoServicesTable />
                         </div>
                     </TabPanel>
 
