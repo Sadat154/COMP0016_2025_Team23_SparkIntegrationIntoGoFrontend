@@ -58,26 +58,25 @@ function ProBonoServicesTable() {
 
     const tableData = (response as ApiResponse | undefined)?.results ?? [];
 
-    // Generate filter options for Company
     const companyOptions = useMemo(() => {
         const companies = tableData.map((item) => item.company).filter(isDefined);
         const uniqueCompanies = unique(companies, (c) => c).sort();
         return uniqueCompanies.map((company) => ({ key: company, label: company }));
     }, [tableData]);
 
-    // Generate filter options for Transport Services
-    // Split by "/" and create individual categories
     const serviceOptions = useMemo(() => {
         const allServices: string[] = [];
         tableData.forEach((item) => {
             if (item.services) {
-                // Split by "/" and trim whitespace
                 const services = item.services.split('/').map((s) => s.trim());
                 allServices.push(...services);
             }
         });
         const uniqueServices = unique(allServices, (s) => s.toLowerCase()).sort();
-        return uniqueServices.map((service) => ({ key: service, label: service }));
+        return uniqueServices.map((service) => ({
+            key: service,
+            label: service.charAt(0).toUpperCase() + service.slice(1).toLowerCase(),
+        }));
     }, [tableData]);
 
     // Apply filters
