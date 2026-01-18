@@ -24,6 +24,7 @@ export function Component() {
                 >
                     <TabList>
                         <Tab name="spark-dashboard">SPARK Dashboard</Tab>
+                        <Tab name="warehouse-stocks">Warehouse Stocks</Tab>
                         <Tab name="framework-agreements">Framework Agreements</Tab>
                         <Tab name="pro-bono-services">Pro Bono Services</Tab>
                         <Tab name="custom-regulations">Custom Regulations</Tab>
@@ -37,6 +38,15 @@ export function Component() {
                                 <Container>
                                     <WorldMap width={1200} height={600} />
                                 </Container>
+                            </div>
+                        </div>
+                    </TabPanel>
+
+                    <TabPanel name="warehouse-stocks">
+                        <div className={styles.tabContent}>
+                            <div className={styles.placeholder}>
+                                <h2 className={styles.placeholderTitle}>Warehouse Stocks</h2>
+                                <p className={styles.placeholderText}>Placeholder for warehouse stocks content.</p>
                             </div>
                         </div>
                     </TabPanel>
