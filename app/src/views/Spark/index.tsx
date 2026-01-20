@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Page from '#components/Page';
 import styles from './styles.module.css';
 import { WorldMap } from './components/WorldMap';
-import ProBonoServicesTable from './ProBonoServicesTable';
+import { ProBonoServicesTable, FrameworkAgreementsTable } from './tables';
 /** @knipignore */
 
 export function Component() {
@@ -44,10 +44,7 @@ export function Component() {
 
                     <TabPanel name="framework-agreements">
                         <div className={styles.tabContent}>
-                            <div className={styles.placeholder}>
-                                <h2 className={styles.placeholderTitle}>Framework Agreements</h2>
-                                <p className={styles.placeholderText}>Placeholder for framework agreements content.</p>
-                            </div>
+                            <FrameworkAgreementsTable />
                         </div>
                     </TabPanel>
 

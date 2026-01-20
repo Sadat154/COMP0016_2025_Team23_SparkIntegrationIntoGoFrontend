@@ -145,7 +145,6 @@ function ProBonoServicesTable() {
         [],
     );
 
-    // Client-side sorting
     const sortedData = useMemo(() => {
         if (isNotDefined(filteredData) || !sortState.sorting) {
             return filteredData;
