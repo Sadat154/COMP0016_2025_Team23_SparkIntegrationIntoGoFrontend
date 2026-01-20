@@ -1,0 +1,11 @@
+.filters {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.tableContainer {
+    width: 100%;
+}

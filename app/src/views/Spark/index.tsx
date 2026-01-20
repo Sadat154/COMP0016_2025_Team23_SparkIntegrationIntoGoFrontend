@@ -5,6 +5,7 @@ import Page from '#components/Page';
 import styles from './styles.module.css';
 import { WorldMap } from './components/WorldMap';
 import ProBonoServicesTable from './ProBonoServicesTable';
+import CustomRegulationsTable from './CustomRegulationsTable';
 /** @knipignore */
 
 export function Component() {
@@ -58,12 +59,9 @@ export function Component() {
                     </TabPanel>
 
                     <TabPanel name="custom-regulations">
-                        <div className={styles.tabContent}>
-                            <div className={styles.placeholder}>
-                                <h2 className={styles.placeholderTitle}>Custom Regulations</h2>
-                                <p className={styles.placeholderText}>Placeholder for custom regulations content.</p>
-                            </div>
-                        </div>
+                    <div className={styles.tabContent}>
+                        <CustomRegulationsTable />
+                    </div>
                     </TabPanel>
                 </Tabs>
             </div>
