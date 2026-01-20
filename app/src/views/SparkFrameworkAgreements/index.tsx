@@ -147,18 +147,20 @@ export function Component() {
     // Display the map with framework agreement data
     // agreementData is now available and can be used to add features to the map
     return (
-        // container is a wrapper which enforces layout structure like max-width, responsive spacing
-        // put things outside of it if i want it to span the very edges of the page 
+        <>
+        {/* container is a wrapper which enforces layout structure like max-width, responsive spacing
+        put things outside of it if i want it to span the very edges of the page  */}
         <Container>
             <h2>Framework Agreements</h2>
             <GlobalMap>
                 <GoMapContainer
                     title="Framework Agreements Map"
+                    // map data to be implemented once we get a mapbox api token
                 />
             </GlobalMap>
         </Container>
 
-        
+        </>
     );
 }
 
