@@ -1,14 +1,38 @@
 import { Container, Tabs, TabList, TabPanel, Tab } from '@ifrc-go/ui';
 import { useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 
 import Page from '#components/Page';
+import useRouting from '#hooks/useRouting';
 import styles from './styles.module.css';
 import { WorldMap } from './components/WorldMap';
 import { ProBonoServicesTable, FrameworkAgreementsTable } from './tables';
 /** @knipignore */
 
+type SparkTabKey = 'spark-dashboard' | 'framework-agreements' | 'pro-bono-services' | 'custom-regulations';
+
 export function Component() {
-    const [activeTab, setActiveTab] = useState<string>('SPARK Dashboard');
+    const location = useLocation();
+    const { navigate } = useRouting();
+
+    const [localActiveTab, setLocalActiveTab] = useState<SparkTabKey>('spark-dashboard');
+
+    const isFrameworkAgreementsRoute = location.pathname.startsWith('/spark/framework-agreements');
+    const activeTab: SparkTabKey = isFrameworkAgreementsRoute
+        ? 'framework-agreements'
+        : localActiveTab;
+
+    const handleTabChange = (nextTab: SparkTabKey) => {
+        if (nextTab === 'framework-agreements') {
+            navigate('sparkFrameworkAgreements');
+            return;
+        }
+
+        // Keep the URL clean for non-routed tabs
+        navigate('globalLogistics');
+        setLocalActiveTab(nextTab);
+    };
+
     return (
         <Page
             title="SPARK"
@@ -20,7 +44,7 @@ export function Component() {
             <div className={styles.tabsContainer}>
                 <Tabs
                     value={activeTab}
-                    onChange={setActiveTab}
+                    onChange={handleTabChange}
                     styleVariant="tab"
                 >
                     <TabList>
@@ -44,7 +68,7 @@ export function Component() {
 
                     <TabPanel name="framework-agreements">
                         <div className={styles.tabContent}>
-                            <FrameworkAgreementsTable />
+                            <Outlet />
                         </div>
                     </TabPanel>
 
