@@ -51,6 +51,10 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
     const [showFilters, setShowFilters] = useState(true);
     const [expandedCountryFilter, setExpandedCountryFilter] = useState(false);
     const [expandedItemNameFilter, setExpandedItemNameFilter] = useState(false);
+    
+    // Slider state - temporary values while dragging
+    const [tempStartDate, setTempStartDate] = useState<string>('');
+    const [tempEndDate, setTempEndDate] = useState<string>('');
 
     // Close filters when clicking outside
     useEffect(() => {
@@ -122,6 +126,31 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
             name && name.toLowerCase().includes(itemNameSearch.toLowerCase())
         );
     }, [itemNamesByCategory, itemNameSearch]);
+
+    // Calculate min and max dates from data
+    const { minDate, maxDate } = useMemo(() => {
+        let min = '9999-12-31';
+        let max = '0000-01-01';
+        
+        data.forEach(item => {
+            if (item.pa_effective_date_fa_start_date && item.pa_effective_date_fa_start_date < min) {
+                min = item.pa_effective_date_fa_start_date;
+            }
+            if (item.pa_expiration_date_fa_end_date && item.pa_expiration_date_fa_end_date > max) {
+                max = item.pa_expiration_date_fa_end_date;
+            }
+        });
+        
+        return { minDate: min, maxDate: max };
+    }, [data]);
+
+    // Initialize temp dates from applied dates or use full range
+    useEffect(() => {
+        if (!tempStartDate && !tempEndDate) {
+            setTempStartDate(startDate || minDate);
+            setTempEndDate(endDate || maxDate);
+        }
+    }, [minDate, maxDate, startDate, endDate, tempStartDate, tempEndDate]);
 
     // Apply all filters with AND logic
     const filteredData = useMemo(() => {
@@ -363,25 +392,64 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                         </div>
 
                         <div className={styles.filterGroup}>
-                            <label>Effective Date From</label>
-                            <TextInput
-                                name="startDate"
-                                placeholder="YYYY-MM-DD"
-                                value={startDate}
-                                onChange={(value) => setStartDate(value ?? '')}
+                            <label>Effective Date Range</label>
+                            <div className={styles.dateRangeDisplay}>
+                                {tempStartDate ? new Date(tempStartDate).toLocaleDateString() : 'Start'} — {tempEndDate ? new Date(tempEndDate).toLocaleDateString() : 'End'}
+                            </div>
+                            <div className={styles.rangeSliderContainer}>
+                                <div className={styles.rangeTrackBase} />
+                                <div 
+                                    className={styles.rangeTrackFill}
+                                    style={{
+                                        left: `${tempStartDate && tempEndDate ? ((new Date(tempStartDate).getTime() - new Date(minDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 0}%`,
+                                        width: `${tempStartDate && tempEndDate ? ((new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 100}%`
+                                    }}
+                                />
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={((new Date(tempStartDate || minDate).getTime() - new Date(minDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100}
+                                    onChange={(e) => {
+                                        const percent = parseFloat(e.target.value);
+                                        const totalMs = new Date(maxDate).getTime() - new Date(minDate).getTime();
+                                        const newStartMs = new Date(minDate).getTime() + (totalMs * percent / 100);
+                                        const newStart = new Date(newStartMs).toISOString().split('T')[0];
+                                        if (newStart <= tempEndDate) {
+                                            setTempStartDate(newStart);
+                                        }
+                                    }}
+                                    disabled={pending}
+                                    className={styles.rangeSliderStart}
+                                />
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={((new Date(tempEndDate || maxDate).getTime() - new Date(minDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100}
+                                    onChange={(e) => {
+                                        const percent = parseFloat(e.target.value);
+                                        const totalMs = new Date(maxDate).getTime() - new Date(minDate).getTime();
+                                        const newEndMs = new Date(minDate).getTime() + (totalMs * percent / 100);
+                                        const newEnd = new Date(newEndMs).toISOString().split('T')[0];
+                                        if (newEnd >= tempStartDate) {
+                                            setTempEndDate(newEnd);
+                                        }
+                                    }}
+                                    disabled={pending}
+                                    className={styles.rangeSliderEnd}
+                                />
+                            </div>
+                            <Button
+                                name="applyDateFilter"
+                                onClick={() => {
+                                    setStartDate(tempStartDate);
+                                    setEndDate(tempEndDate);
+                                }}
                                 disabled={pending}
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            <label>Effective Date To</label>
-                            <TextInput
-                                name="endDate"
-                                placeholder="YYYY-MM-DD"
-                                value={endDate}
-                                onChange={(value) => setEndDate(value ?? '')}
-                                disabled={pending}
-                            />
+                            >
+                                Apply Date Range
+                            </Button>
                         </div>
                     </div>
                 )}
