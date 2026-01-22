@@ -6,7 +6,7 @@ import Page from '#components/Page';
 import useRouting from '#hooks/useRouting';
 import styles from './styles.module.css';
 import { WorldMap } from './components/WorldMap';
-import { ProBonoServicesTable, FrameworkAgreementsTable } from './tables';
+import { ProBonoServicesTable } from './tables';
 /** @knipignore */
 
 type SparkTabKey = 'spark-dashboard' | 'framework-agreements' | 'pro-bono-services' | 'custom-regulations';

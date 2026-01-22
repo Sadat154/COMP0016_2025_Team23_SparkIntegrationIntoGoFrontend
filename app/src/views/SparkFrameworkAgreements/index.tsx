@@ -26,6 +26,7 @@ import {
 import GlobalMap from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
+import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 
 // ============================================================================
 // DATA STRUCTURE
@@ -156,6 +157,10 @@ export function Component() {
                     // map data to be implemented once we get a mapbox api token
                 />
             </GlobalMap>
+        <FrameworkAgreementsTable 
+            data={agreementData}
+            pending={isLoading}
+        />
         </Container>
 
         </>
