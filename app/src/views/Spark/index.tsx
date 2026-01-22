@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Page from '#components/Page';
 import styles from './styles.module.css';
 import { WorldMap } from './components/WorldMap';
+import WarehouseStocksTable from './WarehouseStocksTable';
 /** @knipignore */
 
 export function Component() {
@@ -44,10 +45,7 @@ export function Component() {
 
                     <TabPanel name="warehouse-stocks">
                         <div className={styles.tabContent}>
-                            <div className={styles.placeholder}>
-                                <h2 className={styles.placeholderTitle}>Warehouse Stocks</h2>
-                                <p className={styles.placeholderText}>Placeholder for warehouse stocks content.</p>
-                            </div>
+                            <WarehouseStocksTable />
                         </div>
                     </TabPanel>
 
