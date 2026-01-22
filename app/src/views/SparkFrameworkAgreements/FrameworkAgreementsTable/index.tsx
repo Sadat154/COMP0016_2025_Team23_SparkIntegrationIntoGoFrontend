@@ -49,6 +49,22 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
     const [countrySearch, setCountrySearch] = useState<string>('');
     const [itemNameSearch, setItemNameSearch] = useState<string>('');
     const [showFilters, setShowFilters] = useState(true);
+    const [expandedCountryFilter, setExpandedCountryFilter] = useState(false);
+    const [expandedItemNameFilter, setExpandedItemNameFilter] = useState(false);
+
+    // Close filters when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const filterSection = document.querySelector(`.${styles.filterSection}`);
+            if (filterSection && !filterSection.contains(event.target as Node)) {
+                setExpandedCountryFilter(false);
+                setExpandedItemNameFilter(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Extract unique values for filters
     const regions = useMemo(() => {
@@ -250,33 +266,44 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                         </div>
 
                         <div className={styles.filterGroup}>
-                            <label>Country (Code)</label>
-                            <TextInput
-                                name="countrySearch"
-                                placeholder="Search countries..."
-                                value={countrySearch}
-                                onChange={(value) => setCountrySearch(value ?? '')}
+                            <button
+                                onClick={() => setExpandedCountryFilter(!expandedCountryFilter)}
+                                className={styles.expandableButton}
                                 disabled={pending}
-                            />
-                            <div className={styles.checkboxGroup}>
-                                {filteredCountriesBySearch.map(country => (
-                                    <label key={country} className={styles.checkboxLabel}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedCountries.includes(country)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSelectedCountries([...selectedCountries, country]);
-                                                } else {
-                                                    setSelectedCountries(selectedCountries.filter(c => c !== country));
-                                                }
-                                            }}
-                                            disabled={pending}
-                                        />
-                                        {country}
-                                    </label>
-                                ))}
-                            </div>
+                            >
+                                <span className={styles.chevron + (expandedCountryFilter ? ' ' + styles.chevronOpen : '')}>▶</span>
+                                Country (Code) {selectedCountries.length > 0 && `(${selectedCountries.length} selected)`}
+                            </button>
+                            {expandedCountryFilter && (
+                                <div className={styles.expandedContent}>
+                                    <TextInput
+                                        name="countrySearch"
+                                        placeholder="Search countries..."
+                                        value={countrySearch}
+                                        onChange={(value) => setCountrySearch(value ?? '')}
+                                        disabled={pending}
+                                    />
+                                    <div className={styles.checkboxGroup}>
+                                        {filteredCountriesBySearch.map(country => (
+                                            <label key={country} className={styles.checkboxLabel}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedCountries.includes(country)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedCountries([...selectedCountries, country]);
+                                                        } else {
+                                                            setSelectedCountries(selectedCountries.filter(c => c !== country));
+                                                        }
+                                                    }}
+                                                    disabled={pending}
+                                                />
+                                                {country}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className={styles.filterGroup}>
@@ -295,33 +322,44 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                         </div>
 
                         <div className={styles.filterGroup}>
-                            <label>Item Name</label>
-                            <TextInput
-                                name="itemNameSearch"
-                                placeholder="Search item names..."
-                                value={itemNameSearch}
-                                onChange={(value) => setItemNameSearch(value ?? '')}
+                            <button
+                                onClick={() => setExpandedItemNameFilter(!expandedItemNameFilter)}
+                                className={styles.expandableButton}
                                 disabled={pending}
-                            />
-                            <div className={styles.checkboxGroup}>
-                                {filteredItemNamesBySearch.map(name => (
-                                    <label key={name} className={styles.checkboxLabel}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedItemNames.includes(name)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSelectedItemNames([...selectedItemNames, name]);
-                                                } else {
-                                                    setSelectedItemNames(selectedItemNames.filter(n => n !== name));
-                                                }
-                                            }}
-                                            disabled={pending}
-                                        />
-                                        {name}
-                                    </label>
-                                ))}
-                            </div>
+                            >
+                                <span className={styles.chevron + (expandedItemNameFilter ? ' ' + styles.chevronOpen : '')}>▶</span>
+                                Item Name {selectedItemNames.length > 0 && `(${selectedItemNames.length} selected)`}
+                            </button>
+                            {expandedItemNameFilter && (
+                                <div className={styles.expandedContent}>
+                                    <TextInput
+                                        name="itemNameSearch"
+                                        placeholder="Search item names..."
+                                        value={itemNameSearch}
+                                        onChange={(value) => setItemNameSearch(value ?? '')}
+                                        disabled={pending}
+                                    />
+                                    <div className={styles.checkboxGroup}>
+                                        {filteredItemNamesBySearch.map(name => (
+                                            <label key={name} className={styles.checkboxLabel}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedItemNames.includes(name)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedItemNames([...selectedItemNames, name]);
+                                                        } else {
+                                                            setSelectedItemNames(selectedItemNames.filter(n => n !== name));
+                                                        }
+                                                    }}
+                                                    disabled={pending}
+                                                />
+                                                {name}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className={styles.filterGroup}>

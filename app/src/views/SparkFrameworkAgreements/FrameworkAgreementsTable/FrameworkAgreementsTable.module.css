@@ -52,6 +52,69 @@
     cursor: not-allowed;
 }
 
+.expandableButton {
+    width: 100%;
+    padding: var(--spacing-sm);
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.expandableButton:hover:not(:disabled) {
+    background-color: var(--color-background-hover);
+}
+
+.expandableButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chevron {
+    display: inline-block;
+    transition: transform 0.2s;
+    transform: rotate(0deg);
+}
+
+.chevronOpen {
+    transform: rotate(90deg);
+}
+
+.expandedContent {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    background-color: #ffffff !important;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.expandedContent > * + * {
+    margin-top: var(--spacing-md);
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    position: relative;
+}
+
 .checkboxGroup {
     display: flex;
     flex-direction: column;
@@ -61,6 +124,7 @@
     padding: var(--spacing-xs);
     border: 1px solid var(--color-border);
     border-radius: 4px;
+    background-color: #ffffff !important;
 }
 
 .checkboxLabel {
