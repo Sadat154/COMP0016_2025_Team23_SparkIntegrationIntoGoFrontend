@@ -1,10 +1,13 @@
 import {
     useMemo,
     useState,
+    useEffect,
 } from 'react';
 import {
     Table,
     Container,
+    Button,
+    TextInput,
 } from '@ifrc-go/ui';
 import {
     createStringColumn,
@@ -36,18 +39,119 @@ interface Props {
 }
 
 function FrameworkAgreementsTable({ data, pending = false }: Props) {
-    // rowsPerPage: Number of rows to display on each individual page
+    // Filter state
+    const [selectedRegion, setSelectedRegion] = useState<string>('');
+    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+    const [selectedItemCategory, setSelectedItemCategory] = useState<string>('');
+    const [selectedItemNames, setSelectedItemNames] = useState<string[]>([]);
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
+    const [countrySearch, setCountrySearch] = useState<string>('');
+    const [itemNameSearch, setItemNameSearch] = useState<string>('');
+    const [showFilters, setShowFilters] = useState(true);
+
+    // Extract unique values for filters
+    const regions = useMemo(() => {
+        const uniqueRegions = new Set(data.map(d => d.pa_bu_region_name).filter(Boolean));
+        return Array.from(uniqueRegions).sort();
+    }, [data]);
+
+    const countriesByRegion = useMemo(() => {
+        const map = new Map<string, Set<string>>();
+        data.forEach(item => {
+            if (!item.pa_bu_region_name || !item.pa_bu_country_name) return;
+            if (!map.has(item.pa_bu_region_name)) {
+                map.set(item.pa_bu_region_name, new Set());
+            }
+            map.get(item.pa_bu_region_name)?.add(item.pa_bu_country_name);
+        });
+        
+        const result = new Map<string, string[]>();
+        map.forEach((countries, region) => {
+            result.set(region, Array.from(countries).sort());
+        });
+        return result;
+    }, [data]);
+
+    const availableCountries = useMemo(() => {
+        if (!selectedRegion) {
+            const allCountries = new Set(data.map(d => d.pa_bu_country_name).filter(Boolean));
+            return Array.from(allCountries).sort();
+        }
+        return countriesByRegion.get(selectedRegion) || [];
+    }, [selectedRegion, data, countriesByRegion]);
+
+    const filteredCountriesBySearch = useMemo(() => {
+        return availableCountries.filter(country =>
+            country && country.toLowerCase().includes(countrySearch.toLowerCase())
+        );
+    }, [availableCountries, countrySearch]);
+
+    const itemCategories = useMemo(() => {
+        const uniqueCategories = new Set(data.map(d => d.pa_line_procurement_category).filter(Boolean));
+        return Array.from(uniqueCategories).sort();
+    }, [data]);
+
+    const itemNamesByCategory = useMemo(() => {
+        const filteredByCategory = selectedItemCategory
+            ? data.filter(d => d.pa_line_procurement_category === selectedItemCategory)
+            : data;
+        
+        const uniqueNames = new Set(filteredByCategory.map(d => d.pa_line_item_name).filter(Boolean));
+        return Array.from(uniqueNames).sort();
+    }, [selectedItemCategory, data]);
+
+    const filteredItemNamesBySearch = useMemo(() => {
+        return itemNamesByCategory.filter(name =>
+            name && name.toLowerCase().includes(itemNameSearch.toLowerCase())
+        );
+    }, [itemNamesByCategory, itemNameSearch]);
+
+    // Apply all filters with AND logic
+    const filteredData = useMemo(() => {
+        return data.filter(item => {
+            const matchesRegion = !selectedRegion || item.pa_bu_region_name === selectedRegion;
+            const matchesCountry = selectedCountries.length === 0 || selectedCountries.includes(item.pa_bu_country_name);
+            const matchesCategory = !selectedItemCategory || item.pa_line_procurement_category === selectedItemCategory;
+            const matchesItemName = selectedItemNames.length === 0 || selectedItemNames.includes(item.pa_line_item_name);
+            
+            const itemStartDate = new Date(item.pa_effective_date_fa_start_date);
+            const itemEndDate = new Date(item.pa_expiration_date_fa_end_date);
+            const filterStartDate = startDate ? new Date(startDate) : null;
+            const filterEndDate = endDate ? new Date(endDate) : null;
+            
+            const matchesStartDate = !filterStartDate || itemEndDate >= filterStartDate;
+            const matchesEndDate = !filterEndDate || itemStartDate <= filterEndDate;
+
+            return matchesRegion && matchesCountry && matchesCategory && matchesItemName && matchesStartDate && matchesEndDate;
+        });
+    }, [data, selectedRegion, selectedCountries, selectedItemCategory, selectedItemNames, startDate, endDate]);
+
+    // When region changes, reset countries
+    useEffect(() => {
+        setSelectedCountries([]);
+    }, [selectedRegion]);
+
+    // When category changes, reset item names
+    useEffect(() => {
+        setSelectedItemNames([]);
+    }, [selectedItemCategory]);
+
+    // Pagination
     const rowsPerPage = 100;
-    // displayData: Use all available data (no limit on total rows)
-    const displayData = data;
-    const totalPages = Math.ceil(displayData.length / rowsPerPage);
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     
     const [currentPage, setCurrentPage] = useState(0);
     
-    const paginatedData = displayData.slice(
+    const paginatedData = filteredData.slice(
         currentPage * rowsPerPage,
         (currentPage + 1) * rowsPerPage
     );
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [filteredData]);
 
     const columns = useMemo(
         () => [
@@ -117,10 +221,142 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
 
     return (
         <Container>
+            <div className={styles.filterSection}>
+                <div className={styles.filterHeader}>
+                    <h3>Filter Framework Agreements</h3>
+                    <Button
+                        name="toggleFilters"
+                        onClick={() => setShowFilters(!showFilters)}
+                    >
+                        {showFilters ? 'Hide Filters' : 'Show Filters'}
+                    </Button>
+                </div>
+
+                {showFilters && (
+                    <div className={styles.filtersContainer}>
+                        <div className={styles.filterGroup}>
+                            <label>FA Coverage Region</label>
+                            <select
+                                value={selectedRegion}
+                                onChange={(e) => setSelectedRegion(e.target.value)}
+                                disabled={pending}
+                                className={styles.selectInput}
+                            >
+                                <option value="">-- Select Region --</option>
+                                {regions.map(r => (
+                                    <option key={r} value={r}>{r}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <label>Country (Code)</label>
+                            <TextInput
+                                name="countrySearch"
+                                placeholder="Search countries..."
+                                value={countrySearch}
+                                onChange={(value) => setCountrySearch(value ?? '')}
+                                disabled={pending}
+                            />
+                            <div className={styles.checkboxGroup}>
+                                {filteredCountriesBySearch.map(country => (
+                                    <label key={country} className={styles.checkboxLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCountries.includes(country)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedCountries([...selectedCountries, country]);
+                                                } else {
+                                                    setSelectedCountries(selectedCountries.filter(c => c !== country));
+                                                }
+                                            }}
+                                            disabled={pending}
+                                        />
+                                        {country}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <label>Item Category</label>
+                            <select
+                                value={selectedItemCategory}
+                                onChange={(e) => setSelectedItemCategory(e.target.value)}
+                                disabled={pending}
+                                className={styles.selectInput}
+                            >
+                                <option value="">-- Select Category --</option>
+                                {itemCategories.map(c => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <label>Item Name</label>
+                            <TextInput
+                                name="itemNameSearch"
+                                placeholder="Search item names..."
+                                value={itemNameSearch}
+                                onChange={(value) => setItemNameSearch(value ?? '')}
+                                disabled={pending}
+                            />
+                            <div className={styles.checkboxGroup}>
+                                {filteredItemNamesBySearch.map(name => (
+                                    <label key={name} className={styles.checkboxLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedItemNames.includes(name)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedItemNames([...selectedItemNames, name]);
+                                                } else {
+                                                    setSelectedItemNames(selectedItemNames.filter(n => n !== name));
+                                                }
+                                            }}
+                                            disabled={pending}
+                                        />
+                                        {name}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <label>Effective Date From</label>
+                            <TextInput
+                                name="startDate"
+                                placeholder="YYYY-MM-DD"
+                                value={startDate}
+                                onChange={(value) => setStartDate(value ?? '')}
+                                disabled={pending}
+                            />
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <label>Effective Date To</label>
+                            <TextInput
+                                name="endDate"
+                                placeholder="YYYY-MM-DD"
+                                value={endDate}
+                                onChange={(value) => setEndDate(value ?? '')}
+                                disabled={pending}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <p className={styles.resultCount}>
+                    Showing {paginatedData.length} of {filteredData.length} results
+                </p>
+            </div>
+
             <div className={styles.tableContainer}>
                 <Table
                     data={paginatedData}
-                    keySelector={(row, index) => index}
+                    keySelector={(_row, index) => index}
                     columns={columns}
                     pending={pending}
                     filtered={false}
