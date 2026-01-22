@@ -1,4 +1,42 @@
 .tableContainer {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 400px;
     padding: var(--spacing-md);
 }
+
+.paginationContainer {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    justify-content: center;
+}
+
+.pageButton {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-white);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.pageButton:hover:not(:disabled) {
+    background-color: var(--color-background-hover);
+    border-color: var(--color-border-hover);
+}
+
+.pageButtonActive {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: 1px solid var(--color-primary);
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.pageButton:disabled,
+.pageButtonActive:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;}

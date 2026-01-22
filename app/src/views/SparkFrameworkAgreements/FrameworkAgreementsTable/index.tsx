@@ -1,5 +1,6 @@
 import {
     useMemo,
+    useState,
 } from 'react';
 import {
     Table,
@@ -35,6 +36,18 @@ interface Props {
 }
 
 function FrameworkAgreementsTable({ data, pending = false }: Props) {
+    // rowsPerPage: Number of rows to display on each individual page
+    const rowsPerPage = 100;
+    // displayData: Use all available data (no limit on total rows)
+    const displayData = data;
+    const totalPages = Math.ceil(displayData.length / rowsPerPage);
+    
+    const [currentPage, setCurrentPage] = useState(0);
+    
+    const paginatedData = displayData.slice(
+        currentPage * rowsPerPage,
+        (currentPage + 1) * rowsPerPage
+    );
 
     const columns = useMemo(
         () => [
@@ -106,12 +119,24 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
         <Container>
             <div className={styles.tableContainer}>
                 <Table
-                    data={data.slice(0, 10)}
+                    data={paginatedData}
                     keySelector={(row, index) => index}
                     columns={columns}
                     pending={pending}
                     filtered={false}
                 />
+            </div>
+            <div className={styles.paginationContainer}>
+                {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                        key={i}
+                        onClick={() => setCurrentPage(i)}
+                        className={currentPage === i ? styles.pageButtonActive : styles.pageButton}
+                        disabled={pending}
+                    >
+                        {i + 1}
+                    </button>
+                ))}
             </div>
         </Container>
     );
