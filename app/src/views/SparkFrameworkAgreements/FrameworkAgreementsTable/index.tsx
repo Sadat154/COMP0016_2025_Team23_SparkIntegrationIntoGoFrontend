@@ -69,9 +69,9 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
     }), [sortState.sorting, sortState.setSorting]);
 
     // Filter state
-    const [selectedRegion, setSelectedRegion] = useState<string>('');
+    const [selectedRegion, setSelectedRegion] = useState<string | undefined>(undefined);
     const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedItemCategory, setSelectedItemCategory] = useState<string>('');
+    const [selectedItemCategory, setSelectedItemCategory] = useState<string | undefined>(undefined);
     const [selectedItemNames, setSelectedItemNames] = useState<string[]>([]);
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
@@ -386,9 +386,9 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                                 options={regions}
                                 keySelector={selectOptionKeySelector}
                                 labelSelector={selectOptionLabelSelector}
-                                onChange={(value) => setSelectedRegion(value ?? '')}
+                                onChange={(value) => setSelectedRegion(value)}
                                 disabled={pending}
-                                placeholder="-- Select Region --"
+                                placeholder="Select region..."
                             />
                         </div>
 
@@ -418,9 +418,9 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                                 options={itemCategories}
                                 keySelector={selectOptionKeySelector}
                                 labelSelector={selectOptionLabelSelector}
-                                onChange={(value) => setSelectedItemCategory(value ?? '')}
+                                onChange={(value) => setSelectedItemCategory(value)}
                                 disabled={pending}
-                                placeholder="-- Select Category --"
+                                placeholder="Select item category..."
                             />
                         </div>
 
