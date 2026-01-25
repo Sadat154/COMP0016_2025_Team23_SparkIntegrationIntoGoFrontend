@@ -1,18 +1,17 @@
 import {
+    useCallback,
+    useEffect,
     useMemo,
     useState,
-    useEffect,
 } from 'react';
 import {
-    Table,
-    Container,
     Button,
-    TextInput,
+    Container,
+    MultiSelectInput,
+    SelectInput,
+    Table,
 } from '@ifrc-go/ui';
-import {
-    createStringColumn,
-    numericIdSelector,
-} from '@ifrc-go/ui/utils';
+import { createStringColumn } from '@ifrc-go/ui/utils';
 
 import styles from './FrameworkAgreementsTable.module.css';
 
@@ -33,6 +32,17 @@ interface FrameworkAgreement {
     item_service_short_description: string;
 }
 
+// Data transformation types for pre-built components
+interface SelectOption {
+    id: string;
+    name: string;
+}
+
+interface MultiSelectOption {
+    id: string;
+    name: string;
+}
+
 interface Props {
     data: FrameworkAgreement[];
     pending?: boolean;
@@ -46,101 +56,106 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
     const [selectedItemNames, setSelectedItemNames] = useState<string[]>([]);
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
-    const [countrySearch, setCountrySearch] = useState<string>('');
-    const [itemNameSearch, setItemNameSearch] = useState<string>('');
     const [showFilters, setShowFilters] = useState(true);
-    const [expandedCountryFilter, setExpandedCountryFilter] = useState(false);
-    const [expandedItemNameFilter, setExpandedItemNameFilter] = useState(false);
-    
+
     // Slider state - temporary values while dragging
     const [tempStartDate, setTempStartDate] = useState<string>('');
     const [tempEndDate, setTempEndDate] = useState<string>('');
 
-    // Close filters when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const filterSection = document.querySelector(`.${styles.filterSection}`);
-            if (filterSection && !filterSection.contains(event.target as Node)) {
-                setExpandedCountryFilter(false);
-                setExpandedItemNameFilter(false);
-            }
-        };
+    // Keyselectors and labelselectors for pre-built components
+    const selectOptionKeySelector = useCallback(
+        (option: SelectOption) => option.id,
+        [],
+    );
+    const selectOptionLabelSelector = useCallback(
+        (option: SelectOption) => option.name,
+        [],
+    );
+    const multiSelectOptionKeySelector = useCallback(
+        (option: MultiSelectOption) => option.id,
+        [],
+    );
+    const multiSelectOptionLabelSelector = useCallback(
+        (option: MultiSelectOption) => option.name,
+        [],
+    );
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    // Extract unique values for filters
+    // Extract unique values for filters and transform to component format
     const regions = useMemo(() => {
-        const uniqueRegions = new Set(data.map(d => d.pa_bu_region_name).filter(Boolean));
-        return Array.from(uniqueRegions).sort();
+        const uniqueRegions = new Set(data.map((d) => d.pa_bu_region_name).filter(Boolean));
+        return Array.from(uniqueRegions)
+            .sort()
+            .map((name) => ({ id: name, name }));
     }, [data]);
 
     const countriesByRegion = useMemo(() => {
         const map = new Map<string, Set<string>>();
-        data.forEach(item => {
+        data.forEach((item) => {
             if (!item.pa_bu_region_name || !item.pa_bu_country_name) return;
             if (!map.has(item.pa_bu_region_name)) {
                 map.set(item.pa_bu_region_name, new Set());
             }
             map.get(item.pa_bu_region_name)?.add(item.pa_bu_country_name);
         });
-        
-        const result = new Map<string, string[]>();
+
+        const result = new Map<string, SelectOption[]>();
         map.forEach((countries, region) => {
-            result.set(region, Array.from(countries).sort());
+            result.set(region, Array.from(countries)
+                .sort()
+                .map((name) => ({ id: name, name })));
         });
         return result;
     }, [data]);
 
     const availableCountries = useMemo(() => {
         if (!selectedRegion) {
-            const allCountries = new Set(data.map(d => d.pa_bu_country_name).filter(Boolean));
-            return Array.from(allCountries).sort();
+            const allCountries = new Set(
+                data.map((d) => d.pa_bu_country_name).filter(Boolean),
+            );
+            return Array.from(allCountries)
+                .sort()
+                .map((name) => ({ id: name, name }));
         }
         return countriesByRegion.get(selectedRegion) || [];
     }, [selectedRegion, data, countriesByRegion]);
 
-    const filteredCountriesBySearch = useMemo(() => {
-        return availableCountries.filter(country =>
-            country && country.toLowerCase().includes(countrySearch.toLowerCase())
-        );
-    }, [availableCountries, countrySearch]);
-
     const itemCategories = useMemo(() => {
-        const uniqueCategories = new Set(data.map(d => d.pa_line_procurement_category).filter(Boolean));
-        return Array.from(uniqueCategories).sort();
+        const uniqueCategories = new Set(
+            data.map((d) => d.pa_line_procurement_category).filter(Boolean),
+        );
+        return Array.from(uniqueCategories)
+            .sort()
+            .map((name) => ({ id: name, name }));
     }, [data]);
 
     const itemNamesByCategory = useMemo(() => {
         const filteredByCategory = selectedItemCategory
-            ? data.filter(d => d.pa_line_procurement_category === selectedItemCategory)
+            ? data.filter((d) => d.pa_line_procurement_category === selectedItemCategory)
             : data;
-        
-        const uniqueNames = new Set(filteredByCategory.map(d => d.pa_line_item_name).filter(Boolean));
-        return Array.from(uniqueNames).sort();
-    }, [selectedItemCategory, data]);
 
-    const filteredItemNamesBySearch = useMemo(() => {
-        return itemNamesByCategory.filter(name =>
-            name && name.toLowerCase().includes(itemNameSearch.toLowerCase())
+        const uniqueNames = new Set(
+            filteredByCategory.map((d) => d.pa_line_item_name).filter(Boolean),
         );
-    }, [itemNamesByCategory, itemNameSearch]);
+        return Array.from(uniqueNames)
+            .sort()
+            .map((name) => ({ id: name, name }));
+    }, [selectedItemCategory, data]);
 
     // Calculate min and max dates from data
     const { minDate, maxDate } = useMemo(() => {
         let min = '9999-12-31';
         let max = '0000-01-01';
-        
-        data.forEach(item => {
-            if (item.pa_effective_date_fa_start_date && item.pa_effective_date_fa_start_date < min) {
+
+        data.forEach((item) => {
+            if (item.pa_effective_date_fa_start_date
+                && item.pa_effective_date_fa_start_date < min) {
                 min = item.pa_effective_date_fa_start_date;
             }
             if (item.pa_expiration_date_fa_end_date && item.pa_expiration_date_fa_end_date > max) {
                 max = item.pa_expiration_date_fa_end_date;
             }
         });
-        
+
         return { minDate: min, maxDate: max };
     }, [data]);
 
@@ -153,24 +168,28 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
     }, [minDate, maxDate, startDate, endDate, tempStartDate, tempEndDate]);
 
     // Apply all filters with AND logic
-    const filteredData = useMemo(() => {
-        return data.filter(item => {
-            const matchesRegion = !selectedRegion || item.pa_bu_region_name === selectedRegion;
-            const matchesCountry = selectedCountries.length === 0 || selectedCountries.includes(item.pa_bu_country_name);
-            const matchesCategory = !selectedItemCategory || item.pa_line_procurement_category === selectedItemCategory;
-            const matchesItemName = selectedItemNames.length === 0 || selectedItemNames.includes(item.pa_line_item_name);
-            
-            const itemStartDate = new Date(item.pa_effective_date_fa_start_date);
-            const itemEndDate = new Date(item.pa_expiration_date_fa_end_date);
-            const filterStartDate = startDate ? new Date(startDate) : null;
-            const filterEndDate = endDate ? new Date(endDate) : null;
-            
-            const matchesStartDate = !filterStartDate || itemEndDate >= filterStartDate;
-            const matchesEndDate = !filterEndDate || itemStartDate <= filterEndDate;
+    const filteredData = useMemo(() => data.filter((item) => {
+        const matchesRegion = !selectedRegion
+            || item.pa_bu_region_name === selectedRegion;
+        const matchesCountry = selectedCountries.length === 0
+            || selectedCountries.includes(item.pa_bu_country_name);
+        const matchesCategory = !selectedItemCategory
+            || item.pa_line_procurement_category === selectedItemCategory;
+        const matchesItemName = selectedItemNames.length === 0
+            || selectedItemNames.includes(item.pa_line_item_name);
 
-            return matchesRegion && matchesCountry && matchesCategory && matchesItemName && matchesStartDate && matchesEndDate;
-        });
-    }, [data, selectedRegion, selectedCountries, selectedItemCategory, selectedItemNames, startDate, endDate]);
+        const itemStartDate = new Date(item.pa_effective_date_fa_start_date);
+        const itemEndDate = new Date(item.pa_expiration_date_fa_end_date);
+        const filterStartDate = startDate ? new Date(startDate) : null;
+        const filterEndDate = endDate ? new Date(endDate) : null;
+
+        const matchesStartDate = !filterStartDate || itemEndDate >= filterStartDate;
+        const matchesEndDate = !filterEndDate || itemStartDate <= filterEndDate;
+
+        return matchesRegion && matchesCountry && matchesCategory && matchesItemName
+            && matchesStartDate && matchesEndDate;
+    }), [data, selectedRegion, selectedCountries, selectedItemCategory,
+        selectedItemNames, startDate, endDate]);
 
     // When region changes, reset countries
     useEffect(() => {
@@ -183,15 +202,48 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
     }, [selectedItemCategory]);
 
     // Pagination
-    const rowsPerPage = 100;
+    const rowsPerPage = 1000;
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    
+
     const [currentPage, setCurrentPage] = useState(0);
-    
+
     const paginatedData = filteredData.slice(
         currentPage * rowsPerPage,
-        (currentPage + 1) * rowsPerPage
+        (currentPage + 1) * rowsPerPage,
     );
+
+    const displayedPages = useMemo(() => {
+        if (totalPages <= 1) {
+            return totalPages === 1 ? [0] : [];
+        }
+
+        if (totalPages <= 7) {
+            return Array.from({ length: totalPages }, (_val, index) => index);
+        }
+
+        const windowSize = 5;
+        const half = Math.floor(windowSize / 2);
+
+        let start = Math.max(1, currentPage - half);
+        let end = Math.min(totalPages - 2, currentPage + half);
+
+        const visibleCount = end - start + 1;
+        if (visibleCount < windowSize) {
+            const missing = windowSize - visibleCount;
+            if (start === 1) {
+                end = Math.min(totalPages - 2, end + missing);
+            } else if (end === totalPages - 2) {
+                start = Math.max(1, start - missing);
+            }
+        }
+
+        const pages = new Set<number>([0, totalPages - 1]);
+        for (let page = start; page <= end; page += 1) {
+            pages.add(page);
+        }
+
+        return Array.from(pages).sort((a, b) => a - b);
+    }, [currentPage, totalPages]);
 
     // Reset page when filters change
     useEffect(() => {
@@ -280,142 +332,109 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                 {showFilters && (
                     <div className={styles.filtersContainer}>
                         <div className={styles.filterGroup}>
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                             <label>FA Coverage Region</label>
-                            <select
+                            <SelectInput
+                                className={styles.selectInputWrapper}
+                                name="region"
                                 value={selectedRegion}
-                                onChange={(e) => setSelectedRegion(e.target.value)}
+                                options={regions}
+                                keySelector={selectOptionKeySelector}
+                                labelSelector={selectOptionLabelSelector}
+                                onChange={(value) => setSelectedRegion(value ?? '')}
                                 disabled={pending}
-                                className={styles.selectInput}
-                            >
-                                <option value="">-- Select Region --</option>
-                                {regions.map(r => (
-                                    <option key={r} value={r}>{r}</option>
-                                ))}
-                            </select>
+                                placeholder="-- Select Region --"
+                            />
                         </div>
 
                         <div className={styles.filterGroup}>
-                            <button
-                                onClick={() => setExpandedCountryFilter(!expandedCountryFilter)}
-                                className={styles.expandableButton}
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                            <label>Country</label>
+                            <MultiSelectInput
+                                className={styles.multiSelectInputWrapper}
+                                name="countries"
+                                value={selectedCountries}
+                                options={availableCountries}
+                                keySelector={multiSelectOptionKeySelector}
+                                labelSelector={multiSelectOptionLabelSelector}
+                                onChange={(values) => setSelectedCountries(values)}
                                 disabled={pending}
-                            >
-                                <span className={styles.chevron + (expandedCountryFilter ? ' ' + styles.chevronOpen : '')}>▶</span>
-                                Country (Code) {selectedCountries.length > 0 && `(${selectedCountries.length} selected)`}
-                            </button>
-                            {expandedCountryFilter && (
-                                <div className={styles.expandedContent}>
-                                    <TextInput
-                                        name="countrySearch"
-                                        placeholder="Search countries..."
-                                        value={countrySearch}
-                                        onChange={(value) => setCountrySearch(value ?? '')}
-                                        disabled={pending}
-                                    />
-                                    <div className={styles.checkboxGroup}>
-                                        {filteredCountriesBySearch.map(country => (
-                                            <label key={country} className={styles.checkboxLabel}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedCountries.includes(country)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedCountries([...selectedCountries, country]);
-                                                        } else {
-                                                            setSelectedCountries(selectedCountries.filter(c => c !== country));
-                                                        }
-                                                    }}
-                                                    disabled={pending}
-                                                />
-                                                {country}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                                placeholder="Select countries..."
+                            />
                         </div>
 
                         <div className={styles.filterGroup}>
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                             <label>Item Category</label>
-                            <select
+                            <SelectInput
+                                className={styles.selectInputWrapper}
+                                name="category"
                                 value={selectedItemCategory}
-                                onChange={(e) => setSelectedItemCategory(e.target.value)}
+                                options={itemCategories}
+                                keySelector={selectOptionKeySelector}
+                                labelSelector={selectOptionLabelSelector}
+                                onChange={(value) => setSelectedItemCategory(value ?? '')}
                                 disabled={pending}
-                                className={styles.selectInput}
-                            >
-                                <option value="">-- Select Category --</option>
-                                {itemCategories.map(c => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
+                                placeholder="-- Select Category --"
+                            />
                         </div>
 
                         <div className={styles.filterGroup}>
-                            <button
-                                onClick={() => setExpandedItemNameFilter(!expandedItemNameFilter)}
-                                className={styles.expandableButton}
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                            <label>Item Name</label>
+                            <MultiSelectInput
+                                className={styles.multiSelectInputWrapper}
+                                name="itemNames"
+                                value={selectedItemNames}
+                                options={itemNamesByCategory}
+                                keySelector={multiSelectOptionKeySelector}
+                                labelSelector={multiSelectOptionLabelSelector}
+                                onChange={(values) => setSelectedItemNames(values)}
                                 disabled={pending}
-                            >
-                                <span className={styles.chevron + (expandedItemNameFilter ? ' ' + styles.chevronOpen : '')}>▶</span>
-                                Item Name {selectedItemNames.length > 0 && `(${selectedItemNames.length} selected)`}
-                            </button>
-                            {expandedItemNameFilter && (
-                                <div className={styles.expandedContent}>
-                                    <TextInput
-                                        name="itemNameSearch"
-                                        placeholder="Search item names..."
-                                        value={itemNameSearch}
-                                        onChange={(value) => setItemNameSearch(value ?? '')}
-                                        disabled={pending}
-                                    />
-                                    <div className={styles.checkboxGroup}>
-                                        {filteredItemNamesBySearch.map(name => (
-                                            <label key={name} className={styles.checkboxLabel}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedItemNames.includes(name)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedItemNames([...selectedItemNames, name]);
-                                                        } else {
-                                                            setSelectedItemNames(selectedItemNames.filter(n => n !== name));
-                                                        }
-                                                    }}
-                                                    disabled={pending}
-                                                />
-                                                {name}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                                placeholder="Select item names..."
+                            />
                         </div>
 
                         <div className={styles.filterGroup}>
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                             <label>Effective Date Range</label>
                             <div className={styles.dateRangeDisplay}>
-                                {tempStartDate ? new Date(tempStartDate).toLocaleDateString() : 'Start'} — {tempEndDate ? new Date(tempEndDate).toLocaleDateString() : 'End'}
+                                {tempStartDate ? new Date(tempStartDate).toLocaleDateString() : 'Start'}
+                                {' '}
+                                —
+                                {tempEndDate ? new Date(tempEndDate).toLocaleDateString() : 'End'}
                             </div>
                             <div className={styles.rangeSliderContainer}>
                                 <div className={styles.rangeTrackBase} />
-                                <div 
+                                <div
                                     className={styles.rangeTrackFill}
                                     style={{
-                                        left: `${tempStartDate && tempEndDate ? ((new Date(tempStartDate).getTime() - new Date(minDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 0}%`,
-                                        width: `${tempStartDate && tempEndDate ? ((new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 100}%`
+                                        left: `${tempStartDate && tempEndDate
+                                            ? ((new Date(tempStartDate).getTime()
+                                                - new Date(minDate).getTime())
+                                                / (new Date(maxDate).getTime()
+                                                    - new Date(minDate).getTime())) * 100
+                                            : 0}%`,
+                                        width: `${tempStartDate && tempEndDate ? ((new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 100}%`,
                                     }}
                                 />
                                 <input
                                     type="range"
                                     min="0"
                                     max="100"
-                                    value={((new Date(tempStartDate || minDate).getTime() - new Date(minDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100}
+                                    value={(((new Date(tempStartDate || minDate).getTime()
+                                        - new Date(minDate).getTime())
+                                        / (new Date(maxDate).getTime()
+                                            - new Date(minDate).getTime())) * 100)}
                                     onChange={(e) => {
                                         const percent = parseFloat(e.target.value);
-                                        const totalMs = new Date(maxDate).getTime() - new Date(minDate).getTime();
-                                        const newStartMs = new Date(minDate).getTime() + (totalMs * percent / 100);
-                                        const newStart = new Date(newStartMs).toISOString().split('T')[0];
-                                        if (newStart <= tempEndDate) {
+                                        const totalMs = new Date(maxDate).getTime()
+                                            - new Date(minDate).getTime();
+                                        const newStartMs = new Date(minDate).getTime()
+                                            + ((totalMs * percent) / 100);
+                                        const newStart = new Date(newStartMs)
+                                            .toISOString().split('T')[0];
+                                        if (newStart && newStart <= tempEndDate) {
                                             setTempStartDate(newStart);
                                         }
                                     }}
@@ -426,13 +445,19 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                                     type="range"
                                     min="0"
                                     max="100"
-                                    value={((new Date(tempEndDate || maxDate).getTime() - new Date(minDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100}
+                                    value={(((new Date(tempEndDate || maxDate).getTime()
+                                        - new Date(minDate).getTime())
+                                        / (new Date(maxDate).getTime()
+                                            - new Date(minDate).getTime())) * 100)}
                                     onChange={(e) => {
                                         const percent = parseFloat(e.target.value);
-                                        const totalMs = new Date(maxDate).getTime() - new Date(minDate).getTime();
-                                        const newEndMs = new Date(minDate).getTime() + (totalMs * percent / 100);
-                                        const newEnd = new Date(newEndMs).toISOString().split('T')[0];
-                                        if (newEnd >= tempStartDate) {
+                                        const totalMs = new Date(maxDate).getTime()
+                                            - new Date(minDate).getTime();
+                                        const newEndMs = new Date(minDate).getTime()
+                                            + ((totalMs * percent) / 100);
+                                        const newEnd = new Date(newEndMs)
+                                            .toISOString().split('T')[0];
+                                        if (newEnd && newEnd >= tempStartDate) {
                                             setTempEndDate(newEnd);
                                         }
                                     }}
@@ -441,6 +466,7 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                                 />
                             </div>
                             <Button
+                                type="button"
                                 name="applyDateFilter"
                                 onClick={() => {
                                     setStartDate(tempStartDate);
@@ -455,7 +481,15 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                 )}
 
                 <p className={styles.resultCount}>
-                    Showing {paginatedData.length} of {filteredData.length} results
+                    Showing
+                    {' '}
+                    {paginatedData.length}
+                    {' '}
+                    of
+                    {' '}
+                    {filteredData.length}
+                    {' '}
+                    results
                 </p>
             </div>
 
@@ -468,18 +502,56 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
                     filtered={false}
                 />
             </div>
-            <div className={styles.paginationContainer}>
-                {Array.from({ length: totalPages }, (_, i) => (
+            {totalPages > 0 && (
+                <div className={styles.paginationContainer}>
                     <button
-                        key={i}
-                        onClick={() => setCurrentPage(i)}
-                        className={currentPage === i ? styles.pageButtonActive : styles.pageButton}
-                        disabled={pending}
+                        type="button"
+                        className={styles.navButton}
+                        onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+                        disabled={pending || currentPage === 0}
+                        aria-label="Previous page"
                     >
-                        {i + 1}
+                        &lt;
                     </button>
-                ))}
-            </div>
+
+                    {displayedPages.map((page, index) => {
+                        const previousPage = displayedPages[index - 1];
+                        const showEllipsis = index > 0 && page - previousPage > 1;
+
+                        return (
+                            <span key={page} className={styles.pageWrapper}>
+                                {showEllipsis && (
+                                    <span className={styles.pageEllipsis} aria-hidden>
+                                        …
+                                    </span>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage(page)}
+                                    className={page === currentPage
+                                        ? styles.pageButtonActive
+                                        : styles.pageButton}
+                                    disabled={pending}
+                                    aria-label={`Page ${page + 1}`}
+                                    aria-current={page === currentPage ? 'page' : undefined}
+                                >
+                                    {page + 1}
+                                </button>
+                            </span>
+                        );
+                    })}
+
+                    <button
+                        type="button"
+                        className={styles.navButton}
+                        onClick={() => setCurrentPage((page) => Math.min(totalPages - 1, page + 1))}
+                        disabled={pending || currentPage >= totalPages - 1}
+                        aria-label="Next page"
+                    >
+                        &gt;
+                    </button>
+                </div>
+            )}
         </Container>
     );
 }

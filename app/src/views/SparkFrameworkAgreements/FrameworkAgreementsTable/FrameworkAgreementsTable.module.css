@@ -37,124 +37,48 @@
     font-size: 0.9rem;
 }
 
-.selectInput {
+/* Styling for SelectInput pre-built component */
+.selectInputWrapper {
+    width: 100%;
+}
+
+.selectInputWrapper :global(.input-section-container) {
+    width: 100%;
+}
+
+.selectInputWrapper :global(input) {
     width: 100%;
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.9rem;
     border: 1px solid var(--color-border);
     border-radius: 4px;
     background-color: var(--color-white);
-    cursor: pointer;
 }
 
-.selectInput:disabled {
+.selectInputWrapper :global(input:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.expandableButton {
+/* Styling for MultiSelectInput pre-built component */
+.multiSelectInputWrapper {
     width: 100%;
-    padding: var(--spacing-sm);
-    text-align: left;
-    font-size: 0.9rem;
-    font-weight: 600;
-    background-color: var(--color-white);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    transition: background-color 0.2s;
-    position: relative;
 }
 
-.expandableButton:hover:not(:disabled) {
-    background-color: var(--color-background-hover);
+.multiSelectInputWrapper :global(.input-section-container) {
+    width: 100%;
 }
 
-.expandableButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.chevron {
-    display: inline-block;
-    transition: transform 0.2s;
-    transform: rotate(0deg);
-}
-
-.chevronOpen {
-    transform: rotate(90deg);
-}
-
-.expandedContent {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    padding: var(--spacing-md);
-    border: 1px solid var(--color-border);
-    border-top: none;
-    border-radius: 0 0 4px 4px;
-    background-color: #ffffff !important;
-    z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.expandedContent > * + * {
-    margin-top: var(--spacing-md);
-}
-
-.filterGroup {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-    position: relative;
-}
-
-.checkboxGroup {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-    max-height: 200px;
-    overflow-y: auto;
-    padding: var(--spacing-xs);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background-color: #ffffff !important;
-}
-
-.checkboxLabel {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    cursor: pointer;
-    font-weight: normal;
-    font-size: 0.9rem;
-}
-
-.checkboxLabel input[type="checkbox"] {
-    cursor: pointer;
-}
-
-.clearButton {
+.multiSelectInputWrapper :global(input) {
+    width: 100%;
     padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: 0.85rem;
-    background-color: var(--color-white);
+    font-size: 0.9rem;
     border: 1px solid var(--color-border);
     border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
+    background-color: var(--color-white);
 }
 
-.clearButton:hover:not(:disabled) {
-    background-color: var(--color-background-hover);
-}
-
-.clearButton:disabled {
+.multiSelectInputWrapper :global(input:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -174,33 +98,76 @@
 
 .paginationContainer {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     padding: var(--spacing-md);
     justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-.pageButton {
-    padding: var(--spacing-xs) var(--spacing-sm);
+.navButton {
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background-color: var(--color-white);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    line-height: 1;
+    min-width: 2.25rem;
+}
+
+.navButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pageWrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.pageEllipsis {
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+    padding: 0 0.15rem;
+}
+
+.pageButton,
+.pageButtonActive {
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
     border: 1px solid var(--color-border);
     background-color: var(--color-white);
     cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s;
+    min-width: 2.25rem;
+    line-height: 1;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .pageButton:hover:not(:disabled) {
-    background-color: var(--color-background-hover);
     border-color: var(--color-border-hover);
 }
 
 .pageButtonActive {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    background-color: var(--color-primary);
-    color: var(--color-white);
-    border: 1px solid var(--color-primary);
-    cursor: pointer;
-    border-radius: 4px;
+    border: 2px solid var(--go-ui-color-primary-red);
+    background-color: var(--go-ui-color-primary-red) !important;
     font-weight: 600;
+    color: #ffffff !important;
+}
+
+/* Increase specificity to override any button base styles */
+.paginationContainer .pageButtonActive,
+.paginationContainer .pageButtonActive:hover,
+.paginationContainer .pageButtonActive:focus-visible {
+    color: #ffffff !important;
+}
+
+.pageButton:focus-visible,
+.pageButtonActive:focus-visible,
+.navButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(229, 22, 54, 0.25);
 }
 
 .pageButton:disabled,
