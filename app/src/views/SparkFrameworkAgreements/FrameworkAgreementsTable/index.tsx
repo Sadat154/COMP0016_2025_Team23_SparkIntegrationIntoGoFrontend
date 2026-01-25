@@ -3,6 +3,7 @@ import {
     useEffect,
     useMemo,
     useState,
+    type SetStateAction,
 } from 'react';
 import {
     Button,
@@ -11,9 +12,11 @@ import {
     SelectInput,
     Table,
 } from '@ifrc-go/ui';
+import { SortContext } from '@ifrc-go/ui/contexts';
 import { createStringColumn } from '@ifrc-go/ui/utils';
 
 import styles from './FrameworkAgreementsTable.module.css';
+import useFilterState from '#hooks/useFilterState';
 
 interface FrameworkAgreement {
     fa_number: string;
@@ -49,6 +52,22 @@ interface Props {
 }
 
 function FrameworkAgreementsTable({ data, pending = false }: Props) {
+    const { sortState } = useFilterState({ filter: {} });
+    const triStateSort = useMemo(() => ({
+        sorting: sortState.sorting,
+        setSorting: (value: SetStateAction<{ name: string; direction: 'asc' | 'dsc' } | undefined>) => {
+            const proposed = typeof value === 'function' ? value(sortState.sorting) : value;
+            let finalValue = proposed;
+            if (proposed && sortState.sorting && proposed.name === sortState.sorting.name) {
+                // Cycle: asc -> dsc -> undefined
+                if (sortState.sorting.direction === 'dsc' && proposed.direction === 'asc') {
+                    finalValue = undefined;
+                }
+            }
+            sortState.setSorting(finalValue);
+        },
+    }), [sortState.sorting, sortState.setSorting]);
+
     // Filter state
     const [selectedRegion, setSelectedRegion] = useState<string>('');
     const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
@@ -207,11 +226,6 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
 
     const [currentPage, setCurrentPage] = useState(0);
 
-    const paginatedData = filteredData.slice(
-        currentPage * rowsPerPage,
-        (currentPage + 1) * rowsPerPage,
-    );
-
     const displayedPages = useMemo(() => {
         if (totalPages <= 1) {
             return totalPages === 1 ? [0] : [];
@@ -245,76 +259,107 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
         return Array.from(pages).sort((a, b) => a - b);
     }, [currentPage, totalPages]);
 
-    // Reset page when filters change
-    useEffect(() => {
-        setCurrentPage(0);
-    }, [filteredData]);
-
     const columns = useMemo(
         () => [
             createStringColumn(
                 'fa_number',
                 'FA Number',
                 (item: FrameworkAgreement) => item.fa_number,
+                { sortable: true },
             ),
             createStringColumn(
                 'supplier_name',
                 'Supplier Name',
                 (item: FrameworkAgreement) => item.supplier_name,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_type',
                 'PA Type',
                 (item: FrameworkAgreement) => item.pa_type,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_bu_region_name',
                 'PA BU Region Name',
                 (item: FrameworkAgreement) => item.pa_bu_region_name,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_bu_country_name',
                 'PA BU Country Name',
                 (item: FrameworkAgreement) => item.pa_bu_country_name,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_line_product_type',
                 'PA Line Product Type',
                 (item: FrameworkAgreement) => item.pa_line_product_type,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_line_procurement_category',
                 'PA Line Procurement Category',
                 (item: FrameworkAgreement) => item.pa_line_procurement_category,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_effective_date_fa_start_date',
                 'PA Effective Date',
                 (item: FrameworkAgreement) => item.pa_effective_date_fa_start_date,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_expiration_date_fa_end_date',
                 'PA Expiration Date',
                 (item: FrameworkAgreement) => item.pa_expiration_date_fa_end_date,
+                { sortable: true },
             ),
             createStringColumn(
                 'supplier_country',
                 'Supplier Country',
                 (item: FrameworkAgreement) => item.supplier_country,
+                { sortable: true },
             ),
             createStringColumn(
                 'pa_status',
                 'PA Status',
                 (item: FrameworkAgreement) => item.pa_status,
+                { sortable: true },
             ),
             createStringColumn(
                 'item_service_short_description',
                 'Item / Service Short Description',
                 (item: FrameworkAgreement) => item.item_service_short_description,
+                { sortable: true },
             ),
         ],
         [],
     );
+
+    const sortedData = useMemo(() => {
+        if (!sortState.sorting) {
+            return filteredData;
+        }
+
+        const columnToSort = columns.find((column) => column.id === sortState.sorting?.name);
+        if (!columnToSort?.valueComparator) {
+            return filteredData;
+        }
+
+        const sorted = [...filteredData].sort(columnToSort.valueComparator);
+        return sortState.sorting.direction === 'dsc' ? sorted.reverse() : sorted;
+    }, [filteredData, sortState.sorting, columns]);
+
+    const paginatedData = sortedData.slice(
+        currentPage * rowsPerPage,
+        (currentPage + 1) * rowsPerPage,
+    );
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [filteredData]);
 
     return (
         <Container>
@@ -494,13 +539,15 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
             </div>
 
             <div className={styles.tableContainer}>
-                <Table
-                    data={paginatedData}
-                    keySelector={(_row, index) => index}
-                    columns={columns}
-                    pending={pending}
-                    filtered={false}
-                />
+                <SortContext.Provider value={triStateSort}>
+                    <Table
+                        data={paginatedData}
+                        keySelector={(_row, index) => index}
+                        columns={columns}
+                        pending={pending}
+                        filtered={false}
+                    />
+                </SortContext.Provider>
             </div>
             {totalPages > 0 && (
                 <div className={styles.paginationContainer}>
