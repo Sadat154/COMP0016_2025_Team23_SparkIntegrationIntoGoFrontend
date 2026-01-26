@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import * as d3 from 'd3';
 
 type WorldGeoJSON = any;
@@ -17,7 +21,7 @@ interface WorldMapProps {
     onCountryClick?: (iso3: string) => void;
 }
 
-export function WorldMap({
+export default function WorldMap({
     highlightedIso3 = new Set(),
     width = 1000,
     height = 600,
@@ -100,7 +104,7 @@ export function WorldMap({
                 let iso3 = String(d.properties?.['ISO3166-1-Alpha-3'] ?? '');
                 if (!iso3 || iso3 === '-99') {
                     const pname = String(
-                        d.properties?.['name'] ?? '',
+                        d.properties?.name ?? '',
                     )
                         .trim()
                         .toLowerCase();
@@ -119,20 +123,19 @@ export function WorldMap({
                 d3.select(this as any).attr('stroke-width', 0.5);
                 setHover(null);
             })
-            .on('mousemove', function (event: any, d: any) {
+            .on('mousemove', (event: any, d: any) => {
                 let iso3 = String(d.properties?.['ISO3166-1-Alpha-3'] ?? '');
                 if (!iso3 || iso3 === '-99') {
                     const pname = String(
-                        d.properties?.['name'] ?? '',
+                        d.properties?.name ?? '',
                     )
                         .trim()
                         .toLowerCase();
                     const looked = nameToIsoRef.current[pname];
                     if (looked) iso3 = looked;
                 }
-                const name =
-                    meta[iso3]?.name ??
-                    String(d.properties?.['name'] ?? iso3);
+                const name = meta[iso3]?.name
+                    ?? String(d.properties?.name ?? iso3);
                 const [x, y] = d3.pointer(event, svgRef.current);
                 setHover({
                     iso3,
@@ -141,11 +144,11 @@ export function WorldMap({
                     y: y + 12,
                 });
             })
-            .on('click', function (_event: any, d: any) {
+            .on('click', (_event: any, d: any) => {
                 let iso3 = String(d.properties?.['ISO3166-1-Alpha-3'] ?? '');
                 if (!iso3 || iso3 === '-99') {
                     const pname = String(
-                        d.properties?.['name'] ?? '',
+                        d.properties?.name ?? '',
                     )
                         .trim()
                         .toLowerCase();
@@ -185,7 +188,11 @@ export function WorldMap({
                     }}
                 >
                     <div style={{ fontWeight: 700 }}>
-                        {hover.name} ({hover.iso3})
+                        {hover.name}
+                        {' '}
+                        (
+                        {hover.iso3}
+                        )
                     </div>
                     {hoverMeta?.society_name ? (
                         <div style={{ marginTop: 4 }}>

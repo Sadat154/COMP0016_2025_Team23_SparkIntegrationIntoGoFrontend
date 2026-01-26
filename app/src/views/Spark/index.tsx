@@ -1,21 +1,27 @@
-import { Container, Tabs, TabList, TabPanel, Tab } from '@ifrc-go/ui';
 import { useState } from 'react';
+import {
+    Container,
+    Tab,
+    TabList,
+    TabPanel,
+    Tabs,
+} from '@ifrc-go/ui';
 
 import Page from '#components/Page';
+
+import WorldMap from './components/WorldMap';
+import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
+
 import styles from './styles.module.css';
-import { WorldMap } from './components/WorldMap';
-import WarehouseStocksTable from './WarehouseStocksTable';
 /** @knipignore */
 
 export function Component() {
-    const [activeTab, setActiveTab] = useState<string>('SPARK Dashboard');
+    const [activeTab, setActiveTab] = useState<string>('spark-dashboard');
     return (
         <Page
             title="SPARK"
             heading="SPARK"
-            description={(
-                "Centralised Platform for Enhancing Emergency Supply Chain and Decision-Making"
-            )}
+            description="Centralised Platform for Enhancing Emergency Supply Chain and Decision-Making"
         >
             <div className={styles.tabsContainer}>
                 <Tabs
