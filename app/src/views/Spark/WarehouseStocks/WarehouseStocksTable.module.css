@@ -43,7 +43,7 @@
     overflow: hidden;
 }
 
-// Table-only scrolling
+/* Table-only scrolling */
 .tableScroll {
     max-height: 420px;
     overflow: auto;

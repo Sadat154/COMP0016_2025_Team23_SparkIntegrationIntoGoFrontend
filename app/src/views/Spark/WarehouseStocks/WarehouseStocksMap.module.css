@@ -25,12 +25,12 @@
     height: 100%;
 }
 
-// Add pointer cursor on bubbles
+/* Add pointer cursor on bubbles */
 .mapRoot :global(.mapboxgl-canvas-container.mapboxgl-interactive) {
     cursor: pointer;
 }
 
-// Tooltip overlay
+/* Tooltip overlay */
 .tooltip {
     position: absolute;
     left: 12px;
