@@ -66,11 +66,20 @@ function formatQty(v: string | null | undefined): string {
     });
 }
 
+type OwnerKey = 'IFRC' | 'ICRC' | 'NS';
+
+// Only IFRC data exists right now
+function getOwner(): OwnerKey {
+    return 'IFRC';
+}
+
 function WarehouseStocksTable() {
     const [filterRegion, setFilterRegion] = useState<string | undefined>();
     const [filterCountry, setFilterCountry] = useState<string | undefined>();
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
+
+    const [owner, setOwner] = useState<OwnerKey>('IFRC');
 
     const { sortState } = useFilterState({ filter: {} });
 
@@ -101,9 +110,13 @@ function WarehouseStocksTable() {
         return uniqueNames.map((n) => ({ key: n, label: n }));
     }, [tableData]);
 
-    // For MAP: apply filters except country (so clicking map is meaningful later)
+    // Apply filters except country for map
     const mapFilteredData = useMemo(() => {
         let filtered = tableData;
+
+        if (owner) {
+            filtered = filtered.filter(() => getOwner() === owner);
+        }
 
         if (filterRegion) {
             filtered = filtered.filter((item) => item.region === filterRegion);
@@ -116,11 +129,15 @@ function WarehouseStocksTable() {
         }
 
         return filtered;
-    }, [tableData, filterRegion, filterItemGroup, filterItemName]);
+    }, [tableData, filterRegion, filterItemGroup, filterItemName, owner]);
 
     // Apply all filters for table
     const filteredData = useMemo(() => {
         let filtered = tableData;
+
+        if (owner) {
+            filtered = filtered.filter(() => getOwner() === owner);
+        }
 
         if (filterRegion) {
             filtered = filtered.filter((item) => item.region === filterRegion);
@@ -136,7 +153,7 @@ function WarehouseStocksTable() {
         }
 
         return filtered;
-    }, [tableData, filterRegion, filterCountry, filterItemGroup, filterItemName]);
+    }, [tableData, filterRegion, filterCountry, filterItemGroup, filterItemName, owner]);
 
     const columns = useMemo(
         () => [
@@ -216,15 +233,42 @@ function WarehouseStocksTable() {
     const stringKeySelector = useCallback((option: { key: string }) => option.key, []);
     const stringLabelSelector = useCallback((option: { label: string }) => option.label, []);
 
-    const handleClearFilters = useCallback(() => {
+    const handleClearAll = useCallback(() => {
         setFilterRegion(undefined);
         setFilterCountry(undefined);
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
+        setOwner('IFRC');
     }, []);
 
     const hasFilters = Boolean(filterRegion || filterCountry || filterItemGroup || filterItemName);
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
+
+    const chartData = useMemo(() => {
+        let base = tableData;
+
+        if (owner) {
+            base = base.filter(() => getOwner() === owner);
+        }
+
+        if (filterRegion) base = base.filter((i) => i.region === filterRegion);
+        if (filterCountry) base = base.filter((i) => i.country === filterCountry);
+        if (filterItemName) base = base.filter((i) => i.item_name === filterItemName);
+
+        const totals = new Map<string, number>();
+        base.forEach((row) => {
+            const group = row.item_group ?? 'Unknown';
+            const q = parseQty(row.quantity) ?? 0;
+            totals.set(group, (totals.get(group) ?? 0) + q);
+        });
+
+        const rows = Array.from(totals.entries())
+            .map(([label, value]) => ({ label, value }))
+            .sort((a, b) => b.value - a.value);
+
+        const max = rows[0]?.value ?? 0;
+        return { rows, max };
+    }, [tableData, filterRegion, filterCountry, filterItemName, owner]);
 
     return (
         <Container
@@ -233,9 +277,8 @@ function WarehouseStocksTable() {
             headingLevel={2}
         >
             <div className={styles.layout}>
-                {/* LEFT: Filters card (grey) */}
+                {/* Filters card */}
                 <div className={styles.filtersCard}>
-
                     <SelectInput
                         placeholder="All Regions"
                         label="Region"
@@ -277,11 +320,11 @@ function WarehouseStocksTable() {
                         options={itemNameOptions}
                     />
 
-                    {hasFilters && (
+                    {(hasFilters || owner !== 'IFRC') && (
                         <div className={styles.clearRow}>
                             <Button
                                 name={undefined}
-                                onClick={handleClearFilters}
+                                onClick={handleClearAll}
                             >
                                 Clear Filters
                             </Button>
@@ -289,6 +332,7 @@ function WarehouseStocksTable() {
                     )}
                 </div>
 
+                {/* MAP */}
                 <div className={styles.mapCard}>
                     <WarehouseStocksMap
                         data={mapFilteredData}
@@ -297,6 +341,91 @@ function WarehouseStocksTable() {
                     />
                 </div>
 
+                {/* Right panel (Owner + Bar chart) */}
+                <div className={styles.rightPanel}>
+                    <div className={styles.ownerCard}>
+                        <div className={styles.ownerHeader}>
+                            <div>Owner</div>
+                        </div>
+
+                        <div className={styles.ownerButtons}>
+                            <button
+                                type="button"
+                                className={styles.ownerBtn}
+                                data-active={owner === 'IFRC'}
+                                onClick={() => setOwner('IFRC')}
+                            >
+                                <div className={styles.ownerLineBig}>IFRC</div>
+                                <div className={styles.ownerLineSmall}>All current data</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                className={styles.ownerBtn}
+                                data-disabled="true"
+                                title="No data yet"
+                            >
+                                <div className={styles.ownerLineBig}>ICRC</div>
+                                <div className={styles.ownerLineSmall}>0</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                className={styles.ownerBtn}
+                                data-disabled="true"
+                                title="No data yet"
+                            >
+                                <div className={styles.ownerLineBig}>NS</div>
+                                <div className={styles.ownerLineSmall}>0</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className={styles.chartCard}>
+                        <div className={styles.chartHeader}>
+                            <div className={styles.chartTitle}>Item Groups by Quantity</div>
+                            {filterItemGroup && (
+                                <Button
+                                    name={undefined}
+                                    onClick={() => setFilterItemGroup(undefined)}
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                        </div>
+
+                        <div className={styles.chartBody}>
+                            {chartData.rows.length === 0 ? (
+                                <div className={styles.chartEmpty}>No items</div>
+                            ) : (
+                                chartData.rows.map((r) => {
+                                    const pct = chartData.max > 0 ? (r.value / chartData.max) * 100 : 0;
+                                    const isActive = filterItemGroup === r.label;
+                                    return (
+                                        <button
+                                            type="button"
+                                            className={styles.chartRow}
+                                            key={r.label}
+                                            data-active={isActive}
+                                            onClick={() => setFilterItemGroup(isActive ? undefined : r.label)}
+                                            title={r.label}
+                                        >
+                                            <div className={styles.chartLabel}>{r.label}</div>
+                                            <div className={styles.chartBarWrap}>
+                                                <div className={styles.chartBar} style={{ width: `${pct}%` }} />
+                                            </div>
+                                            <div className={styles.chartValue}>
+                                                {Math.round(r.value).toLocaleString()}
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Table */}
                 <div className={styles.tableCard}>
                     <div className={styles.tableScroll}>
                         <SortContext.Provider value={sortState}>

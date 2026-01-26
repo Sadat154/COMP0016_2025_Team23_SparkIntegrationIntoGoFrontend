@@ -1,50 +1,214 @@
 .page {
-    background: #ffffff;
+    background-color: var(--go-ui-color-foreground);
 }
 
 .layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 280px 1fr 320px;
     grid-template-areas:
-        "filters map"
-        "table table";
-    gap: 16px;
-    padding: var(--spacing-md);
+        "filters map right"
+        "table table right";
+    gap: var(--go-ui-spacing-md);
+    padding: var(--go-ui-spacing-md);
 }
 
 .filtersCard {
     grid-area: filters;
-    padding: 12px;
+    padding: var(--go-ui-spacing-md);
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: var(--go-ui-spacing-md);
 }
 
 .clearRow {
-    margin-top: 6px;
+    margin-top: var(--go-ui-spacing-xs);
 }
 
 .mapCard {
     grid-area: map;
-    background: #f3f3f3;
-    border: 1px solid #e5e5e5;
-    border-radius: 6px;
+    background-color: var(--go-ui-color-background);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
     overflow: hidden;
-    min-height: 360px;
+    height: 360px;
     display: flex;
     flex-direction: column;
 }
 
 .tableCard {
     grid-area: table;
-    background: #ffffff;
-    border: 1px solid #e5e5e5;
-    border-radius: 6px;
+    background-color: var(--go-ui-color-foreground);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    overflow: hidden;
+    height: 400px;
+}
+
+.tableScroll {
+    height: 100%;
+    overflow: auto;
+}
+
+.rightPanel {
+    grid-area: right;
+    display: flex;
+    flex-direction: column;
+    gap: var(--go-ui-spacing-md);
+}
+
+.ownerCard {
+    background-color: var(--go-ui-color-foreground);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    padding: var(--go-ui-spacing-md);
+}
+
+.ownerHeader {
+    font-weight: var(--go-ui-font-weight-bold);
+    margin-bottom: var(--go-ui-spacing-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.ownerHint {
+    font-size: var(--go-ui-font-size-xs);
+    color: var(--go-ui-color-text-description);
+}
+
+.ownerButtons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--go-ui-spacing-sm);
+}
+
+.ownerBtn {
+    width: 100%;
+    text-align: left;
+    background-color: var(--go-ui-color-foreground);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-md);
+    padding: var(--go-ui-spacing-sm) var(--go-ui-spacing-md);
+    cursor: pointer;
+    transition: all var(--go-ui-duration-animation-fast);
+}
+
+.ownerBtn:hover:not([data-disabled="true"]) {
+    border-color: var(--go-ui-color-primary-red);
+    box-shadow: var(--go-ui-box-shadow-sm);
+}
+
+.ownerBtn[data-active="true"] {
+    border-color: var(--go-ui-color-primary-red);
+    background-color: var(--go-ui-color-background);
+    box-shadow: 0 0 0 2px rgba(245, 51, 63, 0.15);
+}
+
+.ownerBtn[data-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ownerLineBig {
+    font-size: var(--go-ui-font-size-lg);
+    font-weight: var(--go-ui-font-weight-bold);
+    line-height: var(--go-ui-line-height-sm);
+    color: var(--go-ui-color-text);
+}
+
+.ownerLineSmall {
+    font-size: var(--go-ui-font-size-xs);
+    color: var(--go-ui-color-text-description);
+    margin-top: var(--go-ui-spacing-3xs);
+}
+
+.chartCard {
+    background-color: var(--go-ui-color-foreground);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    padding: var(--go-ui-spacing-md);
+    display: flex;
+    flex-direction: column;
+}
+
+.chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--go-ui-spacing-sm);
+}
+
+.chartTitle {
+    font-weight: var(--go-ui-font-weight-bold);
+    font-size: var(--go-ui-font-size-md);
+}
+
+.chartBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--go-ui-spacing-sm);
+    max-height: 380px;
+    overflow: auto;
+    padding-right: var(--go-ui-spacing-xs);
+}
+
+.chartRow {
+    display: grid;
+    grid-template-columns: 1fr 100px 60px;
+    gap: 4px;
+    align-items: center;
+    background: none;
+    border: var(--go-ui-width-separator-sm) solid transparent;
+    border-radius: var(--go-ui-border-radius-sm);
+    padding: var(--go-ui-spacing-sm);
+    cursor: pointer;
+    transition: all var(--go-ui-duration-animation-fast);
+    text-align: left;
+}
+
+.chartRow:hover {
+    background-color: var(--go-ui-color-background);
+    border-color: var(--go-ui-color-primary-red);
+}
+
+.chartRow[data-active="true"] {
+    background-color: var(--go-ui-color-background);
+    border-color: var(--go-ui-color-primary-red);
+    box-shadow: 0 0 0 2px rgba(245, 51, 63, 0.15);
+}
+
+.chartLabel {
+    font-size: var(--go-ui-font-size-xs);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--go-ui-color-text);
+}
+
+.chartBarWrap {
+    height: 14px;
+    background-color: var(--go-ui-color-gray-30);
+    border-radius: var(--go-ui-border-radius-sm);
     overflow: hidden;
 }
 
-/* Table-only scrolling */
-.tableScroll {
-    max-height: 420px;
-    overflow: auto;
+.chartBar {
+    height: 100%;
+    background-color: var(--go-ui-color-primary-red);
+    border-radius: var(--go-ui-border-radius-sm);
+    transition: width var(--go-ui-duration-animation-medium);
+}
+
+.chartValue {
+    font-size: var(--go-ui-font-size-xs);
+    text-align: right;
+    font-weight: var(--go-ui-font-weight-medium);
+    color: var(--go-ui-color-text);
+}
+
+.chartEmpty {
+    padding: var(--go-ui-spacing-md);
+    text-align: center;
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-sm);
 }
