@@ -32,6 +32,7 @@ interface FrameworkAgreement {
     supplier_country: string;
     pa_workflow_status: string;
     pa_status: string;
+    fa_geographical_coverage: string;
     item_service_short_description: string;
 }
 
@@ -49,9 +50,10 @@ interface MultiSelectOption {
 interface Props {
     data: FrameworkAgreement[];
     pending?: boolean;
+    selectedCountry?: string;
 }
 
-function FrameworkAgreementsTable({ data, pending = false }: Props) {
+function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Props) {
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
         sorting: sortState.sorting,
@@ -188,6 +190,19 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
 
     // Apply all filters with AND logic
     const filteredData = useMemo(() => data.filter((item) => {
+        // Map filter: if a country is selected on the map
+        if (selectedCountry) {
+            const isGlobal = item.fa_geographical_coverage?.toLowerCase() === 'global';
+            const isLocal = item.fa_geographical_coverage?.toLowerCase() === 'local';
+            const matchesCountry = item.pa_bu_country_name?.toLowerCase() === selectedCountry.toLowerCase();
+            
+            // Show Global agreements always, or Local agreements for the selected country
+            const matchesMapSelection = isGlobal || (isLocal && matchesCountry);
+            if (!matchesMapSelection) {
+                return false;
+            }
+        }
+        
         const matchesRegion = !selectedRegion
             || item.pa_bu_region_name === selectedRegion;
         const matchesCountry = selectedCountries.length === 0
@@ -207,7 +222,7 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
 
         return matchesRegion && matchesCountry && matchesCategory && matchesItemName
             && matchesStartDate && matchesEndDate;
-    }), [data, selectedRegion, selectedCountries, selectedItemCategory,
+    }), [data, selectedCountry, selectedRegion, selectedCountries, selectedItemCategory,
         selectedItemNames, startDate, endDate]);
 
     // When region changes, reset countries
@@ -563,7 +578,7 @@ function FrameworkAgreementsTable({ data, pending = false }: Props) {
 
                     {displayedPages.map((page, index) => {
                         const previousPage = displayedPages[index - 1];
-                        const showEllipsis = index > 0 && page - previousPage > 1;
+                        const showEllipsis = index > 0 && previousPage !== undefined && page - previousPage > 1;
 
                         return (
                             <span key={page} className={styles.pageWrapper}>

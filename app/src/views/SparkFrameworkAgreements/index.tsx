@@ -1,29 +1,13 @@
 import {
     useEffect,
+    useMemo,
     useState,
 } from 'react';
 import { Container } from '@ifrc-go/ui';
 import Papa from 'papaparse';
-// MapSource: Add data sources (GeoJSON) to the map
-// MapLayer: Define how data is rendered (circles, lines, polygons, symbols)
-// MapPopup: Display interactive popups on the map when clicking features
-import {
-    MapLayer,
-    MapPopup,
-    MapSource,
-} from '@togglecorp/re-map';
-// TypeScript types for defining layer styling options
-// CircleLayer: Style point data as circles (size, color, opacity)
-// FillLayer: Style polygon data as filled shapes (color, opacity, patterns)
-// LineLayer: Style line data (width, color, dashes)
-import {
-    type CircleLayer,
-    type FillLayer,
-    type LineLayer,
-} from 'mapbox-gl';
 
 // GlobalMap: Provides base map with country boundaries and interaction handlers
-import GlobalMap from '#components/domain/GlobalMap';
+import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
@@ -71,6 +55,31 @@ export function Component() {
     const [isLoading, setIsLoading] = useState(true);
     // error: Stores any error message if CSV loading fails
     const [error, setError] = useState<string | undefined>();
+    // selectedCountry: Tracks the country clicked on the map (undefined = show all)
+    const [selectedCountry, setSelectedCountry] = useState<string | undefined>();
+
+    // Calculate which countries have framework agreements (Local agreements)
+    // Since Global agreements apply to all countries, all countries will be highlighted
+    const countriesWithAgreements = useMemo(() => {
+        const hasGlobal = agreementData.some(
+            (row) => row.fa_geographical_coverage?.toLowerCase() === 'global',
+        );
+        
+        if (hasGlobal) {
+            // If there are Global agreements, all countries should be highlighted
+            return 'all';
+        }
+        
+        // Otherwise, only highlight countries with Local agreements
+        const countrySet = new Set<string>();
+        agreementData.forEach((row) => {
+            if (row.fa_geographical_coverage?.toLowerCase() === 'local' 
+                && row.pa_bu_country_name) {
+                countrySet.add(row.pa_bu_country_name.toLowerCase());
+            }
+        });
+        return countrySet;
+    }, [agreementData]);
 
     // --------------------------------------------------------------------
     // CSV DATA LOADING
@@ -109,6 +118,59 @@ export function Component() {
             },
         });
     }, []);
+
+    // --------------------------------------------------------------------
+    // MAP STYLING & INTERACTION
+    // --------------------------------------------------------------------
+    // Paint style for country polygons: transparent red by default, opaque red when selected
+    const adminZeroFillPaint = useMemo<mapboxgl.FillPaint>(() => {
+        // Build the match expression for countries with Local agreements
+        const localCountryMatchExpression = countriesWithAgreements !== 'all' 
+            ? Array.from(countriesWithAgreements).flatMap(country => [country, true])
+            : [];
+
+        return {
+            'fill-color': [
+                'case',
+                // If a country is selected
+                ['boolean', selectedCountry !== undefined, false],
+                [
+                    'case',
+                    // Highlight selected country in stronger red
+                    ['==', ['downcase', ['get', 'name']], selectedCountry?.toLowerCase() ?? ''],
+                    'rgba(220, 53, 69, 0.6)', // Stronger red
+                    // Unhighlight all other countries
+                    'rgba(0, 0, 0, 0)', // Transparent
+                ],
+                // No country selected - show countries with agreements
+                [
+                    'case',
+                    // If there are Global agreements, highlight all countries
+                    countriesWithAgreements === 'all',
+                    'rgba(220, 53, 69, 0.3)', // Transparent red for all
+                    // Otherwise, check if country has Local agreement
+                    localCountryMatchExpression.length > 0
+                        ? ['match', ['downcase', ['get', 'name']], ...localCountryMatchExpression, false]
+                        : false,
+                    'rgba(220, 53, 69, 0.3)', // Transparent red for countries with Local agreements
+                    'rgba(0, 0, 0, 0)', // Transparent for countries without agreements
+                ],
+            ],
+            'fill-opacity': 1,
+        };
+    }, [selectedCountry, countriesWithAgreements]);
+
+    // Handle country click on map
+    const handleCountryClick = (feature: AdminZeroFeatureProperties) => {
+        const countryName = feature.name;
+        
+        // Toggle selection: if clicking the same country, deselect it
+        if (selectedCountry?.toLowerCase() === countryName.toLowerCase()) {
+            setSelectedCountry(undefined);
+        } else {
+            setSelectedCountry(countryName);
+        }
+    };
 
     // --------------------------------------------------------------------
     // LOADING STATE
@@ -151,15 +213,18 @@ export function Component() {
         put things outside of it if i want it to span the very edges of the page  */}
         <Container>
             <h2>Framework Agreements</h2>
-            <GlobalMap>
+            <GlobalMap
+                adminZeroFillPaint={adminZeroFillPaint}
+                onAdminZeroFillClick={handleCountryClick}
+            >
                 <GoMapContainer
                     title="Framework Agreements Map"
-                    // map data to be implemented once we get a mapbox api token
                 />
             </GlobalMap>
         <FrameworkAgreementsTable 
             data={agreementData}
             pending={isLoading}
+            selectedCountry={selectedCountry}
         />
         </Container>
 
