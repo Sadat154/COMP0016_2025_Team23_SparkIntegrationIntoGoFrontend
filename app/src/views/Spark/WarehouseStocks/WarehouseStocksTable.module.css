@@ -1,0 +1,50 @@
+.page {
+    background: #ffffff;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-areas:
+        "filters map"
+        "table table";
+    gap: 16px;
+    padding: var(--spacing-md);
+}
+
+.filtersCard {
+    grid-area: filters;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.clearRow {
+    margin-top: 6px;
+}
+
+.mapCard {
+    grid-area: map;
+    background: #f3f3f3;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    overflow: hidden;
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+}
+
+.tableCard {
+    grid-area: table;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+// Table-only scrolling
+.tableScroll {
+    max-height: 420px;
+    overflow: auto;
+}
