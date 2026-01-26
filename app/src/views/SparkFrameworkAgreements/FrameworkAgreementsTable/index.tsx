@@ -2,6 +2,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
     type SetStateAction,
 } from 'react';
@@ -69,6 +70,18 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
             sortState.setSorting(finalValue);
         },
     }), [sortState.sorting, sortState.setSorting]);
+
+    // Track the previous selectedCountry to only set sort when it changes
+    const prevSelectedCountryRef = useRef<string | undefined>(selectedCountry);
+    
+    // When a country is selected (and only when it changes), automatically sort by 
+    // FA Geographical Coverage (descending) so Local agreements appear first
+    useEffect(() => {
+        if (selectedCountry && prevSelectedCountryRef.current !== selectedCountry) {
+            sortState.setSorting({ name: 'fa_geographical_coverage', direction: 'dsc' });
+        }
+        prevSelectedCountryRef.current = selectedCountry;
+    }, [selectedCountry, sortState]);
 
     // Filter state
     const [selectedRegion, setSelectedRegion] = useState<string | undefined>(undefined);
