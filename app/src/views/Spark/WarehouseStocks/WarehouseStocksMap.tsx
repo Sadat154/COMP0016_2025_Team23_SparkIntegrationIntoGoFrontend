@@ -87,8 +87,8 @@ function WarehouseStocksMap(props: Props) {
 
     const mapOptions = useMemo(() => ({
         ...(hasToken ? { accessToken: tokenRaw } : {}),
-        scrollZoom: true,
-        touchZoomRotate: true,
+        scrollZoom: false,
+        touchZoomRotate: false,
     }), [hasToken, tokenRaw]);
 
     // Load country centroids from bundled countries.json via fetch
@@ -285,10 +285,12 @@ function WarehouseStocksMap(props: Props) {
                     >
                         <div className={styles.tooltipRow}>
                             Warehouses:
+                            {' '}
                             {hovered.props.warehouseCount}
                         </div>
                         <div className={styles.tooltipRow}>
-                            Total qty:
+                            Total quantity:
+                            {' '}
                             {Math.round(hovered.props.qty).toLocaleString()}
                         </div>
                     </MapPopup>
