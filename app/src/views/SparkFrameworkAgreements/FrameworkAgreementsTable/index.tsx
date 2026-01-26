@@ -301,12 +301,6 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
                 { sortable: true },
             ),
             createStringColumn(
-                'pa_bu_country_name',
-                'PA BU Country Name',
-                (item: FrameworkAgreement) => item.pa_bu_country_name,
-                { sortable: true },
-            ),
-            createStringColumn(
                 'pa_line_product_type',
                 'PA Line Product Type',
                 (item: FrameworkAgreement) => item.pa_line_product_type,
@@ -346,6 +340,18 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
                 'item_service_short_description',
                 'Item / Service Short Description',
                 (item: FrameworkAgreement) => item.item_service_short_description,
+                { sortable: true },
+            ),
+            createStringColumn(
+                'pa_bu_country_name',
+                'PA BU Country Name',
+                (item: FrameworkAgreement) => item.pa_bu_country_name,
+                { sortable: true },
+            ),
+            createStringColumn(
+                'fa_geographical_coverage',
+                'FA Geographical Coverage',
+                (item: FrameworkAgreement) => item.fa_geographical_coverage,
                 { sortable: true },
             ),
         ],
