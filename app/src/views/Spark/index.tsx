@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import {
+    Outlet,
+    useLocation,
+} from 'react-router-dom';
+import {
     Container,
     Tab,
     TabList,
     TabPanel,
     Tabs,
 } from '@ifrc-go/ui';
-import { Outlet, useLocation } from 'react-router-dom';
 
 import Page from '#components/Page';
 import useRouting from '#hooks/useRouting';
 
 import WorldMap from './components/WorldMap';
 import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
-import ProBonoServicesTable from './ProBonoServicesTable';
 import CustomRegulationsMatrix from './CustomRegulationsMatrix';
+import { ProBonoServicesTable } from './tables';
 
 import styles from './styles.module.css';
-/** @knipignore */
 
 type SparkTabKey =
     | 'spark-dashboard'
@@ -26,6 +28,7 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
+// eslint-disable-next-line import/prefer-default-export
 export function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
