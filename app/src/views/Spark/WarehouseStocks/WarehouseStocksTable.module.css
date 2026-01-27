@@ -212,3 +212,17 @@
     color: var(--go-ui-color-text-description);
     font-size: var(--go-ui-font-size-sm);
 }
+
+.itemLink {
+    color: var(--go-ui-color-primary-red);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.itemLink:hover {
+    text-decoration: underline;
+}
+
+.itemLink:visited {
+    color: var(--go-ui-color-primary-red);
+}

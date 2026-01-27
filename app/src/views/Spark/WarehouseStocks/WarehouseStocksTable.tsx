@@ -10,7 +10,10 @@ import {
     Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
-import { createStringColumn } from '@ifrc-go/ui/utils';
+import {
+    createStringColumn,
+    type TableColumn,
+} from '@ifrc-go/ui/utils';
 import {
     isDefined,
     isNotDefined,
@@ -33,6 +36,7 @@ interface WarehouseStock {
     item_group: string | null;
     item_name: string | null;
     item_number: string | null;
+    item_url: string | null;
     unit: string | null;
     quantity: string | null;
 }
@@ -187,12 +191,36 @@ function WarehouseStocksTable() {
                 (item) => item.item_name ?? '',
                 { sortable: true },
             ),
-            createStringColumn<WarehouseStock, string>(
-                'item_number',
-                'Item number',
-                (item) => item.item_number ?? '',
-                { sortable: true },
-            ),
+            {
+                id: 'item_number',
+                title: 'Item number',
+                sortable: true,
+                valueGetter: (item) => item.item_number ?? '',
+                valueComparator: (a, b) => {
+                    const aVal = a.item_number ?? '';
+                    const bVal = b.item_number ?? '';
+                    return aVal.localeCompare(bVal);
+                },
+                cellRenderer: (_, item) => {
+                    const itemNumber = item.item_number ?? '';
+                    const itemUrl = item.item_url ?? undefined;
+
+                    if (itemUrl) {
+                        return (
+                            <a
+                                href={itemUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.itemLink}
+                            >
+                                {itemNumber}
+                            </a>
+                        );
+                    }
+
+                    return itemNumber;
+                },
+            } satisfies TableColumn<WarehouseStock, string, string, never>,
             createStringColumn<WarehouseStock, string>(
                 'unit',
                 'Unit',
