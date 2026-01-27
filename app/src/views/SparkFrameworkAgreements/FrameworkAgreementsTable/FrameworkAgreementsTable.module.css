@@ -1,0 +1,286 @@
+.filterSection {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-md);
+}
+
+.filterHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.filterHeader h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.filtersContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--color-background-secondary);
+    border-radius: 4px;
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.filterGroup label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Styling for SelectInput pre-built component */
+.selectInputWrapper {
+    width: 100%;
+}
+
+.selectInputWrapper :global(.input-section-container) {
+    width: 100%;
+}
+
+.selectInputWrapper :global(input) {
+    width: 100%;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: var(--color-white);
+}
+
+.selectInputWrapper :global(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Styling for MultiSelectInput pre-built component */
+.multiSelectInputWrapper {
+    width: 100%;
+}
+
+.multiSelectInputWrapper :global(.input-section-container) {
+    width: 100%;
+}
+
+.multiSelectInputWrapper :global(input) {
+    width: 100%;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: var(--color-white);
+}
+
+.multiSelectInputWrapper :global(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.resultCount {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.tableContainer {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 400px;
+    padding: var(--spacing-md);
+}
+
+.paginationContainer {
+    display: flex;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.navButton {
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background-color: var(--color-white);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    line-height: 1;
+    min-width: 2.25rem;
+}
+
+.navButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pageWrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.pageEllipsis {
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+    padding: 0 0.15rem;
+}
+
+.pageButton,
+.pageButtonActive {
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-white);
+    cursor: pointer;
+    min-width: 2.25rem;
+    line-height: 1;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pageButton:hover:not(:disabled) {
+    border-color: var(--color-border-hover);
+}
+
+.pageButtonActive {
+    border: 2px solid var(--go-ui-color-primary-red);
+    background-color: var(--go-ui-color-primary-red) !important;
+    font-weight: 600;
+    color: #ffffff !important;
+}
+
+/* Increase specificity to override any button base styles */
+.paginationContainer .pageButtonActive,
+.paginationContainer .pageButtonActive:hover,
+.paginationContainer .pageButtonActive:focus-visible {
+    color: #ffffff !important;
+}
+
+.pageButton:focus-visible,
+.pageButtonActive:focus-visible,
+.navButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(229, 22, 54, 0.25);
+}
+
+.pageButton:disabled,
+.pageButtonActive:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dateRangeDisplay {
+    padding: var(--spacing-sm);
+    background-color: var(--color-background-secondary);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.rangeSliderContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    height: 40px;
+}
+
+.rangeTrackBase {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    z-index: 1;
+}
+
+.rangeTrackFill {
+    position: absolute;
+    height: 6px;
+    background: #dc2626;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.rangeSliderStart,
+.rangeSliderEnd {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    border-radius: 3px;
+    outline: none;
+    position: absolute;
+    pointer-events: none;
+}
+
+.rangeSliderStart::-webkit-slider-runnable-track,
+.rangeSliderEnd::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+}
+
+.rangeSliderStart::-moz-range-track,
+.rangeSliderEnd::-moz-range-track {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+}
+
+.rangeSliderStart {
+    z-index: 5;
+}
+
+.rangeSliderEnd {
+    z-index: 5;
+}
+
+.rangeSliderStart::-webkit-slider-thumb,
+.rangeSliderEnd::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: #1e40af;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.rangeSliderStart::-moz-range-thumb,
+.rangeSliderEnd::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: #1e40af;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.rangeSliderStart::-webkit-slider-thumb:hover,
+.rangeSliderEnd::-webkit-slider-thumb:hover {
+    background: #1e3a8a;
+    transform: scale(1.15);
+}
+
+.rangeSliderStart::-moz-range-thumb:hover,
+.rangeSliderEnd::-moz-range-thumb:hover {
+    background: #1e3a8a;
+    transform: scale(1.15);
+}
