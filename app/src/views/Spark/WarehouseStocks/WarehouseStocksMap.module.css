@@ -1,0 +1,60 @@
+.mapRoot {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 360px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #ffffff;
+    cursor: default;
+}
+
+.mapContainer {
+    width: 100%;
+    height: 100%;
+}
+
+.mapRoot :global(.mapboxgl-map) {
+    width: 100%;
+    height: 100%;
+}
+
+.mapRoot :global(.mapboxgl-canvas-container),
+.mapRoot :global(.mapboxgl-canvas) {
+    width: 100%;
+    height: 100%;
+}
+
+/* Add pointer cursor on bubbles */
+.mapRoot :global(.mapboxgl-canvas-container.mapboxgl-interactive) {
+    cursor: pointer;
+}
+
+/* Tooltip overlay */
+.tooltip {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    max-width: 260px;
+}
+
+.tooltipTitle {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.tooltipRow {
+    line-height: 1.3;
+}
+
+.smallPopup {
+    width: 14rem;
+    min-height: auto;
+    max-height: 12rem;
+}

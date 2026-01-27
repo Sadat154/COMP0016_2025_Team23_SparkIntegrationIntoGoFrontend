@@ -1,22 +1,30 @@
-import { Container, Tabs, TabList, TabPanel, Tab } from '@ifrc-go/ui';
 import { useState } from 'react';
+import {
+    Container,
+    Tab,
+    TabList,
+    TabPanel,
+    Tabs,
+} from '@ifrc-go/ui';
 
 import Page from '#components/Page';
-import styles from './styles.module.css';
-import { WorldMap } from './components/WorldMap';
+
+import WorldMap from './components/WorldMap';
+import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
 import ProBonoServicesTable from './ProBonoServicesTable';
 import CustomRegulationsMatrix from './CustomRegulationsMatrix';
+
+import styles from './styles.module.css';
 /** @knipignore */
 
 export function Component() {
-    const [activeTab, setActiveTab] = useState<string>('SPARK Dashboard');
+    const [activeTab, setActiveTab] = useState<string>('spark-dashboard');
+
     return (
         <Page
             title="SPARK"
             heading="SPARK"
-            description={(
-                "Centralised Platform for Enhancing Emergency Supply Chain and Decision-Making"
-            )}
+            description="Centralised Platform for Enhancing Emergency Supply Chain and Decision-Making"
         >
             <div className={styles.tabsContainer}>
                 <Tabs
@@ -26,6 +34,7 @@ export function Component() {
                 >
                     <TabList>
                         <Tab name="spark-dashboard">SPARK Dashboard</Tab>
+                        <Tab name="warehouse-stocks">Warehouse Stocks</Tab>
                         <Tab name="framework-agreements">Framework Agreements</Tab>
                         <Tab name="pro-bono-services">Pro Bono Services</Tab>
                         <Tab name="custom-regulations">Custom Regulations</Tab>
@@ -40,6 +49,12 @@ export function Component() {
                                     <WorldMap width={1200} height={600} />
                                 </Container>
                             </div>
+                        </div>
+                    </TabPanel>
+
+                    <TabPanel name="warehouse-stocks">
+                        <div className={styles.tabContent}>
+                            <WarehouseStocksTable />
                         </div>
                     </TabPanel>
 
