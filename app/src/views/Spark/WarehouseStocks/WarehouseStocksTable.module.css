@@ -42,11 +42,43 @@
     border-radius: var(--go-ui-border-radius-lg);
     overflow: hidden;
     height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.tableHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--go-ui-spacing-md);
+    border-bottom: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    background-color: var(--go-ui-color-background);
+}
+
+.tableInfo {
+    font-size: var(--go-ui-font-size-sm);
+    color: var(--go-ui-color-text-description);
+}
+
+.tablePagination {
+    display: flex;
+    align-items: center;
+    gap: var(--go-ui-spacing-md);
+}
+
+.pageInfo {
+    font-size: var(--go-ui-font-size-sm);
+    color: var(--go-ui-color-text);
+    min-width: 100px;
+    text-align: center;
 }
 
 .tableScroll {
-    height: 100%;
-    overflow: auto;
+    flex: 1;
+    /* allow horizontal scrolling for wide tables, but let vertical scrolling be handled by the page
+       to avoid nested/competing vertical scrollbars */
+    overflow-x: auto;
+    overflow-y: visible;
 }
 
 .rightPanel {
@@ -211,4 +243,9 @@
     text-align: center;
     color: var(--go-ui-color-text-description);
     font-size: var(--go-ui-font-size-sm);
+}
+
+/* Ensure table can grow horizontally and be scrolled instead of being clipped */
+.tableScroll table {
+    min-width: 900px;
 }
