@@ -16,7 +16,6 @@ import useRouting from '#hooks/useRouting';
 
 import WorldMap from './components/WorldMap';
 import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
-import CustomRegulationsMatrix from './CustomRegulationsMatrix';
 import { ProBonoServicesTable } from './tables';
 
 import styles from './styles.module.css';
@@ -36,13 +35,21 @@ export function Component() {
     const [localActiveTab, setLocalActiveTab] = useState<SparkTabKey>('spark-dashboard');
 
     const isFrameworkAgreementsRoute = location.pathname.startsWith('/spark/framework-agreements');
+    const isCustomRegulationsRoute = location.pathname.startsWith('/spark/custom-regulations');
     const activeTab: SparkTabKey = isFrameworkAgreementsRoute
         ? 'framework-agreements'
-        : localActiveTab;
+        : isCustomRegulationsRoute
+            ? 'custom-regulations'
+            : localActiveTab;
 
     const handleTabChange = (nextTab: SparkTabKey) => {
         if (nextTab === 'framework-agreements') {
             navigate('sparkFrameworkAgreements');
+            return;
+        }
+
+        if (nextTab === 'custom-regulations') {
+            navigate('sparkCustomRegulations');
             return;
         }
 
@@ -103,7 +110,7 @@ export function Component() {
 
                     <TabPanel name="custom-regulations">
                         <div className={styles.tabContent}>
-                            <CustomRegulationsMatrix />
+                            <Outlet />
                         </div>
                     </TabPanel>
                 </Tabs>

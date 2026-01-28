@@ -19,7 +19,7 @@ import {
 import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
 
-import styles from './CustomRegulationsMatrix.module.css';
+import styles from './styles.module.css';
 
 const QUESTION_COLUMNS = [
     'Who is the competent authority for customs clearance of humanitarian goods?',
@@ -338,4 +338,9 @@ function CustomRegulationsMatrix() {
     );
 }
 
-export default CustomRegulationsMatrix;
+/** @knipignore */
+export function Component() {
+    return <CustomRegulationsMatrix />;
+}
+
+Component.displayName = 'SparkCustomRegulations';
