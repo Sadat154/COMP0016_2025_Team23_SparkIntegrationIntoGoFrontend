@@ -427,6 +427,19 @@ const sparkFrameworkAgreements = customWrapRoute({
     },
 });
 
+const sparkCustomRegulations = customWrapRoute({
+    parent: globalLogistics,
+    path: 'custom-regulations',
+    component: {
+        render: () => import('#views/SparkCustomRegulations'),
+        props: {},
+    },
+    context: {
+        title: 'SPARK - Custom Regulations',
+        visibility: 'is-authenticated',
+    },
+});
+
 const newThreeWProject = customWrapRoute({
     parent: rootLayout,
     path: 'three-w/projects/new',
@@ -1316,6 +1329,7 @@ const wrappedRoutes = {
     perProcessFormIndex,
     globalLogistics,
     sparkFrameworkAgreements,
+    sparkCustomRegulations,
     newThreeWProject,
     threeWProjectEdit,
     threeWActivityEdit,
