@@ -1,5 +1,6 @@
 import {
     useCallback,
+    useEffect,
     useMemo,
     useState,
 } from 'react';
@@ -83,32 +84,161 @@ function WarehouseStocksTable() {
 
     const { sortState } = useFilterState({ filter: {} });
 
-    const { pending, response } = useRequest({ url: '/api/v1/warehouse-stocks/' } as any);
-    const tableData = (response as ApiResponse | undefined)?.results ?? [];
+    const [page, setPage] = useState<number>(1);
+    const [pageSize, setPageSize] = useState<number>(50);
+    const [total, setTotal] = useState<number | undefined>();
 
-    const regionOptions = useMemo(() => {
-        const regions = tableData.map((item) => item.region).filter(isDefined);
-        const uniqueRegions = unique(regions, (r) => r).sort();
-        return uniqueRegions.map((r) => ({ key: r, label: r }));
-    }, [tableData]);
+    const [optionsPending, setOptionsPending] = useState(false);
+    const [regionsOpt, setRegionsOpt] = useState<string[]>([]);
+    const [countriesOpt, setCountriesOpt] = useState<string[]>([]);
+    const [itemGroupsOpt, setItemGroupsOpt] = useState<string[]>([]);
+    const [itemNamesOpt, setItemNamesOpt] = useState<string[]>([]);
 
-    const countryOptions = useMemo(() => {
-        const countries = tableData.map((item) => item.country).filter(isDefined);
-        const uniqueCountries = unique(countries, (c) => c).sort();
-        return uniqueCountries.map((c) => ({ key: c, label: c }));
-    }, [tableData]);
+    const [pending, setPending] = useState(false);
+    const [tableData, setTableData] = useState<WarehouseStock[]>([]);
+    const [aggregatedPending, setAggregatedPending] = useState(false);
+    const [aggregatedData, setAggregatedData] = useState<Array<{
+        country_iso3?: string | null;
+        country?: string | null;
+        region?: string | null;
+        total_quantity?: string | null;
+        warehouse_count?: number | null;
+    }>>([]);
 
-    const itemGroupOptions = useMemo(() => {
-        const groups = tableData.map((item) => item.item_group).filter(isDefined);
-        const uniqueGroups = unique(groups, (g) => g).sort();
-        return uniqueGroups.map((g) => ({ key: g, label: g }));
-    }, [tableData]);
+    // Fetch distinct options once
+    useMemo(() => {
+        let mounted = true;
+        setOptionsPending(true);
+        fetch('/api/v1/warehouse-stocks/?distinct=1')
+            .then((r) => r.json())
+            .then((data) => {
+                console.log('warehouse distinct response', data);
+                if (!mounted) return;
+                setRegionsOpt(data.regions || []);
+                setCountriesOpt(data.countries || []);
+                setItemGroupsOpt(data.item_groups || []);
+                setItemNamesOpt(data.item_names || []);
+            })
+            .catch(() => {
+                // ignore
+            })
+            .finally(() => {
+                if (mounted) setOptionsPending(false);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
-    const itemNameOptions = useMemo(() => {
-        const names = tableData.map((item) => item.item_name).filter(isDefined);
-        const uniqueNames = unique(names, (n) => n).sort();
-        return uniqueNames.map((n) => ({ key: n, label: n }));
-    }, [tableData]);
+    // Fetch table data (request a large page_size so map receives all warehouses)
+    useMemo(() => {
+        let mounted = true;
+        setPending(true);
+        const params = new URLSearchParams();
+        // Request pages (server caps page_size at 1000) and merge them so map receives all warehouses
+        // Start with page 1 and page_size 1000
+        params.set('page', '1');
+        params.set('page_size', '1000');
+        if (filterRegion) params.set('region', filterRegion);
+        if (filterCountry) params.set('country', filterCountry);
+        if (filterItemGroup) params.set('item_group', filterItemGroup);
+        if (filterItemName) params.set('item_name', filterItemName);
+        // sort mapping: frontend sorts use column ids like 'quantity' or 'item_name'
+        if (sortState.sorting) {
+            params.set('sort', sortState.sorting.name);
+            params.set('order', sortState.sorting.direction === 'dsc' ? 'desc' : 'asc');
+        }
+
+        const baseUrl = '/api/v1/warehouse-stocks/?';
+        fetch(`${baseUrl}${params.toString()}`)
+            .then((r) => r.json())
+            .then(async (data) => {
+                console.log('warehouse paged response', { params: params.toString(), data });
+                if (!mounted) return;
+                const results: WarehouseStock[] = (data && data.results) || [];
+                const totalCount = data && typeof data.total === 'number' ? data.total : undefined;
+
+                if (totalCount && results.length < totalCount) {
+                    const pageSize = (data && typeof data.page_size === 'number') ? data.page_size : 1000;
+                    const totalPages = Math.ceil(totalCount / pageSize);
+                    const fetches: Promise<WarehouseStock[]>[] = [];
+                    for (let p = 2; p <= totalPages; p += 1) {
+                        const pParams = new URLSearchParams(params.toString());
+                        pParams.set('page', String(p));
+                        fetches.push(
+                            fetch(`${baseUrl}${pParams.toString()}`)
+                                .then((r2) => r2.json())
+                                .then((d) => d && d.results ? d.results : []),
+                        );
+                    }
+
+                    try {
+                        const rest = await Promise.all(fetches);
+                        const allResults = results.concat(...rest);
+                        setTableData(allResults);
+                    } catch (e) {
+                        setTableData(results);
+                    }
+                } else {
+                    setTableData(results);
+                }
+
+                setTotal(totalCount);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setTableData([]);
+                setTotal(undefined);
+            })
+            .finally(() => {
+                if (mounted) setPending(false);
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, [filterRegion, filterCountry, filterItemGroup, filterItemName, sortState.sorting]);
+
+    // Fetch aggregated per-country data for the map (uses server aggregation endpoint)
+    useEffect(() => {
+        let mounted = true;
+        setAggregatedPending(true);
+
+        const params = new URLSearchParams();
+        // aggregated endpoint expects filters; we don't include country filter here so map shows all
+        if (filterRegion) params.set('region', filterRegion);
+        if (filterItemGroup) params.set('item_group', filterItemGroup);
+        if (filterItemName) params.set('item_name', filterItemName);
+
+        const url = `/api/v1/warehouse-stocks/aggregated/?${params.toString()}`;
+        fetch(url)
+            .then((r) => r.json())
+            .then((data) => {
+                if (!mounted) return;
+                setAggregatedData(Array.isArray(data?.results) ? data.results : []);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setAggregatedData([]);
+            })
+            .finally(() => {
+                if (mounted) setAggregatedPending(false);
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, [filterRegion, filterItemGroup, filterItemName]);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setPage(1);
+    }, [filterRegion, filterCountry, filterItemGroup, filterItemName]);
+
+    const regionOptions = useMemo(() => (regionsOpt || []).map((r) => ({ key: r, label: r })), [regionsOpt]);
+    const countryOptions = useMemo(() => (countriesOpt || []).map((c) => ({ key: c, label: c })), [countriesOpt]);
+    const itemGroupOptions = useMemo(() => (itemGroupsOpt || []).map((g) => ({ key: g, label: g })), [itemGroupsOpt]);
+    const itemNameOptions = useMemo(() => (itemNamesOpt || []).map((n) => ({ key: n, label: n })), [itemNamesOpt]);
 
     // Apply filters except country for map
     const mapFilteredData = useMemo(() => {
@@ -130,6 +260,20 @@ function WarehouseStocksTable() {
 
         return filtered;
     }, [tableData, filterRegion, filterItemGroup, filterItemName, owner]);
+
+    // Convert aggregated per-country response into a synthetic WarehouseStock[]
+    const mapData = useMemo(() => (aggregatedData || []).map((a) => ({
+        id: (a.country_iso3 || a.country || '') as string,
+        region: a.region ?? null,
+        country: a.country ?? null,
+        country_iso3: a.country_iso3 ?? null,
+        warehouse_name: null,
+        item_group: null,
+        item_name: null,
+        item_number: null,
+        unit: null,
+        quantity: a.total_quantity ?? null,
+    } as WarehouseStock)), [aggregatedData]);
 
     // Apply all filters for table
     const filteredData = useMemo(() => {
@@ -270,6 +414,8 @@ function WarehouseStocksTable() {
         return { rows, max };
     }, [tableData, filterRegion, filterCountry, filterItemName, owner]);
 
+    // pagination removed — table shows all fetched rows on the map
+
     return (
         <Container
             className={styles.page}
@@ -335,7 +481,7 @@ function WarehouseStocksTable() {
                 {/* MAP */}
                 <div className={styles.mapCard}>
                     <WarehouseStocksMap
-                        data={mapFilteredData}
+                        data={mapData}
                         selectedCountryName={filterCountry}
                         onCountrySelect={setFilterCountry}
                     />
@@ -438,6 +584,7 @@ function WarehouseStocksTable() {
                             />
                         </SortContext.Provider>
                     </div>
+                
                 </div>
             </div>
         </Container>
