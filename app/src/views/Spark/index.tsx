@@ -34,9 +34,12 @@ export function Component() {
     const [localActiveTab, setLocalActiveTab] = useState<SparkTabKey>('spark-dashboard');
 
     const isFrameworkAgreementsRoute = location.pathname.startsWith('/spark/framework-agreements');
+    const isCustomRegulationsRoute = location.pathname.startsWith('/spark/custom-regulations');
     const activeTab: SparkTabKey = isFrameworkAgreementsRoute
         ? 'framework-agreements'
-        : localActiveTab;
+        : isCustomRegulationsRoute
+            ? 'custom-regulations'
+            : localActiveTab;
 
     const handleTabChange = (nextTab: SparkTabKey) => {
         if (nextTab === 'framework-agreements') {
@@ -97,7 +100,7 @@ export function Component() {
 
                     <TabPanel name="custom-regulations">
                         <div className={styles.tabContent}>
-                            <CustomRegulationsMatrix />
+                            <Outlet />
                         </div>
                     </TabPanel>
                 </Tabs>

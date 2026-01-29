@@ -1,0 +1,15 @@
+{
+    "namespace": "sparkCustomRegulations",
+    "strings": {
+        "sparkCustomRegulationsTitle": "Custom Regulations",
+        "searchCountryLabel": "Country",
+        "searchCountryPlaceholder": "Search countries...",
+        "searchContentLabel": "Content",
+        "searchContentPlaceholder": "Search answers...",
+        "clearFilters": "Clear Filters",
+        "result": "result",
+        "results": "results",
+        "regulations": "Regulations",
+        "notes": "Notes"
+    }
+}
