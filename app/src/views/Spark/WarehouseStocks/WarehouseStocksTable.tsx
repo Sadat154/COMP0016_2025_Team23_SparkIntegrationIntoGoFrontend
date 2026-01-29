@@ -117,7 +117,6 @@ function WarehouseStocksTable() {
         fetch('/api/v1/warehouse-stocks/?distinct=1')
             .then((r) => r.json())
             .then((data) => {
-                console.log('warehouse distinct response', data);
                 if (!mounted) return;
                 setRegionsOpt(data.regions || []);
                 setCountriesOpt(data.countries || []);
