@@ -217,7 +217,7 @@ function WarehouseStocksTable() {
         return () => {
             mounted = false;
         };
-    }, [filterRegion, filterItemGroup, filterItemName]);
+    }, [filterRegion, filterCountry, filterItemGroup, filterItemName]);
 
     // Reset to first page when filters change
     useEffect(() => {
