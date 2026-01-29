@@ -5,10 +5,10 @@ import {
     useState,
 } from 'react';
 import {
-    MapContainer,
     MapLayer,
     MapSource,
 } from '@togglecorp/re-map';
+import GoMapContainer from '#components/GoMapContainer';
 import type {
     CircleLayer,
     CirclePaint,
@@ -309,7 +309,11 @@ function WarehouseStocksMap(props: Props) {
                     </MapPopup>
                 )}
 
-                <MapContainer className={styles.mapContainer} />
+                <GoMapContainer
+                    className={styles.mapContainer}
+                    title="Warehouse stocks"
+                    withoutDownloadButton
+                />
             </GlobalMap>
         </div>
     );
