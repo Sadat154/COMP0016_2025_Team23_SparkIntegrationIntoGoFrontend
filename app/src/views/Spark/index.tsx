@@ -4,7 +4,6 @@ import {
     useLocation,
 } from 'react-router-dom';
 import {
-    Container,
     Tab,
     TabList,
     TabPanel,
@@ -14,9 +13,9 @@ import {
 import Page from '#components/Page';
 import useRouting from '#hooks/useRouting';
 
-import WorldMap from './components/WorldMap';
 import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
-import { ProBonoServicesTable } from './tables';
+import CustomRegulationsMatrix from './CustomRegulationsMatrix';
+import ProBonoServicesTable from './tables/ProBonoServicesTable';
 
 import styles from './styles.module.css';
 
@@ -48,12 +47,6 @@ export function Component() {
             return;
         }
 
-        if (nextTab === 'custom-regulations') {
-            navigate('sparkCustomRegulations');
-            return;
-        }
-
-        // Keep the URL clean for non-routed tabs
         navigate('globalLogistics');
         setLocalActiveTab(nextTab);
     };
@@ -83,9 +76,6 @@ export function Component() {
                             <div className={styles.placeholder}>
                                 <h2 className={styles.placeholderTitle}>SPARK Dashboard</h2>
                                 <p className={styles.placeholderText}>Overview map and dashboard widgets.</p>
-                                <Container>
-                                    <WorldMap width={1200} height={600} />
-                                </Container>
                             </div>
                         </div>
                     </TabPanel>
