@@ -8,7 +8,6 @@ import {
     MapLayer,
     MapSource,
 } from '@togglecorp/re-map';
-import GoMapContainer from '#components/GoMapContainer';
 import type {
     CircleLayer,
     CirclePaint,
@@ -17,6 +16,7 @@ import type {
 } from 'mapbox-gl';
 
 import GlobalMap from '#components/domain/GlobalMap';
+import GoMapContainer from '#components/GoMapContainer';
 import MapPopup from '#components/MapPopup';
 import { mbtoken } from '#config';
 import useCountryRaw from '#hooks/domain/useCountryRaw';
@@ -25,15 +25,14 @@ import { loadISO3ToCentroidMap } from './countryDataLoader';
 
 import styles from './WarehouseStocksMap.module.css';
 
-/** @knipignore */
-export interface GoAdminCountry {
-    iso3?: string | null;
-    name?: string | null;
-    centroid?: {
-        type?: string;
-        coordinates?: [number, number];
-    } | null;
-}
+// export interface GoAdminCountry {
+//     iso3?: string | null;
+//     name?: string | null;
+//     centroid?: {
+//         type?: string;
+//         coordinates?: [number, number];
+//     } | null;
+// }
 
 function parseQty(v: string | null | undefined): number {
     if (!v) {
@@ -130,8 +129,15 @@ function WarehouseStocksMap(props: Props) {
     }, [countriesRaw]);
 
     const bubbleGeoJson: BubbleFC = useMemo(() => {
-        type PerIso3Entry = { country: string; warehouses: Set<string>; qty: number };
-        const perIso3 = new Map<string, PerIso3Entry>();
+        const perIso3 = new Map<
+            string,
+            {
+                country: string;
+                warehouses?: Set<string>;
+                warehousesCount?: number;
+                qty: number;
+            }
+        >();
 
         data.forEach((row) => {
             const iso3 = (row.country_iso3 ?? '').toUpperCase().trim();
@@ -146,7 +152,13 @@ function WarehouseStocksMap(props: Props) {
 
             const current = perIso3.get(iso3);
             if (!current) {
-                const entry: { country: string; warehouses?: Set<string>; warehousesCount?: number; qty: number } = {
+                const entry: {
+                    country: string;
+                    warehouses?: Set<string>;
+                    warehousesCount?: number;
+                    qty: number;
+                } = {
+
                     country: countryName,
                     qty,
                 };
@@ -158,7 +170,8 @@ function WarehouseStocksMap(props: Props) {
                 perIso3.set(iso3, entry);
             } else {
                 if (typeof explicitCount === 'number') {
-                    current.warehousesCount = (current.warehousesCount ?? 0) + explicitCount;
+                    const baseCount = current.warehousesCount ?? 0;
+                    current.warehousesCount = baseCount + explicitCount;
                 } else if (warehouseName) {
                     if (!current.warehouses) {
                         current.warehouses = new Set();
@@ -177,7 +190,9 @@ function WarehouseStocksMap(props: Props) {
                 return;
             }
 
-            const warehouseCount = (typeof v.warehousesCount === 'number') ? v.warehousesCount : (v.warehouses ? v.warehouses.size : 0);
+            const warehouseCount = typeof v.warehousesCount === 'number'
+                ? v.warehousesCount
+                : v.warehouses?.size ?? 0;
 
             features.push({
                 type: 'Feature',
@@ -194,26 +209,19 @@ function WarehouseStocksMap(props: Props) {
             });
         });
 
-        return {
+        const result = {
             type: 'FeatureCollection' as const,
             features,
         };
+
+        return result;
     }, [data, iso3ToCentroid, iso3ToName]);
 
     const handleBubbleEnter = useCallback((feature: MapboxGeoJSONFeature) => {
         const props2 = feature.properties as BubbleFeatureProps | undefined;
-        const geom = feature.geometry;
-
-        const coords = geom && geom.type === 'Point'
-            ? (geom as GeoJSON.Point).coordinates
-            : undefined;
-
-        const lngLat = (Array.isArray(coords) && coords.length >= 2)
-            ? [coords[0], coords[1]] as [number, number]
-            : undefined;
-
-        if (props2 && lngLat) {
-            setHovered({ props: props2, coordinates: lngLat });
+        const coords = (feature.geometry as any)?.coordinates as [number, number] | undefined;
+        if (props2 && coords) {
+            setHovered({ props: props2, coordinates: coords });
         } else {
             setHovered(undefined);
         }
@@ -242,7 +250,7 @@ function WarehouseStocksMap(props: Props) {
 
     const sourceOptions = useMemo<GeoJSONSourceRaw>(() => ({
         type: 'geojson',
-        data: bubbleGeoJson as GeoJSONSourceRaw['data'],
+        data: bubbleGeoJson as any,
     }), [bubbleGeoJson]);
 
     const bubblePaint = useMemo<CirclePaint>(() => ({

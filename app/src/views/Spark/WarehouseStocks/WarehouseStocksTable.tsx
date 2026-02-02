@@ -7,22 +7,20 @@ import {
 import {
     Button,
     Container,
-    SelectInput,
-    Pager,
-    Table,
     DefaultMessage,
+    Pager,
+    SelectInput,
+    Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import { createStringColumn } from '@ifrc-go/ui/utils';
 import {
     isDefined,
-    isNotDefined,
     unique,
 } from '@togglecorp/fujs';
 
-import useFilterState from '#hooks/useFilterState';
 import useCountryRaw from '#hooks/domain/useCountryRaw';
-import { useRequest } from '#utils/restRequest';
+import useFilterState from '#hooks/useFilterState';
 
 import WarehouseStocksMap from './WarehouseStocksMap';
 
@@ -39,10 +37,6 @@ interface WarehouseStock {
     item_number: string | null;
     unit: string | null;
     quantity: string | null;
-}
-
-interface ApiResponse {
-    results: WarehouseStock[];
 }
 
 function parseQty(v: string | null | undefined): number | undefined {
@@ -87,42 +81,55 @@ function WarehouseStocksTable() {
 
     const { sortState } = useFilterState({ filter: {} });
 
-    const { pending, response } = useRequest({
-        url: '/api/v1/warehouse-stocks/',
-    } as unknown as Parameters<typeof useRequest>[0]);
-    const tableData = (response as ApiResponse | undefined)?.results ?? [];
+    const [page, setPage] = useState<number>(1);
+    const [pageSize] = useState<number>(50);
+    const [total, setTotal] = useState<number | undefined>();
 
-    const regionOptions = useMemo(() => {
-        const regions = tableData.map((item) => item.region).filter(isDefined);
-        const uniqueRegions = unique(regions, (r) => r).sort();
-        return uniqueRegions.map((r) => ({ key: r, label: r }));
-    }, [tableData]);
+    // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // const [optionsPending, setOptionsPending] = useState(false);
+    const [regionsOpt, setRegionsOpt] = useState<string[]>([]);
+    // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // const [countriesOpt, setCountriesOpt] = useState<string[]>([]);
+    const [itemGroupsOpt, setItemGroupsOpt] = useState<string[]>([]);
+    const [itemNamesOpt, setItemNamesOpt] = useState<string[]>([]);
 
-    const countryOptions = useMemo(() => {
-        const countries = tableData.map((item) => item.country).filter(isDefined);
-        const uniqueCountries = unique(countries, (c) => c).sort();
-        return uniqueCountries.map((c) => ({ key: c, label: c }));
-    }, [tableData]);
+    const [pending, setPending] = useState(false);
+    const [tableData, setTableData] = useState<WarehouseStock[]>([]);
+    // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // const [allDataPending, setAllDataPending] = useState(false);
+    const [allData, setAllData] = useState<WarehouseStock[] | undefined>();
+    const [aggregatedPending, setAggregatedPending] = useState(false);
+    const [aggregatedData, setAggregatedData] = useState<Array<{
+        country_iso3?: string | null;
+        country?: string | null;
+        region?: string | null;
+        total_quantity?: string | null;
+        warehouse_count?: number | null;
+    }>>([]);
 
-    const itemGroupOptions = useMemo(() => {
-        const groups = tableData.map((item) => item.item_group).filter(isDefined);
-        const uniqueGroups = unique(groups, (g) => g).sort();
-        return uniqueGroups.map((g) => ({ key: g, label: g }));
-    }, [tableData]);
-
-    const itemNameOptions = useMemo(() => {
-        const names = tableData.map((item) => item.item_name).filter(isDefined);
-        const uniqueNames = unique(names, (n) => n).sort();
-        return uniqueNames.map((n) => ({ key: n, label: n }));
-    }, [tableData]);
-
-    // Apply filters except country for map
-    const mapFilteredData = useMemo(() => {
-        let filtered = tableData;
-
-        if (owner) {
-            filtered = filtered.filter(() => getOwner() === owner);
-        }
+    // Fetch distinct options once
+    useMemo(() => {
+        let mounted = true;
+        // setOptionsPending(true);
+        fetch('/api/v1/warehouse-stocks/?distinct=1')
+            .then((r) => r.json())
+            .then((data) => {
+                if (!mounted) return;
+                setRegionsOpt(data.regions || []);
+                // setCountriesOpt(data.countries || []);
+                setItemGroupsOpt(data.item_groups || []);
+                setItemNamesOpt(data.item_names || []);
+            })
+            .catch(() => {
+                // ignore
+            })
+            .finally(() => {
+                // if (mounted) setOptionsPending(false);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     // Fetch table data (on-demand pagination - single page only)
     useEffect(() => {
@@ -174,15 +181,25 @@ function WarehouseStocksTable() {
         return () => {
             mounted = false;
         };
-    }, [page, pageSize, filterRegion, filterCountry, filterItemGroup, filterItemName, sortState.sorting]);
+    }, [
+        page,
+        pageSize,
+        filterRegion,
+        filterCountry,
+        filterItemGroup,
+        filterItemName,
+        sortState.sorting,
+    ]);
 
-    // Fetch aggregated per-country data for the map (uses server aggregation endpoint)
+    // Fetch aggregated per-country data for the map
+    // (uses server aggregation endpoint)
     useEffect(() => {
         let mounted = true;
         setAggregatedPending(true);
 
         const params = new URLSearchParams();
-        // aggregated endpoint expects filters; we don't include country filter here so map shows all
+        // aggregated endpoint expects filters;
+        // we don't include country filter here so map shows all
         if (filterRegion) params.set('region', filterRegion);
         if (filterCountry) params.set('country_iso3', filterCountry);
         if (filterItemGroup) params.set('item_group', filterItemGroup);
@@ -216,7 +233,7 @@ function WarehouseStocksTable() {
     // Fetch ALL matching rows in background (paged) to compute global stats
     useEffect(() => {
         let mounted = true;
-        setAllDataPending(true);
+        // setAllDataPending(true);
         setAllData(undefined);
 
         const params = new URLSearchParams();
@@ -260,7 +277,7 @@ function WarehouseStocksTable() {
                     u.searchParams.set('page', String(p));
                     u.searchParams.set('page_size', String(fetchPageSize));
                     if (filterRegion) u.searchParams.set('region', filterRegion);
-                        if (filterCountry) u.searchParams.set('country_iso3', filterCountry);
+                    if (filterCountry) u.searchParams.set('country_iso3', filterCountry);
                     if (filterItemGroup) u.searchParams.set('item_group', filterItemGroup);
                     if (filterItemName) u.searchParams.set('item_name', filterItemName);
                     remainingPromises.push(fetch(u.toString()));
@@ -268,19 +285,23 @@ function WarehouseStocksTable() {
 
                 try {
                     const responses = await Promise.all(remainingPromises);
-                    const jsons = await Promise.all(responses.map((r) => r.json().catch(() => ({}))));
-                    const moreRows: WarehouseStock[] = jsons.flatMap((j) => (Array.isArray(j.results) ? j.results : []));
+                    const jsons = await Promise.all(
+                        responses.map((r) => r.json().catch(() => ({}))),
+                    );
+                    const moreRows: WarehouseStock[] = jsons.flatMap(
+                        (j) => (Array.isArray(j.results) ? j.results : []),
+                    );
                     if (mounted) setAllData(results.concat(moreRows));
-                } catch (e) {
+                } catch {
                     if (mounted) setAllData(results);
                 }
             })
             .catch(() => {
                 if (mounted) setAllData(undefined);
-            })
-            .finally(() => {
-                if (mounted) setAllDataPending(false);
             });
+        // .finally(() => {
+        //     // if (mounted) // setAllDataPending(false);
+        // });
 
         return () => {
             mounted = false;
@@ -312,8 +333,15 @@ function WarehouseStocksTable() {
             .filter((c) => c.iso3 && c.name)
             .map((c) => ({ key: c.iso3 as string, label: c.name as string }));
     }, [countriesRaw]);
-    const itemGroupOptions = useMemo(() => (itemGroupsOpt || []).map((g) => ({ key: g, label: g })), [itemGroupsOpt]);
-    const itemNameOptions = useMemo(() => (itemNamesOpt || []).map((n) => ({ key: n, label: n })), [itemNamesOpt]);
+    const itemGroupOptions = useMemo(
+        () => (itemGroupsOpt || []).map((g) => ({ key: g, label: g })),
+        [itemGroupsOpt],
+    );
+
+    const itemNameOptions = useMemo(
+        () => (itemNamesOpt || []).map((n) => ({ key: n, label: n })),
+        [itemNamesOpt],
+    );
 
     // Convert aggregated per-country response into a synthetic WarehouseStock[] for map
     const mapData = useMemo(() => (aggregatedData || []).map((a) => ({
@@ -333,8 +361,13 @@ function WarehouseStocksTable() {
 
     const selectedCountryHasData = useMemo(() => {
         if (!filterCountry) return true; // no country selected => show table
-        if (aggregatedPending) return true; // still loading aggregated info; avoid showing empty prematurely
-        const found = (aggregatedData || []).find((a) => ((a.country_iso3 || a.country || '') as string).toUpperCase() === filterCountry.toUpperCase());
+        if (aggregatedPending) return true; // still loading aggregated info;
+        // ^ avoid showing empty prematurely
+        const found = (aggregatedData || []).find((a) => {
+            const country = (a.country_iso3 || a.country || '') as string;
+
+            return country.toUpperCase() === filterCountry.toUpperCase();
+        });
         if (!found) return false;
         const count = typeof found.warehouse_count === 'number' ? found.warehouse_count : 0;
         const qty = parseQty(found.total_quantity) ?? 0;
@@ -389,54 +422,21 @@ function WarehouseStocksTable() {
                 'quantity',
                 'Quantity',
                 (item) => formatQty(item.quantity),
-                { sortable: true },
+                {
+                    sortable: true,
+                    valueComparator: (a, b) => {
+                        const an = parseQty(a.quantity) ?? -Infinity;
+                        const bn = parseQty(b.quantity) ?? -Infinity;
+                        return an - bn;
+                    },
+                },
             ),
-
         ],
         [],
     );
 
-    const sortedData = useMemo(() => {
-        if (isNotDefined(filteredData) || !sortState.sorting) {
-            return filteredData;
-        }
-
-        const { name, direction } = sortState.sorting;
-
-        const sorted = [...filteredData].sort((a, b) => {
-            if (name === 'quantity') {
-                const an = parseQty(a.quantity) ?? -Infinity;
-                const bn = parseQty(b.quantity) ?? -Infinity;
-                return an - bn;
-            }
-
-            // Default string-ish compare for other columns
-            const getSortable = (row: WarehouseStock): string => {
-                switch (name) {
-                    case 'region':
-                        return row.region ?? '';
-                    case 'country':
-                        return row.country ?? '';
-                    case 'warehouse_name':
-                        return row.warehouse_name ?? '';
-                    case 'item_group':
-                        return row.item_group ?? '';
-                    case 'item_name':
-                        return row.item_name ?? '';
-                    case 'item_number':
-                        return row.item_number ?? '';
-                    case 'unit':
-                        return row.unit ?? '';
-                    default:
-                        return '';
-                }
-            };
-
-            return getSortable(a).localeCompare(getSortable(b));
-        });
-
-        return direction === 'dsc' ? sorted.reverse() : sorted;
-    }, [filteredData, sortState.sorting]);
+    // Server handles filtering and sorting, so table uses raw data
+    const displayData = tableData;
 
     const stringKeySelector = useCallback((option: { key: string }) => option.key, []);
     const stringLabelSelector = useCallback((option: { label: string }) => option.label, []);
@@ -451,8 +451,6 @@ function WarehouseStocksTable() {
 
     const hasFilters = Boolean(filterRegion || filterCountry || filterItemGroup || filterItemName);
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
-
-    const totalPages = total && pageSize ? Math.ceil(total / pageSize) : 1;
 
     const chartData = useMemo(() => {
         // Use the full dataset when available so statistics reflect all matching rows,
@@ -485,15 +483,12 @@ function WarehouseStocksTable() {
     // pagination removed — table shows all fetched rows on the map
 
     return (
-        <Container
-            className={styles.page}
-            headingLevel={2}
-        >
-            <p>
+        <Container className={styles.page}>
+            <div className={styles.description}>
                 {filterCountry
-                    ? `Showing data for ${filterCountry}. Click the map bubble again or use filters to change selection.`
+                    ? `Showing data for ${iso3ToName.get(filterCountry) ?? filterCountry}. Click the map bubble again or use filters to change selection.`
                     : 'Click on a country bubble in the map to filter, or use the filters on the left.'}
-            </p>
+            </div>
             <div className={styles.layout}>
                 {/* Filters card */}
                 <div className={styles.filtersCard}>
@@ -653,7 +648,17 @@ function WarehouseStocksTable() {
                         <div className={styles.tableInfo}>
                             {total !== undefined && (
                                 <span>
-                                    Showing {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, total)} of {total.toLocaleString()} items
+                                    Showing
+                                    {' '}
+                                    {((page - 1) * pageSize) + 1}
+                                    –
+                                    {Math.min(page * pageSize, total)}
+                                    {' '}
+                                    of
+                                    {' '}
+                                    {total.toLocaleString()}
+                                    {' '}
+                                    items
                                 </span>
                             )}
                         </div>
@@ -671,6 +676,9 @@ function WarehouseStocksTable() {
                             {filterCountry && !pending && !selectedCountryHasData ? (
                                 <DefaultMessage
                                     empty
+                                    pending={false}
+                                    filtered={false}
+                                    errored={false}
                                     emptyMessage="No data found for the selected country"
                                 />
                             ) : (
