@@ -4,6 +4,7 @@ const COUNTRIES_LOCAL_URL = '/data/countries.json';
 let cachedCountriesData: CountryDataFromJSON[] | undefined;
 let inflightPromise: Promise<CountryDataFromJSON[]> | undefined;
 
+/** @knipignore */
 export interface CountryDataFromJSON {
     iso3: string | null;
     centroid?: {
@@ -12,8 +13,11 @@ export interface CountryDataFromJSON {
     } | null;
 }
 
+/** @knipignore */
 // Build a map of ISO3 codes to centroids from provided country data
-export function buildISO3ToCentroidMapFromData(countries: CountryDataFromJSON[]): Map<string, [number, number]> {
+export function buildISO3ToCentroidMapFromData(
+    countries: CountryDataFromJSON[],
+): Map<string, [number, number]> {
     const map = new Map<string, [number, number]>();
 
     countries.forEach((country) => {
@@ -25,7 +29,9 @@ export function buildISO3ToCentroidMapFromData(countries: CountryDataFromJSON[])
 
         const coords = country.centroid?.coordinates;
 
-        if (coords && coords.length === 2 && Number.isFinite(coords[0]) && Number.isFinite(coords[1])) {
+        if (coords && coords.length === 2
+            && Number.isFinite(coords[0])
+            && Number.isFinite(coords[1])) {
             map.set(iso3, coords);
         }
     });
@@ -36,12 +42,22 @@ export function buildISO3ToCentroidMapFromData(countries: CountryDataFromJSON[])
 async function fetchCountries(): Promise<CountryDataFromJSON[]> {
     const response = await fetch(COUNTRIES_LOCAL_URL, { cache: 'no-store' });
     if (!response.ok) {
-        throw new Error(`Failed to fetch countries from ${COUNTRIES_LOCAL_URL}: ${response.status}`);
+        throw new Error(
+            `Failed to fetch countries from ${COUNTRIES_LOCAL_URL}: ${response.status}`,
+        );
     }
-    const data = await response.json();
-    return Array.isArray(data) ? data : (Array.isArray((data as any)?.results) ? (data as any).results : []);
+    const data: unknown = await response.json();
+    if (Array.isArray(data)) {
+        return data;
+    }
+    const dataRecord = data as Record<string, unknown>;
+    if (Array.isArray(dataRecord?.results)) {
+        return dataRecord.results as CountryDataFromJSON[];
+    }
+    return [];
 }
 
+/** @knipignore */
 export async function loadCountriesData(): Promise<CountryDataFromJSON[]> {
     if (cachedCountriesData) {
         return cachedCountriesData;

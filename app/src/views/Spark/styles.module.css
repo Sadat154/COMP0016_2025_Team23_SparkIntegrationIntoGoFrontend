@@ -1,52 +1,59 @@
 .tabsContainer {
     margin: 24px 0 32px 0;
 }
+
 .tabs {
-    list-style: none;
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
     margin: 0;
     padding: 0;
-    display: flex;
-    gap: 16px;
-    align-items: stretch;
+    list-style: none;
 }
+
 .tab {
-    background: #f7f7f7;
-    color: #000000;
-    border: none;
-    padding: 18px 28px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    cursor: pointer;
     display: inline-block;
-}
-.tab:focus {
-    outline: 2px solid rgba(245,51,63,0.2);
-}
-.tabSelected {
-    background: transparent;
-    color: #F5333F;
     border: none;
-    padding: 18px 28px;
-    font-weight: 700;
-    border-bottom: 4px solid #F5333F;
+    background: #f7f7f7;
     cursor: pointer;
+    padding: 18px 28px;
+    letter-spacing: 0.5px;
+    color: #000000;
+    font-weight: 700;
+}
+
+.tab:focus {
+    outline: 2px solid rgba(245, 51, 63, 0.2);
+}
+
+.tabSelected {
+    border: none;
+    border-bottom: 4px solid #F5333F;
+    background: transparent;
+    cursor: pointer;
+    padding: 18px 28px;
+    color: #F5333F;
+    font-weight: 700;
 }
 
 .tabContent {
     margin-top: 24px;
 }
+
 .placeholder {
-    padding: 28px 18px;
-    background: #ffffff;
     border: 1px solid #efefef;
     border-radius: 4px;
+    background: #ffffff;
+    padding: 28px 18px;
 }
+
 .placeholderTitle {
     margin: 0 0 8px 0;
     color: #000000;
     font-size: 20px;
     font-weight: 700;
 }
+
 .placeholderText {
     margin: 0 0 16px 0;
     color: #666666;

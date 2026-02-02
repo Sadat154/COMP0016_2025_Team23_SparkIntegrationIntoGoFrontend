@@ -4,7 +4,6 @@ import {
     useLocation,
 } from 'react-router-dom';
 import {
-    Container,
     Tab,
     TabList,
     TabPanel,
@@ -14,9 +13,8 @@ import {
 import Page from '#components/Page';
 import useRouting from '#hooks/useRouting';
 
-import WorldMap from './components/WorldMap';
 import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
-import { ProBonoServicesTable } from './tables';
+import ProBonoServicesTable from './tables';
 
 import styles from './styles.module.css';
 
@@ -27,8 +25,8 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
-// eslint-disable-next-line import/prefer-default-export
-export function Component() {
+/** @knipignore */
+function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
 
@@ -36,11 +34,13 @@ export function Component() {
 
     const isFrameworkAgreementsRoute = location.pathname.startsWith('/spark/framework-agreements');
     const isCustomRegulationsRoute = location.pathname.startsWith('/spark/custom-regulations');
-    const activeTab: SparkTabKey = isFrameworkAgreementsRoute
-        ? 'framework-agreements'
-        : isCustomRegulationsRoute
-            ? 'custom-regulations'
-            : localActiveTab;
+
+    let activeTab: SparkTabKey = localActiveTab;
+    if (isFrameworkAgreementsRoute) {
+        activeTab = 'framework-agreements';
+    } else if (isCustomRegulationsRoute) {
+        activeTab = 'custom-regulations';
+    }
 
     const handleTabChange = (nextTab: SparkTabKey) => {
         if (nextTab === 'framework-agreements') {
@@ -82,10 +82,10 @@ export function Component() {
                         <div className={styles.tabContent}>
                             <div className={styles.placeholder}>
                                 <h2 className={styles.placeholderTitle}>SPARK Dashboard</h2>
-                                <p className={styles.placeholderText}>Overview map and dashboard widgets.</p>
-                                <Container>
-                                    <WorldMap width={1200} height={600} />
-                                </Container>
+                                <p className={styles.placeholderText}>
+                                    Overview map and dashboard widgets.
+                                </p>
+
                             </div>
                         </div>
                     </TabPanel>
@@ -120,3 +120,7 @@ export function Component() {
 }
 
 Component.displayName = 'Spark';
+
+/** @knipignore */
+export { Component };
+export default Component;

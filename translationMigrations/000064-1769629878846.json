@@ -1,0 +1,65 @@
+{
+    "parent": "000063-1765977376504.json",
+    "actions": [
+        {
+            "action": "add",
+            "key": "clearFilters",
+            "namespace": "sparkCustomRegulations",
+            "value": "Clear Filters"
+        },
+        {
+            "action": "add",
+            "key": "notes",
+            "namespace": "sparkCustomRegulations",
+            "value": "Notes"
+        },
+        {
+            "action": "add",
+            "key": "regulations",
+            "namespace": "sparkCustomRegulations",
+            "value": "Regulations"
+        },
+        {
+            "action": "add",
+            "key": "result",
+            "namespace": "sparkCustomRegulations",
+            "value": "result"
+        },
+        {
+            "action": "add",
+            "key": "results",
+            "namespace": "sparkCustomRegulations",
+            "value": "results"
+        },
+        {
+            "action": "add",
+            "key": "searchContentLabel",
+            "namespace": "sparkCustomRegulations",
+            "value": "Content"
+        },
+        {
+            "action": "add",
+            "key": "searchContentPlaceholder",
+            "namespace": "sparkCustomRegulations",
+            "value": "Search answers..."
+        },
+        {
+            "action": "add",
+            "key": "searchCountryLabel",
+            "namespace": "sparkCustomRegulations",
+            "value": "Country"
+        },
+        {
+            "action": "add",
+            "key": "searchCountryPlaceholder",
+            "namespace": "sparkCustomRegulations",
+            "value": "Search countries..."
+        },
+        {
+            "action": "add",
+            "key": "sparkCustomRegulationsTitle",
+            "namespace": "sparkCustomRegulations",
+            "value": "Custom Regulations"
+        }
+    ]
+}

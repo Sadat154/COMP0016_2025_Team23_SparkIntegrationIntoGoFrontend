@@ -1,13 +1,15 @@
+/* stylelint-disable csstools/value-no-unknown-custom-properties */
+
 .filterSection {
-    padding: var(--spacing-md);
-    border-bottom: 1px solid var(--color-border);
     margin-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-md);
 }
 
 .filterHeader {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: var(--spacing-md);
 }
 
@@ -18,23 +20,24 @@
 
 .filtersContainer {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-md);
-    padding: var(--spacing-md);
-    background-color: var(--color-background-secondary);
     border-radius: 4px;
+    background-color: var(--color-background-secondary);
+    padding: var(--spacing-md);
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
 .filterGroup {
     display: flex;
+    align-items: stretch;
     flex-direction: column;
     gap: var(--spacing-xs);
 }
 
 .filterGroup label {
-    font-weight: 600;
     font-size: 0.9rem;
+    font-weight: 600;
 }
 
 /* Styling for SelectInput pre-built component */
@@ -47,12 +50,13 @@
 }
 
 .selectInputWrapper :global(input) {
-    width: 100%;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: 0.9rem;
     border: 1px solid var(--color-border);
     border-radius: 4px;
     background-color: var(--color-white);
+    cursor: text;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    width: 100%;
+    font-size: 0.9rem;
 }
 
 .selectInputWrapper :global(input:disabled) {
@@ -70,12 +74,13 @@
 }
 
 .multiSelectInputWrapper :global(input) {
-    width: 100%;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: 0.9rem;
     border: 1px solid var(--color-border);
     border-radius: 4px;
     background-color: var(--color-white);
+    cursor: text;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    width: 100%;
+    font-size: 0.9rem;
 }
 
 .multiSelectInputWrapper :global(input:disabled) {
@@ -84,36 +89,36 @@
 }
 
 .resultCount {
-    font-size: 0.9rem;
-    color: var(--color-text-secondary);
     margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
 }
 
 .tableContainer {
+    padding: var(--spacing-md);
+    max-height: 400px;
     overflow-x: auto;
     overflow-y: auto;
-    max-height: 400px;
-    padding: var(--spacing-md);
 }
 
 .paginationContainer {
     display: flex;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-md);
-    justify-content: center;
     align-items: center;
     flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
 }
 
 .navButton {
-    padding: 0.35rem 0.65rem;
     border: 1px solid var(--color-border);
     border-radius: 999px;
     background-color: var(--color-white);
-    color: var(--color-text-primary);
     cursor: pointer;
-    line-height: 1;
+    padding: 0.35rem 0.65rem;
     min-width: 2.25rem;
+    line-height: 1;
+    color: var(--color-text-primary);
 }
 
 .navButton:disabled {
@@ -128,32 +133,48 @@
 }
 
 .pageEllipsis {
+    padding: 0 0.15rem;
     color: var(--color-text-secondary);
     font-size: 0.95rem;
-    padding: 0 0.15rem;
 }
 
 .pageButton,
 .pageButtonActive {
-    padding: 0.45rem 0.75rem;
-    border-radius: 999px;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-white);
-    cursor: pointer;
-    min-width: 2.25rem;
-    line-height: 1;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background-color: var(--color-white);
+  cursor: pointer;
+  padding: 0.45rem 0.75rem;
+  min-width: 2.25rem;
+  line-height: 1;
+}
+
+.pageButtonActive {
+  border: 2px solid var(--go-ui-color-primary-red);
+  background-color: var(--go-ui-color-primary-red) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+
+/* Fix no-descending-specificity: put :disabled BEFORE the base selector */
+.pageButton:disabled,
+.pageButtonActive:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+.pageButton:focus-visible,
+.pageButtonActive:focus-visible,
+.navButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(229, 22, 54, 0.25);
 }
 
 .pageButton:hover:not(:disabled) {
     border-color: var(--color-border-hover);
-}
-
-.pageButtonActive {
-    border: 2px solid var(--go-ui-color-primary-red);
-    background-color: var(--go-ui-color-primary-red) !important;
-    font-weight: 600;
-    color: #ffffff !important;
 }
 
 /* Increase specificity to override any button base styles */
@@ -163,31 +184,18 @@
     color: #ffffff !important;
 }
 
-.pageButton:focus-visible,
-.pageButtonActive:focus-visible,
-.navButton:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(229, 22, 54, 0.25);
-}
-
-.pageButton:disabled,
-.pageButtonActive:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 .dateRangeDisplay {
-    padding: var(--spacing-sm);
-    background-color: var(--color-background-secondary);
+    margin-bottom: var(--spacing-sm);
     border-radius: 4px;
+    background-color: var(--color-background-secondary);
+    padding: var(--spacing-sm);
     font-size: 0.9rem;
     font-weight: 600;
-    margin-bottom: var(--spacing-sm);
 }
 
 .rangeSliderContainer {
-    position: relative;
     display: flex;
+    position: relative;
     align-items: center;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
@@ -196,47 +204,48 @@
 
 .rangeTrackBase {
     position: absolute;
+    opacity: 1;
+    z-index: 1;
+    border-radius: 3px;
+    background: #e5e7eb;
     width: 100%;
     height: 6px;
-    background: #e5e7eb;
-    border-radius: 3px;
-    z-index: 1;
 }
 
 .rangeTrackFill {
     position: absolute;
-    height: 6px;
-    background: #dc2626;
-    border-radius: 3px;
-    pointer-events: none;
     z-index: 10;
+    border-radius: 3px;
+    background: #dc2626;
+    height: 6px;
+    pointer-events: none;
 }
 
 .rangeSliderStart,
 .rangeSliderEnd {
+    position: absolute;
+    outline: none;
+    border-radius: 3px;
+    background: transparent;
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
     height: 6px;
-    background: transparent;
-    border-radius: 3px;
-    outline: none;
-    position: absolute;
     pointer-events: none;
 }
 
 .rangeSliderStart::-webkit-slider-runnable-track,
 .rangeSliderEnd::-webkit-slider-runnable-track {
-    height: 6px;
-    background: #e5e7eb;
     border-radius: 3px;
+    background: #e5e7eb;
+    height: 6px;
 }
 
 .rangeSliderStart::-moz-range-track,
 .rangeSliderEnd::-moz-range-track {
-    height: 6px;
-    background: #e5e7eb;
     border-radius: 3px;
+    background: #e5e7eb;
+    height: 6px;
 }
 
 .rangeSliderStart {
@@ -251,36 +260,38 @@
 .rangeSliderEnd::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 22px;
-    height: 22px;
-    background: #1e40af;
     border: 3px solid #ffffff;
     border-radius: 50%;
-    cursor: pointer;
-    pointer-events: auto;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    background: #1e40af;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    pointer-events: auto;
 }
 
 .rangeSliderStart::-moz-range-thumb,
 .rangeSliderEnd::-moz-range-thumb {
-    width: 22px;
-    height: 22px;
-    background: #1e40af;
     border: 3px solid #ffffff;
     border-radius: 50%;
-    cursor: pointer;
-    pointer-events: auto;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    background: #1e40af;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    pointer-events: auto;
 }
 
 .rangeSliderStart::-webkit-slider-thumb:hover,
 .rangeSliderEnd::-webkit-slider-thumb:hover {
-    background: #1e3a8a;
     transform: scale(1.15);
+    background: #1e3a8a;
 }
 
 .rangeSliderStart::-moz-range-thumb:hover,
 .rangeSliderEnd::-moz-range-thumb:hover {
-    background: #1e3a8a;
     transform: scale(1.15);
+    background: #1e3a8a;
 }
+
+/* stylelint-enable csstools/value-no-unknown-custom-properties */

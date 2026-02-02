@@ -118,7 +118,7 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
             <TextInput
                 name="modalSearch"
                 value={modalSearch}
-                onChange={setModalSearch}
+                onChange={(value) => setModalSearch(value ?? '')}
                 placeholder="Search questions and answers..."
                 className={styles.modalSearchInput}
             />
@@ -180,7 +180,13 @@ function CustomRegulationsMatrix() {
                     return true;
                 }
                 const countryItems = c.sections?.flatMap((s) => s.items) ?? [];
-                return countryItems.some((item) => item.answer?.toLowerCase?.().includes(searchAnswer.toLowerCase()) ?? false);
+                return countryItems.some(
+                    (item) => (
+                        item.answer
+                            ?.toLowerCase?.()
+                            .includes(searchAnswer.toLowerCase()) ?? false
+                    ),
+                );
             })
             .map((country, index) => {
                 const row: MatrixRow = {
@@ -262,7 +268,7 @@ function CustomRegulationsMatrix() {
         const rowIndex = Array.from(tableRow.parentElement?.children ?? []).indexOf(tableRow);
         if (rowIndex >= 0 && rowIndex < sortedData.length) {
             const clickedRow = sortedData[rowIndex];
-            if (clickedRow.countryData) {
+            if (clickedRow?.countryData) {
                 setSelectedCountry(clickedRow.countryData);
             }
         }
@@ -273,24 +279,26 @@ function CustomRegulationsMatrix() {
             <div className={styles.searchSection}>
                 <div className={styles.searchContainer}>
                     <div className={styles.searchField}>
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                         <label htmlFor="searchCountry" className={styles.searchLabel}>
                             Country
                         </label>
                         <TextInput
                             name="searchCountry"
                             value={searchCountry}
-                            onChange={setSearchCountry}
+                            onChange={(value) => setSearchCountry(value ?? '')}
                             placeholder="Search countries..."
                         />
                     </div>
                     <div className={styles.searchField}>
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                         <label htmlFor="searchAnswer" className={styles.searchLabel}>
                             Content
                         </label>
                         <TextInput
                             name="searchAnswer"
                             value={searchAnswer}
-                            onChange={setSearchAnswer}
+                            onChange={(value) => setSearchAnswer(value ?? '')}
                             placeholder="Search answers..."
                         />
                     </div>
@@ -338,9 +346,12 @@ function CustomRegulationsMatrix() {
     );
 }
 
-/** @knipignore */
-export function Component() {
+function Component() {
     return <CustomRegulationsMatrix />;
 }
 
 Component.displayName = 'SparkCustomRegulations';
+
+/** @knipignore */
+export { Component };
+export default Component;

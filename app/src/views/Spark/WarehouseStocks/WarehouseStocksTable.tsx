@@ -83,7 +83,9 @@ function WarehouseStocksTable() {
 
     const { sortState } = useFilterState({ filter: {} });
 
-    const { pending, response } = useRequest({ url: '/api/v1/warehouse-stocks/' } as any);
+    const { pending, response } = useRequest({
+        url: '/api/v1/warehouse-stocks/',
+    } as unknown as Parameters<typeof useRequest>[0]);
     const tableData = (response as ApiResponse | undefined)?.results ?? [];
 
     const regionOptions = useMemo(() => {
@@ -203,15 +205,9 @@ function WarehouseStocksTable() {
                 'quantity',
                 'Quantity',
                 (item) => formatQty(item.quantity),
-                {
-                    sortable: true,
-                    valueComparator: (a, b) => {
-                        const an = parseQty(a.quantity) ?? -Infinity;
-                        const bn = parseQty(b.quantity) ?? -Infinity;
-                        return an - bn;
-                    },
-                },
+                { sortable: true },
             ),
+
         ],
         [],
     );
@@ -221,14 +217,42 @@ function WarehouseStocksTable() {
             return filteredData;
         }
 
-        const columnToSort = columns.find((column) => column.id === sortState.sorting?.name);
-        if (!columnToSort?.valueComparator) {
-            return filteredData;
-        }
+        const { name, direction } = sortState.sorting;
 
-        const sorted = [...filteredData].sort(columnToSort.valueComparator);
-        return sortState.sorting.direction === 'dsc' ? sorted.reverse() : sorted;
-    }, [filteredData, sortState.sorting, columns]);
+        const sorted = [...filteredData].sort((a, b) => {
+            if (name === 'quantity') {
+                const an = parseQty(a.quantity) ?? -Infinity;
+                const bn = parseQty(b.quantity) ?? -Infinity;
+                return an - bn;
+            }
+
+            // Default string-ish compare for other columns
+            const getSortable = (row: WarehouseStock): string => {
+                switch (name) {
+                    case 'region':
+                        return row.region ?? '';
+                    case 'country':
+                        return row.country ?? '';
+                    case 'warehouse_name':
+                        return row.warehouse_name ?? '';
+                    case 'item_group':
+                        return row.item_group ?? '';
+                    case 'item_name':
+                        return row.item_name ?? '';
+                    case 'item_number':
+                        return row.item_number ?? '';
+                    case 'unit':
+                        return row.unit ?? '';
+                    default:
+                        return '';
+                }
+            };
+
+            return getSortable(a).localeCompare(getSortable(b));
+        });
+
+        return direction === 'dsc' ? sorted.reverse() : sorted;
+    }, [filteredData, sortState.sorting]);
 
     const stringKeySelector = useCallback((option: { key: string }) => option.key, []);
     const stringLabelSelector = useCallback((option: { label: string }) => option.label, []);
@@ -273,9 +297,13 @@ function WarehouseStocksTable() {
     return (
         <Container
             className={styles.page}
-            description={filterCountry ? `Showing data for ${filterCountry}. Click the map bubble again or use filters to change selection.` : 'Click on a country bubble in the map to filter, or use the filters on the left.'}
             headingLevel={2}
         >
+            <p>
+                {filterCountry
+                    ? `Showing data for ${filterCountry}. Click the map bubble again or use filters to change selection.`
+                    : 'Click on a country bubble in the map to filter, or use the filters on the left.'}
+            </p>
             <div className={styles.layout}>
                 {/* Filters card */}
                 <div className={styles.filtersCard}>
@@ -399,7 +427,9 @@ function WarehouseStocksTable() {
                                 <div className={styles.chartEmpty}>No items</div>
                             ) : (
                                 chartData.rows.map((r) => {
-                                    const pct = chartData.max > 0 ? (r.value / chartData.max) * 100 : 0;
+                                    const pct = chartData.max > 0
+                                        ? (r.value / chartData.max) * 100
+                                        : 0;
                                     const isActive = filterItemGroup === r.label;
                                     return (
                                         <button
@@ -407,7 +437,9 @@ function WarehouseStocksTable() {
                                             className={styles.chartRow}
                                             key={r.label}
                                             data-active={isActive}
-                                            onClick={() => setFilterItemGroup(isActive ? undefined : r.label)}
+                                            onClick={() => setFilterItemGroup(
+                                                isActive ? undefined : r.label,
+                                            )}
                                             title={r.label}
                                         >
                                             <div className={styles.chartLabel}>{r.label}</div>

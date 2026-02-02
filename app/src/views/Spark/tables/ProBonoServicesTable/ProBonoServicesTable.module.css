@@ -1,10 +1,11 @@
+/* stylelint-disable csstools/value-no-unknown-custom-properties */
 .filters {
     display: flex;
-    gap: 2rem;
     align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 2rem;
     padding: var(--spacing-md);
     padding-bottom: 40px;
-    flex-wrap: wrap;
 }
 
 .filters > * {
@@ -12,6 +13,7 @@
 }
 
 .tableContainer {
-    overflow-x: auto;
     padding: var(--spacing-md);
+    overflow-x: auto;
 }
+/* stylelint-enable csstools/value-no-unknown-custom-properties */

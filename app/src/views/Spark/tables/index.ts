@@ -1,1 +1,3 @@
-export { default as ProBonoServicesTable } from './ProBonoServicesTable';
+import ProBonoServicesTable from './ProBonoServicesTable';
+
+export default ProBonoServicesTable;

@@ -4,10 +4,10 @@ import {
     useState,
 } from 'react';
 import {
-    Table,
+    Button,
     Container,
     SelectInput,
-    Button,
+    Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
@@ -22,6 +22,7 @@ import {
 
 import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
+
 import styles from './ProBonoServicesTable.module.css';
 
 interface ProBonoService {
@@ -54,7 +55,7 @@ function ProBonoServicesTable() {
         response,
     } = useRequest({
         url: '/api/v1/pro-bono-services/',
-    } as any);
+    } as unknown as Parameters<typeof useRequest>[0]);
 
     const tableData = (response as ApiResponse | undefined)?.results ?? [];
 

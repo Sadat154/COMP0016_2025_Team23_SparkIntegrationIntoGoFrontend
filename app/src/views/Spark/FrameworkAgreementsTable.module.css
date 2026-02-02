@@ -1,4 +1,6 @@
+/* stylelint-disable csstools/value-no-unknown-custom-properties */
 .tableContainer {
-    overflow-x: auto;
     padding: var(--spacing-md);
+    overflow-x: auto;
 }
+/* stylelint-enable csstools/value-no-unknown-custom-properties */
