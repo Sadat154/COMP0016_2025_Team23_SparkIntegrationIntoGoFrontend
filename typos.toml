@@ -5,6 +5,7 @@ extend-exclude = [
     "patches/*",
     "CHANGELOG.md",
     "app/public/*"
+    "app/prototypes/*"
 
 ]
 [default.extend-identifiers]
