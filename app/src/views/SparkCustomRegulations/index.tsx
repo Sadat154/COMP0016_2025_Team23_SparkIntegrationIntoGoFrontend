@@ -1,8 +1,4 @@
-import {
-    useCallback,
-    useMemo,
-    useState,
-} from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
     Button,
     Container,
@@ -20,29 +16,6 @@ import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
 
 import styles from './styles.module.css';
-
-const QUESTION_COLUMNS = [
-    'Who is the competent authority for customs clearance of humanitarian goods?',
-    'Is pre-authorization required for importation of key health items?',
-    'Are there specific government agencies involved beyond customs?',
-    'Are import permits required for health items? List authority and time to obtain.',
-    'List health items requiring special importation steps (PPE, vaccines, etc.):',
-    'What are the main customs entry points (airports/seaports/land borders)?',
-    'Can IFRC or NS act as consignee/importer of record?',
-    'Are there import restrictions on any medical/health items?',
-    'Are there exemptions for humanitarian cargo (duty/VAT)? Legal framework?',
-    'What documents are required for customs clearance?',
-    'Typical clearance timeframe (in days):',
-    'Are there fast-track or humanitarian clearance procedures? Describe.',
-    'Are vaccines subject to special import licenses?',
-    'Is WHO prequalification accepted for imported vaccines?',
-    'Are there national cold chain handling standards?',
-    'Customs/health clearance procedures for temperature-sensitive goods:',
-    'Are customs facilities with cold storage available at entry points?',
-    'Are Ebola-related items subject to restrictions?',
-    'Is there a fast-track mechanism for outbreak response items?',
-    'Any prior IFRC Ebola-related imports? Challenges/lessons?',
-] as const;
 
 interface RegulationItem {
     question: string;
@@ -66,14 +39,25 @@ interface RegulationsApiResponse {
 
 interface MatrixRow {
     id: number;
+    region: string;
     country: string;
+    ifrcLegalStatus: string;
+    humanitarianCargoExemptions: string;
+    detailsLabel: string;
+    lastUpdated: string;
     countryData?: CountryRegulation;
-    [key: string]: string | number | undefined | CountryRegulation;
+}
+
+const IFRC_LEGAL_STATUS_QUESTION = 'Is there an existing status agreement for IFRC in the country?';
+const HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION = 'Are there exemptions for humanitarian cargo (duty/VAT)? Legal framework?';
+
+function normalizeQuestion(v: string) {
+    return v.toLowerCase().trim();
 }
 
 function getAnswerForQuestion(question: string, allItems: RegulationItem[]): string {
-    const qLower = question.toLowerCase().trim();
-    const item = allItems.find((it) => it.question.toLowerCase().trim() === qLower);
+    const qLower = normalizeQuestion(question);
+    const item = allItems.find((it) => normalizeQuestion(it.question) === qLower);
     return item?.answer?.trim() ?? '';
 }
 
@@ -85,14 +69,17 @@ interface DetailModalProps {
 function DetailModal({ countryData, onClose }: DetailModalProps) {
     const [modalSearch, setModalSearch] = useState<string>('');
 
+    const handleModalSearchChange = useCallback((value: string | undefined) => {
+        setModalSearch(value ?? '');
+    }, []);
+
     if (!countryData) {
         return null;
     }
 
-    // Filter sections and items based on search
     const filteredSections = countryData.sections?.map((section) => {
         const filteredItems = section.items?.filter((item) => {
-            if (!modalSearch?.trim()) {
+            if (!modalSearch.trim()) {
                 return true;
             }
             const searchLower = modalSearch.toLowerCase();
@@ -105,7 +92,7 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
 
     return (
         <Modal
-            heading={`Regulations — ${countryData.country}`}
+            heading={`Regulations: ${countryData.country}`}
             onClose={onClose}
             // @ts-expect-error depending on ui version
             size="large"
@@ -118,8 +105,8 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
             <TextInput
                 name="modalSearch"
                 value={modalSearch}
-                onChange={setModalSearch}
-                placeholder="Search questions and answers..."
+                onChange={handleModalSearchChange}
+                placeholder="Search questions, answers, notes..."
                 className={styles.modalSearchInput}
             />
             <div className={styles.detailContent}>
@@ -131,11 +118,11 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
                                 <div key={`${section.section}-${item.question}`} className={styles.itemCard}>
                                     <div className={styles.question}>{item.question}</div>
                                     <div className={styles.answer}>
-                                        {item.answer?.trim() || '—'}
+                                        {item.answer?.trim() || 'N/A'}
                                     </div>
                                     {item.notes?.trim() && (
                                         <div className={styles.notes}>
-                                            <div className={styles.notesLabel}>Notes:</div>
+                                            <div className={styles.notesLabel}>Notes</div>
                                             <div className={styles.notesContent}>
                                                 {item.notes}
                                             </div>
@@ -157,9 +144,17 @@ function CustomRegulationsMatrix() {
     const [searchCountry, setSearchCountry] = useState<string>('');
     const [searchAnswer, setSearchAnswer] = useState<string>('');
 
+    const handleSearchCountryChange = useCallback((value: string | undefined) => {
+        setSearchCountry(value ?? '');
+    }, []);
+
+    const handleSearchAnswerChange = useCallback((value: string | undefined) => {
+        setSearchAnswer(value ?? '');
+    }, []);
+
     const { pending, response } = useRequest({
         url: '/api/v2/country-regulations/',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     const apiData = response as RegulationsApiResponse | undefined;
@@ -172,63 +167,76 @@ function CustomRegulationsMatrix() {
         () => countries
             .filter((c) => c.country?.trim())
             .filter((c) => {
-                if (!searchCountry) return true;
+                if (!searchCountry.trim()) return true;
                 return c.country?.toLowerCase?.().includes(searchCountry.toLowerCase()) ?? false;
             })
             .filter((c) => {
-                if (!searchAnswer?.trim()) {
-                    return true;
-                }
+                if (!searchAnswer.trim()) return true;
                 const countryItems = c.sections?.flatMap((s) => s.items) ?? [];
-                return countryItems.some((item) => item.answer?.toLowerCase?.().includes(searchAnswer.toLowerCase()) ?? false);
+                const searchLower = searchAnswer.toLowerCase();
+
+                return countryItems.some((item) => (
+                    (item.question?.toLowerCase?.().includes(searchLower) ?? false)
+                    || (item.answer?.toLowerCase?.().includes(searchLower) ?? false)
+                    || (item.notes?.toLowerCase?.().includes(searchLower) ?? false)
+                ));
             })
             .map((country, index) => {
-                const row: MatrixRow = {
-                    id: index + 1,
-                    country: country.country,
-                    countryData: country,
-                };
-
                 const countryItems = country.sections?.flatMap((s) => s.items) ?? [];
 
-                QUESTION_COLUMNS.forEach((question) => {
-                    const answer = getAnswerForQuestion(question, countryItems);
-                    const key = `q_${question
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, '_')
-                        .replace(/^_+|_+$/g, '')}`;
-                    row[key] = answer;
-                });
-
-                return row;
+                return {
+                    id: index + 1,
+                    region: 'N/A',
+                    country: country.country,
+                    ifrcLegalStatus: getAnswerForQuestion(IFRC_LEGAL_STATUS_QUESTION, countryItems) || 'N/A',
+                    humanitarianCargoExemptions: getAnswerForQuestion(HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION, countryItems) || 'N/A',
+                    detailsLabel: 'More details',
+                    lastUpdated: 'N/A',
+                    countryData: country,
+                };
             }),
         [countries, searchCountry, searchAnswer],
     );
 
     const columns = useMemo(
-        () => {
-            const countryCol = createStringColumn<MatrixRow, number>(
+        () => ([
+            createStringColumn<MatrixRow, number>(
+                'region',
+                'Region',
+                (item) => item.region,
+                { sortable: true },
+            ),
+            createStringColumn<MatrixRow, number>(
                 'country',
                 'Country',
                 (item) => item.country,
                 { sortable: true },
-            );
-
-            const questionCols = QUESTION_COLUMNS.map((question) => {
-                const key = `q_${question
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '_')
-                    .replace(/^_+|_+$/g, '')}`;
-                return createStringColumn<MatrixRow, number>(
-                    key,
-                    question,
-                    (item) => (item[key] as string) ?? '',
-                    { sortable: true },
-                );
-            });
-
-            return [countryCol, ...questionCols];
-        },
+            ),
+            createStringColumn<MatrixRow, number>(
+                'ifrcLegalStatus',
+                'IFRC legal status',
+                (item) => item.ifrcLegalStatus,
+                { sortable: true },
+            ),
+            createStringColumn<MatrixRow, number>(
+                'humanitarianCargoExemptions',
+                'Humanitarian cargo exemptions',
+                (item) => item.humanitarianCargoExemptions,
+                { sortable: true },
+            ),
+            createStringColumn<MatrixRow, number>(
+                'detailsLabel',
+                'Details',
+                (item) => item.detailsLabel,
+                { sortable: false },
+            ),
+            createStringColumn<MatrixRow, number>(
+                'lastUpdated',
+                'Last updated',
+                (item) => item.lastUpdated,
+                { sortable: true },
+            ),
+        ]),
         [],
     );
 
@@ -238,96 +246,119 @@ function CustomRegulationsMatrix() {
         }
 
         const columnToSort = columns.find((c) => c.id === sortState.sorting?.name);
-        if (!columnToSort?.valueComparator) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const comparator = (columnToSort as any)?.valueComparator as ((a: MatrixRow, b: MatrixRow) => number) | undefined;
+
+        if (!comparator) {
             return rows;
         }
 
-        const sorted = [...rows].sort(columnToSort.valueComparator);
+        const sorted = [...rows].sort(comparator);
         return sortState.sorting.direction === 'dsc' ? sorted.reverse() : sorted;
     }, [rows, sortState.sorting, columns]);
 
+    // Row click logic, but ONLY allow opening modal when clicking "More details"
+    const DETAILS_COL_INDEX = 4; // Region 0, Country 1, IFRC 2, Humanitarian 3, Details 4, Last updated 5
+
     const handleTableClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         const target = e.target as HTMLElement;
-        const tableRow = target.closest('tr');
 
-        if (!tableRow) {
+        const cell = target.closest('td');
+        if (!cell) {
             return;
         }
 
-        // Skip header rows (those containing th elements)
-        if (tableRow.querySelector('th') !== null) {
+        const rowEl = target.closest('tr');
+        if (!rowEl || rowEl.querySelector('th')) {
             return;
         }
 
-        const rowIndex = Array.from(tableRow.parentElement?.children ?? []).indexOf(tableRow);
-        if (rowIndex >= 0 && rowIndex < sortedData.length) {
-            const clickedRow = sortedData[rowIndex];
-            if (clickedRow.countryData) {
-                setSelectedCountry(clickedRow.countryData);
-            }
+        const cellIndex = Array.from(rowEl.children).indexOf(cell);
+        if (cellIndex !== DETAILS_COL_INDEX) {
+            return;
+        }
+
+        const parent = rowEl.parentElement;
+        if (!parent) {
+            return;
+        }
+
+        const rowIndex = Array.from(parent.children).indexOf(rowEl);
+        if (rowIndex < 0 || rowIndex >= sortedData.length) {
+            return;
+        }
+
+        const clickedRow = sortedData[rowIndex];
+        if (clickedRow.countryData) {
+            setSelectedCountry(clickedRow.countryData);
         }
     }, [sortedData]);
 
+
     return (
         <Container className={styles.container}>
-            <div className={styles.searchSection}>
-                <div className={styles.searchContainer}>
-                    <div className={styles.searchField}>
-                        <label htmlFor="searchCountry" className={styles.searchLabel}>
-                            Country
-                        </label>
-                        <TextInput
-                            name="searchCountry"
-                            value={searchCountry}
-                            onChange={setSearchCountry}
-                            placeholder="Search countries..."
-                        />
+            <div className={styles.content}>
+                <div className={styles.searchSection}>
+                    <div className={styles.searchContainer}>
+                        <div className={styles.searchField}>
+                            <label htmlFor="searchCountry" className={styles.searchLabel}>
+                                Country
+                            </label>
+                            <TextInput
+                                name="searchCountry"
+                                value={searchCountry}
+                                onChange={handleSearchCountryChange}
+                                placeholder="Search countries..."
+                            />
+                        </div>
+                        <div className={styles.searchField}>
+                            <label htmlFor="searchAnswer" className={styles.searchLabel}>
+                                Content
+                            </label>
+                            <TextInput
+                                name="searchAnswer"
+                                value={searchAnswer}
+                                onChange={handleSearchAnswerChange}
+                                placeholder="Search content..."
+                            />
+                        </div>
                     </div>
-                    <div className={styles.searchField}>
-                        <label htmlFor="searchAnswer" className={styles.searchLabel}>
-                            Content
-                        </label>
-                        <TextInput
-                            name="searchAnswer"
-                            value={searchAnswer}
-                            onChange={setSearchAnswer}
-                            placeholder="Search answers..."
-                        />
+
+                    <div className={styles.searchActions}>
+                        <Button
+                            name={undefined}
+                            onClick={() => {
+                                setSearchCountry('');
+                                setSearchAnswer('');
+                            }}
+                            disabled={!searchCountry && !searchAnswer}
+                        >
+                            Clear Filters
+                        </Button>
+                        <div className={styles.resultCount}>
+                            {sortedData.length}
+                            {' '}
+                            result
+                            {sortedData.length !== 1 ? 's' : ''}
+                        </div>
                     </div>
                 </div>
-                <div className={styles.searchActions}>
-                    <Button
-                        name={undefined}
-                        onClick={() => {
-                            setSearchCountry('');
-                            setSearchAnswer('');
-                        }}
-                        disabled={!searchCountry && !searchAnswer}
-                    >
-                        Clear Filters
-                    </Button>
-                    <div className={styles.resultCount}>
-                        {sortedData.length}
-                        {' '}
-                        result
-                        {sortedData.length !== 1 ? 's' : ''}
-                    </div>
+
+                <div
+                    className={styles.tableSurface}
+                    onClick={handleTableClick}
+                    role="presentation"
+                >
+                    <SortContext.Provider value={sortState}>
+                        <Table
+                            data={sortedData}
+                            keySelector={numericIdSelector}
+                            columns={columns}
+                            pending={pending}
+                            filtered={false}
+                        />
+                    </SortContext.Provider>
                 </div>
-            </div>
-            <div
-                className={styles.tableContainer}
-                onClick={handleTableClick}
-                role="presentation"
-            >
-                <SortContext.Provider value={sortState}>
-                    <Table
-                        data={sortedData}
-                        keySelector={numericIdSelector}
-                        columns={columns}
-                        pending={pending}
-                        filtered={false}
-                    />
-                </SortContext.Provider>
             </div>
 
             <DetailModal
