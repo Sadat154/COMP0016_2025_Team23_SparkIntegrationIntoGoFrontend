@@ -14,7 +14,6 @@ import Page from '#components/Page';
 import useRouting from '#hooks/useRouting';
 
 import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
-import CustomRegulationsMatrix from './CustomRegulationsMatrix';
 import ProBonoServicesTable from './tables/ProBonoServicesTable';
 
 import styles from './styles.module.css';
@@ -44,6 +43,10 @@ export function Component() {
     const handleTabChange = (nextTab: SparkTabKey) => {
         if (nextTab === 'framework-agreements') {
             navigate('sparkFrameworkAgreements');
+            return;
+        }
+        if (nextTab === 'custom-regulations') {
+            navigate('sparkCustomRegulations');
             return;
         }
 
