@@ -4,7 +4,7 @@ extend-exclude = [
     "translationMigrations/*",
     "patches/*",
     "CHANGELOG.md",
-    "app/public/*"
+    "app/public/*",
     "app/prototypes/*"
 
 ]
