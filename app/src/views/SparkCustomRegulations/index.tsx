@@ -61,6 +61,15 @@ function getAnswerForQuestion(question: string, allItems: RegulationItem[]): str
     return item?.answer?.trim() ?? '';
 }
 
+function toTitleCase(value: string): string {
+    return value
+        .toLowerCase()
+        .split(' ')
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
 interface DetailModalProps {
     countryData?: CountryRegulation;
     onClose: () => void;
@@ -187,9 +196,17 @@ function CustomRegulationsMatrix() {
                 return {
                     id: index + 1,
                     region: 'N/A',
-                    country: country.country,
-                    ifrcLegalStatus: getAnswerForQuestion(IFRC_LEGAL_STATUS_QUESTION, countryItems) || 'N/A',
-                    humanitarianCargoExemptions: getAnswerForQuestion(HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION, countryItems) || 'N/A',
+                    country: toTitleCase(country.country ?? ''),
+                    ifrcLegalStatus: (
+                        getAnswerForQuestion(IFRC_LEGAL_STATUS_QUESTION, countryItems)
+                            ? toTitleCase(getAnswerForQuestion(IFRC_LEGAL_STATUS_QUESTION, countryItems))
+                            : 'N/A'
+                    ),
+                    humanitarianCargoExemptions: (
+                        getAnswerForQuestion(HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION, countryItems)
+                            ? toTitleCase(getAnswerForQuestion(HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION, countryItems))
+                            : 'N/A'
+                    ),
                     detailsLabel: 'More details',
                     lastUpdated: 'N/A',
                     countryData: country,
