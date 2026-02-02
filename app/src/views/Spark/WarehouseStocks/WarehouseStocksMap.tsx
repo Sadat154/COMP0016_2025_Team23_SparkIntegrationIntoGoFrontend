@@ -5,10 +5,10 @@ import {
     useState,
 } from 'react';
 import {
-    MapContainer,
     MapLayer,
     MapSource,
 } from '@togglecorp/re-map';
+import GoMapContainer from '#components/GoMapContainer';
 import type {
     CircleLayer,
     CirclePaint,
@@ -142,16 +142,27 @@ function WarehouseStocksMap(props: Props) {
             const countryName = row.country ?? iso3ToName.get(iso3) ?? iso3;
             const warehouseName = row.warehouse_name ?? '';
             const qty = parseQty(row.quantity);
+            const explicitCount = (row as any).warehouse_count;
 
             const current = perIso3.get(iso3);
             if (!current) {
-                perIso3.set(iso3, {
+                const entry: { country: string; warehouses?: Set<string>; warehousesCount?: number; qty: number } = {
                     country: countryName,
-                    warehouses: new Set(warehouseName ? [warehouseName] : []),
                     qty,
-                });
+                };
+                if (typeof explicitCount === 'number') {
+                    entry.warehousesCount = explicitCount;
+                } else {
+                    entry.warehouses = new Set(warehouseName ? [warehouseName] : []);
+                }
+                perIso3.set(iso3, entry);
             } else {
-                if (warehouseName) {
+                if (typeof explicitCount === 'number') {
+                    current.warehousesCount = (current.warehousesCount ?? 0) + explicitCount;
+                } else if (warehouseName) {
+                    if (!current.warehouses) {
+                        current.warehouses = new Set();
+                    }
                     current.warehouses.add(warehouseName);
                 }
                 current.qty += qty;
@@ -166,6 +177,8 @@ function WarehouseStocksMap(props: Props) {
                 return;
             }
 
+            const warehouseCount = (typeof v.warehousesCount === 'number') ? v.warehousesCount : (v.warehouses ? v.warehouses.size : 0);
+
             features.push({
                 type: 'Feature',
                 geometry: {
@@ -175,7 +188,7 @@ function WarehouseStocksMap(props: Props) {
                 properties: {
                     iso3,
                     country: v.country,
-                    warehouseCount: v.warehouses.size,
+                    warehouseCount,
                     qty: v.qty,
                 },
             });
@@ -218,10 +231,10 @@ function WarehouseStocksMap(props: Props) {
             return true;
         }
 
-        if (selectedCountryName && props2.country === selectedCountryName) {
+        if (selectedCountryName && props2.iso3 === selectedCountryName) {
             onCountrySelect(undefined);
         } else {
-            onCountrySelect(props2.country);
+            onCountrySelect(props2.iso3);
         }
 
         return true;
@@ -236,14 +249,14 @@ function WarehouseStocksMap(props: Props) {
         'circle-color': '#F5333F',
         'circle-opacity': [
             'case',
-            ['==', ['get', 'country'], selectedCountryName ?? ''],
+            ['==', ['get', 'iso3'], selectedCountryName ?? ''],
             0.85, // Higher opacity for selected
             0.55, // Normal opacity
         ],
         'circle-stroke-color': '#F5333F',
         'circle-stroke-width': [
             'case',
-            ['==', ['get', 'country'], selectedCountryName ?? ''],
+            ['==', ['get', 'iso3'], selectedCountryName ?? ''],
             3, // Thicker stroke for selected
             0.5,
         ],
@@ -303,7 +316,11 @@ function WarehouseStocksMap(props: Props) {
                     </MapPopup>
                 )}
 
-                <MapContainer className={styles.mapContainer} />
+                <GoMapContainer
+                    className={styles.mapContainer}
+                    title="Warehouse stocks"
+                    withoutDownloadButton
+                />
             </GlobalMap>
         </div>
     );

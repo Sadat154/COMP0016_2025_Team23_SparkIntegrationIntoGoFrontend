@@ -48,12 +48,6 @@ function Component() {
             return;
         }
 
-        if (nextTab === 'custom-regulations') {
-            navigate('sparkCustomRegulations');
-            return;
-        }
-
-        // Keep the URL clean for non-routed tabs
         navigate('globalLogistics');
         setLocalActiveTab(nextTab);
     };

@@ -48,8 +48,11 @@
 }
 
 .tableScroll {
-    height: 100%;
-    overflow: auto;
+    flex: 1;
+    /* allow horizontal scrolling for wide tables, but let vertical scrolling be handled by the page
+       to avoid nested/competing vertical scrollbars */
+    overflow-x: auto;
+    overflow-y: visible;
 }
 
 .rightPanel {
