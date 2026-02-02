@@ -3,7 +3,9 @@ extend-exclude = [
     "packages/e2e-tests/playwright-report/*",
     "translationMigrations/*",
     "patches/*",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "app/public/*
+
 ]
 [default.extend-identifiers]
     CoordinatedAssessementIcon = "CoordinatedAssessementIcon"
