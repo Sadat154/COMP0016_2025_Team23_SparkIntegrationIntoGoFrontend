@@ -3,40 +3,46 @@
 }
 
 .layout {
-    display: grid;
-    grid-template-columns: 280px 1fr 320px;
-    grid-template-areas:
-        "filters map right"
-        "table table right";
+    display: flex;
+    flex-direction: column;
     gap: var(--go-ui-spacing-md);
     padding: var(--go-ui-spacing-md);
 }
 
 .filtersCard {
-    grid-area: filters;
     padding: var(--go-ui-spacing-md);
+    background-color: var(--go-ui-color-foreground);
+    border-radius: var(--go-ui-border-radius-lg);
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: var(--go-ui-spacing-md);
+    align-items: end;
+}
+
+.filterItem {
+    flex: 1 1 180px;
+    min-width: 180px;
 }
 
 .clearRow {
-    margin-top: var(--go-ui-spacing-xs);
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+    margin-top: 0;
+    align-self: flex-end;
 }
 
 .mapCard {
-    grid-area: map;
     background-color: var(--go-ui-color-background);
     border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: var(--go-ui-border-radius-lg);
     overflow: hidden;
-    height: 360px;
+    min-height: 420px;
     display: flex;
     flex-direction: column;
 }
 
 .tableCard {
-    grid-area: table;
     background-color: var(--go-ui-color-foreground);
     border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: var(--go-ui-border-radius-lg);
@@ -81,23 +87,21 @@
     overflow-y: visible;
 }
 
-.rightPanel {
-    grid-area: right;
+.ownerRow {
     display: flex;
-    flex-direction: column;
-    gap: var(--go-ui-spacing-md);
+    justify-content: stretch;
 }
 
 .ownerCard {
     background-color: var(--go-ui-color-foreground);
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: var(--go-ui-border-radius-lg);
     padding: var(--go-ui-spacing-md);
+    width: 100%;
 }
 
 .ownerHeader {
     font-weight: var(--go-ui-font-weight-bold);
-    margin-bottom: var(--go-ui-spacing-sm);
+    margin-bottom: 0;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -109,8 +113,8 @@
 }
 
 .ownerButtons {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--go-ui-spacing-sm);
 }
 

@@ -72,12 +72,12 @@ interface WarehouseStock {
 
 interface Props {
     data: WarehouseStock[];
-    selectedCountryName?: string | undefined;
-    onCountrySelect?: (countryName: string | undefined) => void;
+    selectedCountryNames?: string[] | undefined;
+    onCountrySelect?: (countryNames: string[] | undefined) => void;
 }
 
 function WarehouseStocksMap(props: Props) {
-    const { data, selectedCountryName, onCountrySelect } = props;
+    const { data, selectedCountryNames, onCountrySelect } = props;
 
     const tokenRaw = (mbtoken ?? '').trim();
     const hasToken = /^pk\./.test(tokenRaw);
@@ -224,14 +224,17 @@ function WarehouseStocksMap(props: Props) {
             return true;
         }
 
-        if (selectedCountryName && props2.iso3 === selectedCountryName) {
-            onCountrySelect(undefined);
+        const current = selectedCountryNames ?? [];
+        const exists = current.includes(props2.iso3);
+        if (exists) {
+            const next = current.filter((c) => c !== props2.iso3);
+            onCountrySelect(next.length > 0 ? next : undefined);
         } else {
-            onCountrySelect(props2.iso3);
+            onCountrySelect([...current, props2.iso3]);
         }
 
         return true;
-    }, [onCountrySelect, selectedCountryName]);
+    }, [onCountrySelect, selectedCountryNames]);
 
     const sourceOptions = useMemo<GeoJSONSourceRaw>(() => ({
         type: 'geojson',
@@ -242,14 +245,14 @@ function WarehouseStocksMap(props: Props) {
         'circle-color': '#F5333F',
         'circle-opacity': [
             'case',
-            ['==', ['get', 'iso3'], selectedCountryName ?? ''],
+            ['in', ['get', 'iso3'], ['literal', selectedCountryNames ?? []]],
             0.85, // Higher opacity for selected
             0.55, // Normal opacity
         ],
         'circle-stroke-color': '#F5333F',
         'circle-stroke-width': [
             'case',
-            ['==', ['get', 'iso3'], selectedCountryName ?? ''],
+            ['in', ['get', 'iso3'], ['literal', selectedCountryNames ?? []]],
             3, // Thicker stroke for selected
             0.5,
         ],
@@ -263,7 +266,7 @@ function WarehouseStocksMap(props: Props) {
             10000, 12,
             100000, 18,
         ],
-    }), [selectedCountryName]);
+    }), [selectedCountryNames]);
 
     const bubbleLayer = useMemo<Omit<CircleLayer, 'id'>>(() => ({
         type: 'circle',

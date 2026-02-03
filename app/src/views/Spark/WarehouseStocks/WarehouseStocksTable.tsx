@@ -7,6 +7,7 @@ import {
 import {
     Button,
     Container,
+    MultiSelectInput,
     SelectInput,
     Pager,
     Table,
@@ -79,7 +80,7 @@ function getOwner(): OwnerKey {
 
 function WarehouseStocksTable() {
     const [filterRegion, setFilterRegion] = useState<string | undefined>();
-    const [filterCountry, setFilterCountry] = useState<string | undefined>();
+    const [filterCountries, setFilterCountries] = useState<string[] | undefined>();
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
 
@@ -142,7 +143,7 @@ function WarehouseStocksTable() {
         params.set('page', String(page));
         params.set('page_size', String(pageSize));
         if (filterRegion) params.set('region', filterRegion);
-        if (filterCountry) params.set('country_iso3', filterCountry);
+        if (filterCountries && filterCountries.length > 0) params.set('country_iso3', filterCountries.join(','));
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
         // sort mapping: frontend sorts use column ids like 'quantity' or 'item_name'
@@ -184,7 +185,7 @@ function WarehouseStocksTable() {
         return () => {
             mounted = false;
         };
-    }, [page, pageSize, filterRegion, filterCountry, filterItemGroup, filterItemName, sortState.sorting]);
+    }, [page, pageSize, filterRegion, filterCountries, filterItemGroup, filterItemName, sortState.sorting]);
 
     // Fetch aggregated per-country data for the map (uses server aggregation endpoint)
     useEffect(() => {
@@ -192,9 +193,8 @@ function WarehouseStocksTable() {
         setAggregatedPending(true);
 
         const params = new URLSearchParams();
-        // aggregated endpoint expects filters; we don't include country filter here so map shows all
+        // aggregated endpoint expects filters; we don't include country filter here so map shows all countries
         if (filterRegion) params.set('region', filterRegion);
-        if (filterCountry) params.set('country_iso3', filterCountry);
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
 
@@ -216,12 +216,12 @@ function WarehouseStocksTable() {
         return () => {
             mounted = false;
         };
-    }, [filterRegion, filterCountry, filterItemGroup, filterItemName]);
+    }, [filterRegion, filterItemGroup, filterItemName]);
 
     // Reset to first page when filters change
     useEffect(() => {
         setPage(1);
-    }, [filterRegion, filterCountry, filterItemGroup, filterItemName]);
+    }, [filterRegion, filterCountries, filterItemGroup, filterItemName]);
 
     // Fetch ALL matching rows in background (paged) to compute global stats
     useEffect(() => {
@@ -234,7 +234,7 @@ function WarehouseStocksTable() {
         const fetchPageSize = 1000;
         params.set('page_size', String(fetchPageSize));
         if (filterRegion) params.set('region', filterRegion);
-        if (filterCountry) params.set('country_iso3', filterCountry);
+        if (filterCountries && filterCountries.length > 0) params.set('country_iso3', filterCountries.join(','));
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
 
@@ -270,7 +270,7 @@ function WarehouseStocksTable() {
                     u.searchParams.set('page', String(p));
                     u.searchParams.set('page_size', String(fetchPageSize));
                     if (filterRegion) u.searchParams.set('region', filterRegion);
-                        if (filterCountry) u.searchParams.set('country_iso3', filterCountry);
+                    if (filterCountries && filterCountries.length > 0) u.searchParams.set('country_iso3', filterCountries.join(','));
                     if (filterItemGroup) u.searchParams.set('item_group', filterItemGroup);
                     if (filterItemName) u.searchParams.set('item_name', filterItemName);
                     remainingPromises.push(fetch(u.toString()));
@@ -295,7 +295,7 @@ function WarehouseStocksTable() {
         return () => {
             mounted = false;
         };
-    }, [filterRegion, filterCountry, filterItemGroup, filterItemName, sortState.sorting]);
+    }, [filterRegion, filterCountries, filterItemGroup, filterItemName, sortState.sorting]);
 
     const regionOptions = useMemo(() => {
         const fromDistinct = (regionsOpt || []).filter(isDefined);
@@ -342,14 +342,18 @@ function WarehouseStocksTable() {
     } as WarehouseStock)), [aggregatedData]);
 
     const selectedCountryHasData = useMemo(() => {
-        if (!filterCountry) return true; // no country selected => show table
+        if (!filterCountries || filterCountries.length === 0) return true; // no country selected => show table
         if (aggregatedPending) return true; // still loading aggregated info; avoid showing empty prematurely
-        const found = (aggregatedData || []).find((a) => ((a.country_iso3 || a.country || '') as string).toUpperCase() === filterCountry.toUpperCase());
-        if (!found) return false;
-        const count = typeof found.warehouse_count === 'number' ? found.warehouse_count : 0;
-        const qty = parseQty(found.total_quantity) ?? 0;
-        return count > 0 || qty > 0;
-    }, [filterCountry, aggregatedData, aggregatedPending]);
+        const found = (aggregatedData || []).filter((a) => filterCountries.some(
+            (c) => ((a.country_iso3 || a.country || '') as string).toUpperCase() === c.toUpperCase(),
+        ));
+        if (!found || found.length === 0) return false;
+        return found.some((f) => {
+            const count = typeof f.warehouse_count === 'number' ? f.warehouse_count : 0;
+            const qty = parseQty(f.total_quantity) ?? 0;
+            return count > 0 || qty > 0;
+        });
+    }, [filterCountries, aggregatedData, aggregatedPending]);
 
     const columns = useMemo(
         () => [
@@ -420,13 +424,13 @@ function WarehouseStocksTable() {
 
     const handleClearAll = useCallback(() => {
         setFilterRegion(undefined);
-        setFilterCountry(undefined);
+        setFilterCountries(undefined);
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
         setOwner('IFRC');
     }, []);
 
-    const hasFilters = Boolean(filterRegion || filterCountry || filterItemGroup || filterItemName);
+    const hasFilters = Boolean(filterRegion || (filterCountries && filterCountries.length > 0) || filterItemGroup || filterItemName);
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
 
     const totalPages = total && pageSize ? Math.ceil(total / pageSize) : 1;
@@ -441,7 +445,9 @@ function WarehouseStocksTable() {
         }
 
         if (filterRegion) base = base.filter((i) => i.region === filterRegion);
-        if (filterCountry) base = base.filter((i) => i.country_iso3 === filterCountry);
+        if (filterCountries && filterCountries.length > 0) {
+            base = base.filter((i) => filterCountries.includes(i.country_iso3 ?? ''));
+        }
         if (filterItemName) base = base.filter((i) => i.item_name === filterItemName);
 
         const totals = new Map<string, number>();
@@ -457,88 +463,46 @@ function WarehouseStocksTable() {
 
         const max = rows[0]?.value ?? 0;
         return { rows, max };
-    }, [allData, tableData, filterRegion, filterCountry, filterItemName, owner]);
+    }, [allData, tableData, filterRegion, filterCountries, filterItemName, owner]);
+
+    const ownerStats = useMemo(() => {
+        let base = allData ?? tableData;
+        if (owner) {
+            base = base.filter(() => getOwner() === owner);
+        }
+
+        const warehouses = new Set<string>();
+        const itemGroups = new Set<string>();
+
+        base.forEach((row) => {
+            if (row.warehouse_name) {
+                warehouses.add(row.warehouse_name);
+            }
+            if (row.item_group) {
+                itemGroups.add(row.item_group);
+            }
+        });
+
+        return {
+            ifrcWarehouses: warehouses.size,
+            ifrcItemGroups: itemGroups.size,
+        };
+    }, [allData, tableData, owner]);
 
     // pagination removed — table shows all fetched rows on the map
 
     return (
         <Container
             className={styles.page}
-            description={filterCountry ? `Showing data for ${iso3ToName.get(filterCountry) ?? filterCountry}. Click the map bubble again or use filters to change selection.` : 'Click on a country bubble in the map to filter, or use the filters on the left.'}
+            description={filterCountries && filterCountries.length > 0
+                ? `Showing data for ${(filterCountries.map((c) => iso3ToName.get(c) ?? c)).join(', ')}. Click the map bubble again or use filters above to change selection.`
+                : 'Click on a country bubble in the map to filter, or use the filters above.'}
             headingLevel={2}
         >
             <div className={styles.layout}>
-                {/* Filters card */}
-                <div className={styles.filtersCard}>
-                    <SelectInput
-                        placeholder="All Regions"
-                        label="Region"
-                        name={undefined}
-                        value={filterRegion}
-                        onChange={setFilterRegion}
-                        keySelector={stringKeySelector}
-                        labelSelector={stringLabelSelector}
-                        options={regionOptions}
-                    />
-                    <SelectInput
-                        placeholder="All Countries"
-                        label="Country"
-                        name={undefined}
-                        value={filterCountry}
-                        onChange={setFilterCountry}
-                        keySelector={stringKeySelector}
-                        labelSelector={stringLabelSelector}
-                        options={countryOptions}
-                    />
-                    <SelectInput
-                        placeholder="All Item groups"
-                        label="Item group"
-                        name={undefined}
-                        value={filterItemGroup}
-                        onChange={setFilterItemGroup}
-                        keySelector={stringKeySelector}
-                        labelSelector={stringLabelSelector}
-                        options={itemGroupOptions}
-                    />
-                    <SelectInput
-                        placeholder="All Item names"
-                        label="Item name"
-                        name={undefined}
-                        value={filterItemName}
-                        onChange={setFilterItemName}
-                        keySelector={stringKeySelector}
-                        labelSelector={stringLabelSelector}
-                        options={itemNameOptions}
-                    />
-
-                    {(hasFilters || owner !== 'IFRC') && (
-                        <div className={styles.clearRow}>
-                            <Button
-                                name={undefined}
-                                onClick={handleClearAll}
-                            >
-                                Clear Filters
-                            </Button>
-                        </div>
-                    )}
-                </div>
-
-                {/* MAP */}
-                <div className={styles.mapCard}>
-                    <WarehouseStocksMap
-                        data={mapData}
-                        selectedCountryName={filterCountry}
-                        onCountrySelect={setFilterCountry}
-                    />
-                </div>
-
-                {/* Right panel (Owner + Bar chart) */}
-                <div className={styles.rightPanel}>
+                {/* Owner filters (top row) */}
+                <div className={styles.ownerRow}>
                     <div className={styles.ownerCard}>
-                        <div className={styles.ownerHeader}>
-                            <div>Owner</div>
-                        </div>
-
                         <div className={styles.ownerButtons}>
                             <button
                                 type="button"
@@ -547,7 +511,9 @@ function WarehouseStocksTable() {
                                 onClick={() => setOwner('IFRC')}
                             >
                                 <div className={styles.ownerLineBig}>IFRC</div>
-                                <div className={styles.ownerLineSmall}>All current data</div>
+                                <div className={styles.ownerLineSmall}>
+                                    {ownerStats.ifrcWarehouses} warehouses | {ownerStats.ifrcItemGroups} item categories
+                                </div>
                             </button>
 
                             <button
@@ -557,7 +523,7 @@ function WarehouseStocksTable() {
                                 title="No data yet"
                             >
                                 <div className={styles.ownerLineBig}>ICRC</div>
-                                <div className={styles.ownerLineSmall}>0</div>
+                                <div className={styles.ownerLineSmall}>0 warehouses | 0 item categories</div>
                             </button>
 
                             <button
@@ -567,53 +533,81 @@ function WarehouseStocksTable() {
                                 title="No data yet"
                             >
                                 <div className={styles.ownerLineBig}>NS</div>
-                                <div className={styles.ownerLineSmall}>0</div>
+                                <div className={styles.ownerLineSmall}>0 warehouses | 0 item categories</div>
                             </button>
                         </div>
                     </div>
+                </div>
 
-                    <div className={styles.chartCard}>
-                        <div className={styles.chartHeader}>
-                            <div className={styles.chartTitle}>Item Groups by Quantity</div>
-                            {filterItemGroup && (
-                                <Button
-                                    name={undefined}
-                                    onClick={() => setFilterItemGroup(undefined)}
-                                >
-                                    Clear
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className={styles.chartBody}>
-                            {chartData.rows.length === 0 ? (
-                                <div className={styles.chartEmpty}>No items</div>
-                            ) : (
-                                chartData.rows.map((r) => {
-                                    const pct = chartData.max > 0 ? (r.value / chartData.max) * 100 : 0;
-                                    const isActive = filterItemGroup === r.label;
-                                    return (
-                                        <button
-                                            type="button"
-                                            className={styles.chartRow}
-                                            key={r.label}
-                                            data-active={isActive}
-                                            onClick={() => setFilterItemGroup(isActive ? undefined : r.label)}
-                                            title={r.label}
-                                        >
-                                            <div className={styles.chartLabel}>{r.label}</div>
-                                            <div className={styles.chartBarWrap}>
-                                                <div className={styles.chartBar} style={{ width: `${pct}%` }} />
-                                            </div>
-                                            <div className={styles.chartValue}>
-                                                {Math.round(r.value).toLocaleString()}
-                                            </div>
-                                        </button>
-                                    );
-                                })
-                            )}
-                        </div>
+                {/* Stock filters (second row) */}
+                <div className={styles.filtersCard}>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            placeholder="All Regions"
+                            label="Region"
+                            name={undefined}
+                            value={filterRegion}
+                            onChange={setFilterRegion}
+                            keySelector={stringKeySelector}
+                            labelSelector={stringLabelSelector}
+                            options={regionOptions}
+                        />
                     </div>
+                    <div className={styles.filterItem}>
+                        <MultiSelectInput
+                            placeholder="All Countries"
+                            label="Country"
+                            name={undefined}
+                            value={filterCountries}
+                            onChange={setFilterCountries}
+                            keySelector={stringKeySelector}
+                            labelSelector={stringLabelSelector}
+                            options={countryOptions}
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            placeholder="All Item groups"
+                            label="Item group"
+                            name={undefined}
+                            value={filterItemGroup}
+                            onChange={setFilterItemGroup}
+                            keySelector={stringKeySelector}
+                            labelSelector={stringLabelSelector}
+                            options={itemGroupOptions}
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            placeholder="All Item names"
+                            label="Item name"
+                            name={undefined}
+                            value={filterItemName}
+                            onChange={setFilterItemName}
+                            keySelector={stringKeySelector}
+                            labelSelector={stringLabelSelector}
+                            options={itemNameOptions}
+                        />
+                    </div>
+
+                    <div className={styles.clearRow}>
+                        <Button
+                            name={undefined}
+                            onClick={handleClearAll}
+                            variant={hasFilters || owner !== 'IFRC' ? undefined : 'secondary'}
+                        >
+                            Clear Filters
+                        </Button>
+                    </div>
+                </div>
+
+                {/* MAP */}
+                <div className={styles.mapCard}>
+                    <WarehouseStocksMap
+                        data={mapData}
+                        selectedCountryNames={filterCountries}
+                        onCountrySelect={setFilterCountries}
+                    />
                 </div>
 
                 {/* Table */}
@@ -637,7 +631,7 @@ function WarehouseStocksTable() {
                     </div>
                     <div className={styles.tableScroll}>
                         <SortContext.Provider value={sortState}>
-                            {filterCountry && !pending && !selectedCountryHasData ? (
+                            {filterCountries && filterCountries.length > 0 && !pending && !selectedCountryHasData ? (
                                 <DefaultMessage
                                     empty
                                     emptyMessage="No data found for the selected country"
@@ -652,6 +646,50 @@ function WarehouseStocksTable() {
                                 />
                             )}
                         </SortContext.Provider>
+                    </div>
+                </div>
+
+                {/* Chart (below table) */}
+                <div className={styles.chartCard}>
+                    <div className={styles.chartHeader}>
+                        <div className={styles.chartTitle}>Item Groups by Quantity</div>
+                        {filterItemGroup && (
+                            <Button
+                                name={undefined}
+                                onClick={() => setFilterItemGroup(undefined)}
+                            >
+                                Clear
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className={styles.chartBody}>
+                        {chartData.rows.length === 0 ? (
+                            <div className={styles.chartEmpty}>No items</div>
+                        ) : (
+                            chartData.rows.map((r) => {
+                                const pct = chartData.max > 0 ? (r.value / chartData.max) * 100 : 0;
+                                const isActive = filterItemGroup === r.label;
+                                return (
+                                    <button
+                                        type="button"
+                                        className={styles.chartRow}
+                                        key={r.label}
+                                        data-active={isActive}
+                                        onClick={() => setFilterItemGroup(isActive ? undefined : r.label)}
+                                        title={r.label}
+                                    >
+                                        <div className={styles.chartLabel}>{r.label}</div>
+                                        <div className={styles.chartBarWrap}>
+                                            <div className={styles.chartBar} style={{ width: `${pct}%` }} />
+                                        </div>
+                                        <div className={styles.chartValue}>
+                                            {Math.round(r.value).toLocaleString()}
+                                        </div>
+                                    </button>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </div>
