@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
     Button,
     Container,
@@ -50,6 +50,109 @@ interface MatrixRow {
 
 const IFRC_LEGAL_STATUS_QUESTION = 'Is there an existing status agreement for IFRC in the country?';
 const HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION = 'Are there exemptions for humanitarian cargo (duty/VAT)? Legal framework?';
+const COUNTRIES_CSV_URL = '/data/Countries.csv';
+
+const REGION_ID_TO_LABEL: Record<number, string> = {
+    0: 'Africa',
+    1: 'Americas',
+    2: 'Asia Pacific',
+    3: 'Europe',
+    4: 'Middle East and North Africa',
+};
+
+function normalizeName(value: string | null | undefined): string {
+    return (value ?? '')
+        .toLowerCase()
+        // remove anything after comma
+        .split(',')[0]
+        // remove parenthetical content
+        .replace(/\(.*?\)/g, '')
+        // normalize punctuation
+        .replace(/[^a-z\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+// Parses one CSV line handling quotes
+function parseCsvLine(line: string): string[] {
+    const out: string[] = [];
+    let cur = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i += 1) {
+        const ch = line[i];
+
+        if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+                cur += '"';
+                i += 1;
+            } else {
+                inQuotes = !inQuotes;
+            }
+            continue;
+        }
+
+        if (ch === ',' && !inQuotes) {
+            out.push(cur);
+            cur = '';
+            continue;
+        }
+
+        cur += ch;
+    }
+
+    out.push(cur);
+    return out.map((s) => s.trim());
+}
+
+async function loadCountryNameToRegionLabelFromCsv(): Promise<Map<string, string>> {
+    const res = await fetch(COUNTRIES_CSV_URL, { cache: 'no-store' });
+    if (!res.ok) {
+        throw new Error(`Failed to fetch ${COUNTRIES_CSV_URL}: ${res.status}`);
+    }
+
+    const text = await res.text();
+    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (lines.length < 2) {
+        return new Map();
+    }
+
+    const header = parseCsvLine(lines[0]);
+    const idxName = header.indexOf('name');
+    const idxRegion = header.indexOf('region');
+
+    if (idxName === -1 || idxRegion === -1) {
+        return new Map();
+    }
+
+    const map = new Map<string, string>();
+
+    for (let i = 1; i < lines.length; i += 1) {
+        const cols = parseCsvLine(lines[i]);
+
+        const name = cols[idxName] ?? '';
+        const regionRaw = cols[idxRegion] ?? '';
+
+        const nameKey = normalizeName(name);
+        if (!nameKey) {
+            continue;
+        }
+
+        const regionId = Number(regionRaw);
+        if (!Number.isFinite(regionId)) {
+            continue;
+        }
+
+        const label = REGION_ID_TO_LABEL[regionId];
+        if (!label) {
+            continue;
+        }
+
+        map.set(nameKey, label);
+    }
+
+    return map;
+}
 
 function normalizeQuestion(v: string) {
     return v.toLowerCase().trim();
@@ -153,6 +256,8 @@ function CustomRegulationsMatrix() {
     const [searchCountry, setSearchCountry] = useState<string>('');
     const [searchAnswer, setSearchAnswer] = useState<string>('');
 
+    const [countryNameToRegionLabel, setCountryNameToRegionLabel] = useState<Map<string, string>>(new Map());
+
     const handleSearchCountryChange = useCallback((value: string | undefined) => {
         setSearchCountry(value ?? '');
     }, []);
@@ -171,6 +276,25 @@ function CustomRegulationsMatrix() {
         () => apiData?.countries ?? [],
         [apiData],
     );
+
+    useEffect(() => {
+        let mounted = true;
+
+        loadCountryNameToRegionLabelFromCsv()
+            .then((map) => {
+                if (!mounted) return;
+                setCountryNameToRegionLabel(map);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setCountryNameToRegionLabel(new Map());
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
 
     const rows: MatrixRow[] = useMemo(
         () => countries
@@ -192,10 +316,11 @@ function CustomRegulationsMatrix() {
             })
             .map((country, index) => {
                 const countryItems = country.sections?.flatMap((s) => s.items) ?? [];
+                const regionLabel = countryNameToRegionLabel.get(normalizeName(country.country)) ?? 'N/A';
 
                 return {
                     id: index + 1,
-                    region: 'N/A',
+                    region: regionLabel,
                     country: toTitleCase(country.country ?? ''),
                     ifrcLegalStatus: (
                         getAnswerForQuestion(IFRC_LEGAL_STATUS_QUESTION, countryItems)
@@ -212,7 +337,7 @@ function CustomRegulationsMatrix() {
                     countryData: country,
                 };
             }),
-        [countries, searchCountry, searchAnswer],
+        [countries, searchCountry, searchAnswer, countryNameToRegionLabel],
     );
 
     const columns = useMemo(
