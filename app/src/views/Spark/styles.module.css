@@ -2,43 +2,43 @@
     margin: 24px 0 32px 0;
 }
 .tabs {
-    list-style: none;
     margin: 0;
-    padding: 0;
     display: flex;
+    padding: 0;
+    list-style: none;
     gap: 16px;
     align-items: stretch;
 }
 .tab {
     background: #f7f7f7;
-    color: #000000;
     border: none;
     padding: 18px 28px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    cursor: pointer;
     display: inline-block;
+    cursor: pointer;
+    color: #000000;
+    letter-spacing: 0.5px;
+    font-weight: 700;
 }
 .tab:focus {
     outline: 2px solid rgba(245,51,63,0.2);
 }
 .tabSelected {
     background: transparent;
-    color: #F5333F;
     border: none;
     padding: 18px 28px;
-    font-weight: 700;
     border-bottom: 4px solid #F5333F;
     cursor: pointer;
+    color: #F5333F;
+    font-weight: 700;
 }
 
 .tabContent {
     margin-top: 24px;
 }
 .placeholder {
-    padding: 28px 18px;
-    background: #ffffff;
     border: 1px solid #efefef;
+    background: #ffffff;
+    padding: 28px 18px;
     border-radius: 4px;
 }
 .placeholderTitle {
