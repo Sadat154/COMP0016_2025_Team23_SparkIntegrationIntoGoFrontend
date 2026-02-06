@@ -167,6 +167,12 @@
     flex-direction: column;
 }
 
+.chartsRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--go-ui-spacing-md);
+}
+
 .chartHeader {
     display: flex;
     justify-content: space-between;
@@ -186,6 +192,52 @@
     max-height: 380px;
     overflow: auto;
     padding-right: var(--go-ui-spacing-xs);
+}
+
+.verticalChart {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: var(--go-ui-spacing-sm);
+    align-items: end;
+    min-height: 220px;
+}
+
+.verticalBarItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--go-ui-spacing-3xs);
+}
+
+.verticalBar {
+    width: 100%;
+    height: 160px;
+    background-color: var(--go-ui-color-gray-30);
+    border-radius: var(--go-ui-border-radius-sm);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+}
+
+.verticalBarFill {
+    width: 100%;
+    background-color: var(--go-ui-color-primary-red);
+    transition: height var(--go-ui-duration-animation-medium);
+}
+
+.verticalBarLabel {
+    font-size: var(--go-ui-font-size-xs);
+    color: var(--go-ui-color-text);
+    text-align: center;
+    max-width: 72px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.verticalBarValue {
+    font-size: var(--go-ui-font-size-xs);
+    color: var(--go-ui-color-text-description);
 }
 
 .chartRow {
