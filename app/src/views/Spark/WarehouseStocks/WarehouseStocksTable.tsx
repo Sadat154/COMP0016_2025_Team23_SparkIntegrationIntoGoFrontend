@@ -7,11 +7,11 @@ import {
 import {
     Button,
     Container,
-    MultiSelectInput,
-    SelectInput,
-    Pager,
-    Table,
     DefaultMessage,
+    MultiSelectInput,
+    Pager,
+    SelectInput,
+    Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
@@ -20,17 +20,20 @@ import {
 } from '@ifrc-go/ui/utils';
 import {
     isDefined,
-    isNotDefined,
     unique,
 } from '@togglecorp/fujs';
 
-import useFilterState from '#hooks/useFilterState';
 import useCountryRaw from '#hooks/domain/useCountryRaw';
-import { useRequest } from '#utils/restRequest';
+import useFilterState from '#hooks/useFilterState';
 
 import WarehouseStocksMap from './WarehouseStocksMap';
 
 import styles from './WarehouseStocksTable.module.css';
+
+type SelectOption = {
+    key: string;
+    label: string;
+};
 
 interface WarehouseStock {
     id: string;
@@ -71,10 +74,6 @@ function DetailsCell(props: DetailsCellProps) {
     );
 }
 
-interface ApiResponse {
-    results: WarehouseStock[];
-}
-
 function parseQty(v: string | null | undefined): number | undefined {
     if (!v) {
         return undefined;
@@ -100,6 +99,13 @@ function formatQty(v: string | null | undefined): string {
     });
 }
 
+function getPercent(value: number, max: number): number {
+    if (max <= 0) {
+        return 0;
+    }
+    return (value / max) * 100;
+}
+
 type OwnerKey = 'IFRC' | 'ICRC' | 'NS';
 
 // Only IFRC data exists right now
@@ -118,20 +124,16 @@ function WarehouseStocksTable() {
     const { sortState } = useFilterState({ filter: {} });
 
     const [page, setPage] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(50);
+    const [pageSize] = useState<number>(50);
     const [total, setTotal] = useState<number | undefined>();
 
-    const [optionsPending, setOptionsPending] = useState(false);
     const [regionsOpt, setRegionsOpt] = useState<string[]>([]);
-    const [countriesOpt, setCountriesOpt] = useState<string[]>([]);
     const [itemGroupsOpt, setItemGroupsOpt] = useState<string[]>([]);
     const [itemNamesOpt, setItemNamesOpt] = useState<string[]>([]);
 
     const [pending, setPending] = useState(false);
     const [tableData, setTableData] = useState<WarehouseStock[]>([]);
-    const [allDataPending, setAllDataPending] = useState(false);
     const [allData, setAllData] = useState<WarehouseStock[] | undefined>();
-    const [gapsDataPending, setGapsDataPending] = useState(false);
     const [gapsData, setGapsData] = useState<WarehouseStock[] | undefined>();
     const [aggregatedPending, setAggregatedPending] = useState(false);
     const [aggregatedData, setAggregatedData] = useState<Array<{
@@ -145,13 +147,11 @@ function WarehouseStocksTable() {
     // Fetch distinct options once
     useMemo(() => {
         let mounted = true;
-        setOptionsPending(true);
         fetch('/api/v1/warehouse-stocks/?distinct=1')
             .then((r) => r.json())
             .then((data) => {
                 if (!mounted) return;
                 setRegionsOpt(data.regions || []);
-                setCountriesOpt(data.countries || []);
                 setItemGroupsOpt(data.item_groups || []);
                 setItemNamesOpt(data.item_names || []);
             })
@@ -159,7 +159,7 @@ function WarehouseStocksTable() {
                 // ignore
             })
             .finally(() => {
-                if (mounted) setOptionsPending(false);
+                // ignore
             });
         return () => {
             mounted = false;
@@ -174,7 +174,9 @@ function WarehouseStocksTable() {
         params.set('page', String(page));
         params.set('page_size', String(pageSize));
         if (filterRegion) params.set('region', filterRegion);
-        if (filterCountries && filterCountries.length > 0) params.set('country_iso3', filterCountries.join(','));
+        if (filterCountries && filterCountries.length > 0) {
+            params.set('country_iso3', filterCountries.join(','));
+        }
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
         // sort mapping: frontend sorts use column ids like 'quantity' or 'item_name'
@@ -216,7 +218,15 @@ function WarehouseStocksTable() {
         return () => {
             mounted = false;
         };
-    }, [page, pageSize, filterRegion, filterCountries, filterItemGroup, filterItemName, sortState.sorting]);
+    }, [
+        page,
+        pageSize,
+        filterRegion,
+        filterCountries,
+        filterItemGroup,
+        filterItemName,
+        sortState.sorting,
+    ]);
 
     // Fetch aggregated per-country data for the map (uses server aggregation endpoint)
     useEffect(() => {
@@ -224,7 +234,8 @@ function WarehouseStocksTable() {
         setAggregatedPending(true);
 
         const params = new URLSearchParams();
-        // aggregated endpoint expects filters; we don't include country filter here so map shows all countries
+        // aggregated endpoint expects filters; we don't include country filter here
+        // so map shows all countries
         if (filterRegion) params.set('region', filterRegion);
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
@@ -252,12 +263,16 @@ function WarehouseStocksTable() {
     // Reset to first page when filters change
     useEffect(() => {
         setPage(1);
-    }, [filterRegion, filterCountries, filterItemGroup, filterItemName]);
+    }, [
+        filterRegion,
+        filterCountries,
+        filterItemGroup,
+        filterItemName,
+    ]);
 
     // Fetch ALL matching rows in background (paged) to compute global stats
     useEffect(() => {
         let mounted = true;
-        setAllDataPending(true);
         setAllData(undefined);
 
         const params = new URLSearchParams();
@@ -265,7 +280,9 @@ function WarehouseStocksTable() {
         const fetchPageSize = 1000;
         params.set('page_size', String(fetchPageSize));
         if (filterRegion) params.set('region', filterRegion);
-        if (filterCountries && filterCountries.length > 0) params.set('country_iso3', filterCountries.join(','));
+        if (filterCountries && filterCountries.length > 0) {
+            params.set('country_iso3', filterCountries.join(','));
+        }
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
 
@@ -301,7 +318,9 @@ function WarehouseStocksTable() {
                     u.searchParams.set('page', String(p));
                     u.searchParams.set('page_size', String(fetchPageSize));
                     if (filterRegion) u.searchParams.set('region', filterRegion);
-                    if (filterCountries && filterCountries.length > 0) u.searchParams.set('country_iso3', filterCountries.join(','));
+                    if (filterCountries && filterCountries.length > 0) {
+                        u.searchParams.set('country_iso3', filterCountries.join(','));
+                    }
                     if (filterItemGroup) u.searchParams.set('item_group', filterItemGroup);
                     if (filterItemName) u.searchParams.set('item_name', filterItemName);
                     remainingPromises.push(fetch(u.toString()));
@@ -309,10 +328,14 @@ function WarehouseStocksTable() {
 
                 try {
                     const responses = await Promise.all(remainingPromises);
-                    const jsons = await Promise.all(responses.map((r) => r.json().catch(() => ({}))));
-                    const moreRows: WarehouseStock[] = jsons.flatMap((j) => (Array.isArray(j.results) ? j.results : []));
+                    const jsons = await Promise.all(
+                        responses.map((r) => r.json().catch(() => ({}))),
+                    );
+                    const moreRows: WarehouseStock[] = jsons.flatMap(
+                        (j) => (Array.isArray(j.results) ? j.results : []),
+                    );
                     if (mounted) setAllData(results.concat(moreRows));
-                } catch (e) {
+                } catch {
                     if (mounted) setAllData(results);
                 }
             })
@@ -320,18 +343,23 @@ function WarehouseStocksTable() {
                 if (mounted) setAllData(undefined);
             })
             .finally(() => {
-                if (mounted) setAllDataPending(false);
+                // ignore
             });
 
         return () => {
             mounted = false;
         };
-    }, [filterRegion, filterCountries, filterItemGroup, filterItemName, sortState.sorting]);
+    }, [
+        filterRegion,
+        filterCountries,
+        filterItemGroup,
+        filterItemName,
+        sortState.sorting,
+    ]);
 
     // Fetch ALL matching rows in background for gaps chart (ignore item category filter)
     useEffect(() => {
         let mounted = true;
-        setGapsDataPending(true);
         setGapsData(undefined);
 
         const params = new URLSearchParams();
@@ -339,7 +367,9 @@ function WarehouseStocksTable() {
         const fetchPageSize = 1000;
         params.set('page_size', String(fetchPageSize));
         if (filterRegion) params.set('region', filterRegion);
-        if (filterCountries && filterCountries.length > 0) params.set('country_iso3', filterCountries.join(','));
+        if (filterCountries && filterCountries.length > 0) {
+            params.set('country_iso3', filterCountries.join(','));
+        }
         if (filterItemName) params.set('item_name', filterItemName);
 
         const baseUrl = `/api/v1/warehouse-stocks/?${params.toString()}`;
@@ -373,17 +403,23 @@ function WarehouseStocksTable() {
                     u.searchParams.set('page', String(p));
                     u.searchParams.set('page_size', String(fetchPageSize));
                     if (filterRegion) u.searchParams.set('region', filterRegion);
-                    if (filterCountries && filterCountries.length > 0) u.searchParams.set('country_iso3', filterCountries.join(','));
+                    if (filterCountries && filterCountries.length > 0) {
+                        u.searchParams.set('country_iso3', filterCountries.join(','));
+                    }
                     if (filterItemName) u.searchParams.set('item_name', filterItemName);
                     remainingPromises.push(fetch(u.toString()));
                 }
 
                 try {
                     const responses = await Promise.all(remainingPromises);
-                    const jsons = await Promise.all(responses.map((r) => r.json().catch(() => ({}))));
-                    const moreRows: WarehouseStock[] = jsons.flatMap((j) => (Array.isArray(j.results) ? j.results : []));
+                    const jsons = await Promise.all(
+                        responses.map((r) => r.json().catch(() => ({}))),
+                    );
+                    const moreRows: WarehouseStock[] = jsons.flatMap(
+                        (j) => (Array.isArray(j.results) ? j.results : []),
+                    );
                     if (mounted) setGapsData(results.concat(moreRows));
-                } catch (e) {
+                } catch {
                     if (mounted) setGapsData(results);
                 }
             })
@@ -391,19 +427,28 @@ function WarehouseStocksTable() {
                 if (mounted) setGapsData(undefined);
             })
             .finally(() => {
-                if (mounted) setGapsDataPending(false);
+                // ignore
             });
 
         return () => {
             mounted = false;
         };
-    }, [filterRegion, filterCountries, filterItemName, sortState.sorting]);
+    }, [
+        filterRegion,
+        filterCountries,
+        filterItemName,
+        sortState.sorting,
+    ]);
 
     const regionOptions = useMemo(() => {
         const fromDistinct = (regionsOpt || []).filter(isDefined);
         const fromAggregated = (aggregatedData || []).map((a) => a.region).filter(isDefined);
         const fromAll = (allData || []).map((r) => r.region).filter(isDefined);
-        const combined = unique([...fromDistinct, ...fromAggregated, ...fromAll]);
+        const combined = unique([
+            ...fromDistinct,
+            ...fromAggregated,
+            ...fromAll,
+        ]);
         return combined.map((r) => ({ key: r as string, label: r as string }));
     }, [regionsOpt, aggregatedData, allData]);
     const countriesRaw = useCountryRaw();
@@ -422,34 +467,49 @@ function WarehouseStocksTable() {
         const results = countriesRaw ?? [];
         return results
             .filter((c) => c.iso3 && c.name)
-            .map((c) => ({ key: c.iso3 as string, label: c.name as string }));
+            .map((c) => ({
+                key: c.iso3 as string,
+                label: c.name as string,
+            }));
     }, [countriesRaw]);
-    const itemGroupOptions = useMemo(() => (itemGroupsOpt || []).map((g) => ({ key: g, label: g })), [itemGroupsOpt]);
-    const itemNameOptions = useMemo(() => (itemNamesOpt || []).map((n) => ({ key: n, label: n })), [itemNamesOpt]);
+    const itemGroupOptions = useMemo(
+        () => (itemGroupsOpt || []).map((g) => ({ key: g, label: g })),
+        [itemGroupsOpt],
+    );
+    const itemNameOptions = useMemo(
+        () => (itemNamesOpt || []).map((n) => ({ key: n, label: n })),
+        [itemNamesOpt],
+    );
 
     // Convert aggregated per-country response into a synthetic WarehouseStock[] for map
-    const mapData = useMemo(() => (aggregatedData || []).map((a) => ({
-        id: (a.country_iso3 || a.country || '') as string,
-        region: a.region ?? null,
-        country: a.country ?? null,
-        country_iso3: a.country_iso3 ?? null,
-        warehouse_name: null,
-        // include warehouse_count so map component can show accurate counts
-        warehouse_count: a.warehouse_count ?? undefined,
-        item_group: null,
-        item_name: null,
-        item_number: null,
-        item_status_name: null,
-        unit: null,
-        quantity: a.total_quantity ?? null,
-    } as WarehouseStock)), [aggregatedData]);
+    const mapData = useMemo(
+        () => (aggregatedData || []).map((a) => ({
+            id: (a.country_iso3 || a.country || '') as string,
+            region: a.region ?? null,
+            country: a.country ?? null,
+            country_iso3: a.country_iso3 ?? null,
+            warehouse_name: null,
+            // include warehouse_count so map component can show accurate counts
+            warehouse_count: a.warehouse_count ?? undefined,
+            item_group: null,
+            item_name: null,
+            item_number: null,
+            item_status_name: null,
+            unit: null,
+            quantity: a.total_quantity ?? null,
+        } as WarehouseStock)),
+        [aggregatedData],
+    );
 
     const selectedCountryHasData = useMemo(() => {
-        if (!filterCountries || filterCountries.length === 0) return true; // no country selected => show table
-        if (aggregatedPending) return true; // still loading aggregated info; avoid showing empty prematurely
-        const found = (aggregatedData || []).filter((a) => filterCountries.some(
-            (c) => ((a.country_iso3 || a.country || '') as string).toUpperCase() === c.toUpperCase(),
-        ));
+        if (!filterCountries || filterCountries.length === 0) return true;
+        if (aggregatedPending) return true;
+        const found = (aggregatedData || []).filter(
+            (a) => filterCountries.some(
+                (c) => ((a.country_iso3 || a.country || '') as string)
+                    .toUpperCase() === c.toUpperCase(),
+            ),
+        );
         if (!found || found.length === 0) return false;
         return found.some((f) => {
             const count = typeof f.warehouse_count === 'number' ? f.warehouse_count : 0;
@@ -494,20 +554,13 @@ function WarehouseStocksTable() {
                 'quantity',
                 'Quantity',
                 (item) => formatQty(item.quantity),
-                {
-                    sortable: true,
-                    valueComparator: (a, b) => {
-                        const an = parseQty(a.quantity) ?? -Infinity;
-                        const bn = parseQty(b.quantity) ?? -Infinity;
-                        return an - bn;
-                    },
-                },
+                { sortable: true },
             ),
             createElementColumn<WarehouseStock, string, DetailsCellProps>(
                 'details',
                 'Details',
                 DetailsCell,
-                (id, item) => ({
+                (_, item) => ({
                     url: item.item_url,
                 }),
             ),
@@ -530,8 +583,9 @@ function WarehouseStocksTable() {
     // Server handles filtering and sorting, so table uses raw data
     const displayData = tableData;
 
-    const stringKeySelector = useCallback((option: { key: string }) => option.key, []);
-    const stringLabelSelector = useCallback((option: { label: string }) => option.label, []);
+    const stringKeySelector = useCallback((option: SelectOption) => option.key, []);
+    const stringLabelSelector = useCallback((option: SelectOption) => option.label, []);
+    const emptyOptions = useMemo<SelectOption[]>(() => [], []);
 
     const handleClearAll = useCallback(() => {
         setFilterRegion(undefined);
@@ -541,10 +595,7 @@ function WarehouseStocksTable() {
         setOwner('IFRC');
     }, []);
 
-    const hasFilters = Boolean(filterRegion || (filterCountries && filterCountries.length > 0) || filterItemGroup || filterItemName);
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
-
-    const totalPages = total && pageSize ? Math.ceil(total / pageSize) : 1;
 
     const chartData = useMemo(() => {
         // Use the full dataset when available so statistics reflect all matching rows,
@@ -574,7 +625,14 @@ function WarehouseStocksTable() {
 
         const max = rows[0]?.value ?? 0;
         return { rows, max };
-    }, [allData, tableData, filterRegion, filterCountries, filterItemName, owner]);
+    }, [
+        allData,
+        tableData,
+        filterRegion,
+        filterCountries,
+        filterItemName,
+        owner,
+    ]);
 
     const lowStockData = useMemo(() => {
         // Keep this independent from item category filter
@@ -604,7 +662,15 @@ function WarehouseStocksTable() {
 
         const max = rows[rows.length - 1]?.value ?? 0;
         return { rows, max };
-    }, [gapsData, allData, tableData, owner, filterRegion, filterCountries, filterItemName]);
+    }, [
+        gapsData,
+        allData,
+        tableData,
+        owner,
+        filterRegion,
+        filterCountries,
+        filterItemName,
+    ]);
 
     const ownerStats = useMemo(() => {
         let base = allData ?? tableData;
@@ -630,14 +696,18 @@ function WarehouseStocksTable() {
         };
     }, [allData, tableData, owner]);
 
+    const showNoCountryData = Boolean(
+        filterCountries
+        && filterCountries.length > 0
+        && !pending
+        && !selectedCountryHasData,
+    );
+
     // pagination removed — table shows all fetched rows on the map
 
     return (
         <Container
             className={styles.page}
-            description={filterCountries && filterCountries.length > 0
-                ? `Showing data for ${(filterCountries.map((c) => iso3ToName.get(c) ?? c)).join(', ')}. Click the map bubble again or use filters above to change selection.`
-                : 'Click on a country bubble in the map to filter, or use the filters above.'}
             headingLevel={2}
         >
             <div className={styles.layout}>
@@ -653,7 +723,15 @@ function WarehouseStocksTable() {
                             >
                                 <div className={styles.ownerLineBig}>IFRC</div>
                                 <div className={styles.ownerLineSmall}>
-                                    {ownerStats.ifrcWarehouses} warehouses | {ownerStats.ifrcItemGroups} item categories
+                                    {ownerStats.ifrcWarehouses}
+                                    {' '}
+                                    warehouses
+                                    {' '}
+                                    |
+                                    {' '}
+                                    {ownerStats.ifrcItemGroups}
+                                    {' '}
+                                    item categories
                                 </div>
                             </button>
 
@@ -664,7 +742,17 @@ function WarehouseStocksTable() {
                                 title="No data yet"
                             >
                                 <div className={styles.ownerLineBig}>ICRC</div>
-                                <div className={styles.ownerLineSmall}>0 warehouses | 0 item categories</div>
+                                <div className={styles.ownerLineSmall}>
+                                    0
+                                    {' '}
+                                    warehouses
+                                    {' '}
+                                    |
+                                    {' '}
+                                    0
+                                    {' '}
+                                    item categories
+                                </div>
                             </button>
 
                             <button
@@ -674,7 +762,17 @@ function WarehouseStocksTable() {
                                 title="No data yet"
                             >
                                 <div className={styles.ownerLineBig}>NS</div>
-                                <div className={styles.ownerLineSmall}>0 warehouses | 0 item categories</div>
+                                <div className={styles.ownerLineSmall}>
+                                    0
+                                    {' '}
+                                    warehouses
+                                    {' '}
+                                    |
+                                    {' '}
+                                    0
+                                    {' '}
+                                    item categories
+                                </div>
                             </button>
                         </div>
                     </div>
@@ -739,7 +837,7 @@ function WarehouseStocksTable() {
                             onChange={() => undefined}
                             keySelector={stringKeySelector}
                             labelSelector={stringLabelSelector}
-                            options={[]}
+                            options={emptyOptions}
                         />
                     </div>
 
@@ -747,7 +845,6 @@ function WarehouseStocksTable() {
                         <Button
                             name={undefined}
                             onClick={handleClearAll}
-                            variant={hasFilters || owner !== 'IFRC' ? undefined : 'secondary'}
                         >
                             Clear Filters
                         </Button>
@@ -769,7 +866,19 @@ function WarehouseStocksTable() {
                         <div className={styles.tableInfo}>
                             {total !== undefined && (
                                 <span>
-                                    Showing {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, total)} of {total.toLocaleString()} items
+                                    Showing
+                                    {' '}
+                                    {((page - 1) * pageSize) + 1}
+                                    {' '}
+                                    –
+                                    {' '}
+                                    {Math.min(page * pageSize, total)}
+                                    {' '}
+                                    of
+                                    {' '}
+                                    {total.toLocaleString()}
+                                    {' '}
+                                    items
                                 </span>
                             )}
                         </div>
@@ -784,10 +893,13 @@ function WarehouseStocksTable() {
                     </div>
                     <div className={styles.tableScroll}>
                         <SortContext.Provider value={sortState}>
-                            {filterCountries && filterCountries.length > 0 && !pending && !selectedCountryHasData ? (
+                            {showNoCountryData ? (
                                 <DefaultMessage
                                     empty
                                     emptyMessage="No data found for the selected country"
+                                    pending={false}
+                                    filtered={false}
+                                    errored={false}
                                 />
                             ) : (
                                 <Table
@@ -806,7 +918,9 @@ function WarehouseStocksTable() {
                 <div className={styles.chartsRow}>
                     <div className={styles.chartCard}>
                         <div className={styles.chartHeader}>
-                            <div className={styles.chartTitle}>Most Requested Item Categories</div>
+                            <div className={styles.chartTitle}>
+                                Most Requested Item Categories
+                            </div>
                             {filterItemGroup && (
                                 <Button
                                     name={undefined}
@@ -821,53 +935,66 @@ function WarehouseStocksTable() {
                             {chartData.rows.length === 0 ? (
                                 <div className={styles.chartEmpty}>No items</div>
                             ) : (
-                                chartData.rows.map((r) => {
-                                    const pct = chartData.max > 0 ? (r.value / chartData.max) * 100 : 0;
-                                    const isActive = filterItemGroup === r.label;
-                                    return (
-                                        <button
-                                            type="button"
-                                            className={styles.chartRow}
-                                            key={r.label}
-                                            data-active={isActive}
-                                            onClick={() => setFilterItemGroup(isActive ? undefined : r.label)}
-                                            title={r.label}
-                                        >
-                                            <div className={styles.chartLabel}>{r.label}</div>
-                                            <div className={styles.chartBarWrap}>
-                                                <div className={styles.chartBar} style={{ width: `${pct}%` }} />
-                                            </div>
-                                            <div className={styles.chartValue}>
-                                                {Math.round(r.value).toLocaleString()}
-                                            </div>
-                                        </button>
-                                    );
-                                })
+                                chartData.rows.map((r) => (
+                                    <button
+                                        type="button"
+                                        className={styles.chartRow}
+                                        key={r.label}
+                                        data-active={filterItemGroup === r.label}
+                                        onClick={() => setFilterItemGroup(
+                                            filterItemGroup === r.label ? undefined : r.label,
+                                        )}
+                                        title={r.label}
+                                    >
+                                        <div className={styles.chartLabel}>{r.label}</div>
+                                        <div className={styles.chartBarWrap}>
+                                            <div
+                                                className={styles.chartBar}
+                                                style={{
+                                                    width: `${getPercent(r.value, chartData.max)}%`,
+                                                }}
+                                            />
+                                        </div>
+                                        <div className={styles.chartValue}>
+                                            {Math.round(r.value).toLocaleString()}
+                                        </div>
+                                    </button>
+                                ))
                             )}
                         </div>
                     </div>
 
                     <div className={styles.chartCard}>
                         <div className={styles.chartHeader}>
-                            <div className={styles.chartTitle}>Key Items Low or Out of Stock</div>
+                            <div className={styles.chartTitle}>
+                                Key Items Low or Out of Stock
+                            </div>
                         </div>
 
                         <div className={styles.verticalChart}>
                             {lowStockData.rows.length === 0 ? (
                                 <div className={styles.chartEmpty}>No items</div>
                             ) : (
-                                lowStockData.rows.map((r) => {
-                                    const pct = lowStockData.max > 0 ? (r.value / lowStockData.max) * 100 : 0;
-                                    return (
-                                        <div className={styles.verticalBarItem} key={r.label} title={r.label}>
-                                            <div className={styles.verticalBar}>
-                                                <div className={styles.verticalBarFill} style={{ height: `${pct}%` }} />
-                                            </div>
-                                            <div className={styles.verticalBarLabel}>{r.label}</div>
-                                            <div className={styles.verticalBarValue}>{Math.round(r.value).toLocaleString()}</div>
+                                lowStockData.rows.map((r) => (
+                                    <div
+                                        className={styles.verticalBarItem}
+                                        key={r.label}
+                                        title={r.label}
+                                    >
+                                        <div className={styles.verticalBar}>
+                                            <div
+                                                className={styles.verticalBarFill}
+                                                style={{
+                                                    height: `${getPercent(r.value, lowStockData.max)}%`,
+                                                }}
+                                            />
                                         </div>
-                                    );
-                                })
+                                        <div className={styles.verticalBarLabel}>{r.label}</div>
+                                        <div className={styles.verticalBarValue}>
+                                            {Math.round(r.value).toLocaleString()}
+                                        </div>
+                                    </div>
+                                ))
                             )}
                         </div>
                     </div>
