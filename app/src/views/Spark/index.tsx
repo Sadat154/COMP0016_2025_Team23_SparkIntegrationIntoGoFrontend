@@ -65,7 +65,7 @@ export function Component() {
                 >
                     <TabList>
                         <Tab name="spark-dashboard">SPARK Dashboard</Tab>
-                        <Tab name="warehouse-stocks">Warehouse Stocks</Tab>
+                        <Tab name="warehouse-stocks">Stock Inventory</Tab>
                         <Tab name="framework-agreements">Framework Agreements</Tab>
                         <Tab name="pro-bono-services">Pro Bono Services</Tab>
                         <Tab name="custom-regulations">Custom Regulations</Tab>
