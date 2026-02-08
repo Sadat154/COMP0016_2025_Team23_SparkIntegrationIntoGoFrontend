@@ -13,8 +13,8 @@ import {
 import Page from '#components/Page';
 import useRouting from '#hooks/useRouting';
 
-import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
 import ProBonoServicesTable from './tables/ProBonoServicesTable';
+import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
 
 import styles from './styles.module.css';
 
@@ -25,7 +25,6 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
-// eslint-disable-next-line import/prefer-default-export
 export function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
@@ -34,11 +33,12 @@ export function Component() {
 
     const isFrameworkAgreementsRoute = location.pathname.startsWith('/spark/framework-agreements');
     const isCustomRegulationsRoute = location.pathname.startsWith('/spark/custom-regulations');
-    const activeTab: SparkTabKey = isFrameworkAgreementsRoute
-        ? 'framework-agreements'
-        : isCustomRegulationsRoute
-            ? 'custom-regulations'
-            : localActiveTab;
+    let activeTab: SparkTabKey = localActiveTab;
+    if (isFrameworkAgreementsRoute) {
+        activeTab = 'framework-agreements';
+    } else if (isCustomRegulationsRoute) {
+        activeTab = 'custom-regulations';
+    }
 
     const handleTabChange = (nextTab: SparkTabKey) => {
         if (nextTab === 'framework-agreements') {
@@ -58,7 +58,10 @@ export function Component() {
         <Page
             title="SPARK"
             heading="SPARK"
-            description="Centralised Platform for Enhancing Emergency Supply Chain and Decision-Making"
+            description={(
+                'Centralised Platform for Enhancing Emergency Supply Chain '
+                + 'and Decision-Making'
+            )}
         >
             <div className={styles.tabsContainer}>
                 <Tabs
@@ -68,7 +71,7 @@ export function Component() {
                 >
                     <TabList>
                         <Tab name="spark-dashboard">SPARK Dashboard</Tab>
-                        <Tab name="warehouse-stocks">Warehouse Stocks</Tab>
+                        <Tab name="warehouse-stocks">Stock Inventory</Tab>
                         <Tab name="framework-agreements">Framework Agreements</Tab>
                         <Tab name="pro-bono-services">Pro Bono Services</Tab>
                         <Tab name="custom-regulations">Custom Regulations</Tab>
@@ -78,7 +81,9 @@ export function Component() {
                         <div className={styles.tabContent}>
                             <div className={styles.placeholder}>
                                 <h2 className={styles.placeholderTitle}>SPARK Dashboard</h2>
-                                <p className={styles.placeholderText}>Overview map and dashboard widgets.</p>
+                                <p className={styles.placeholderText}>
+                                    Overview map and dashboard widgets.
+                                </p>
                             </div>
                         </div>
                     </TabPanel>
