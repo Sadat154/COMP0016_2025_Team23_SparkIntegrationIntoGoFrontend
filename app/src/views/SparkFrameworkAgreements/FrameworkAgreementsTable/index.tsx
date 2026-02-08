@@ -1,10 +1,12 @@
+/* eslint-disable max-len */
+
 import {
+    type SetStateAction,
     useCallback,
     useEffect,
     useMemo,
     useRef,
     useState,
-    type SetStateAction,
 } from 'react';
 import {
     Button,
@@ -16,8 +18,9 @@ import {
 import { SortContext } from '@ifrc-go/ui/contexts';
 import { createStringColumn } from '@ifrc-go/ui/utils';
 
-import styles from './FrameworkAgreementsTable.module.css';
 import useFilterState from '#hooks/useFilterState';
+
+import styles from './FrameworkAgreementsTable.module.css';
 
 interface FrameworkAgreement {
     fa_number: string;
@@ -73,8 +76,8 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
 
     // Track the previous selectedCountry to only set sort when it changes
     const prevSelectedCountryRef = useRef<string | undefined>(selectedCountry);
-    
-    // When a country is selected (and only when it changes), automatically sort by 
+
+    // When a country is selected (and only when it changes), automatically sort by
     // FA Geographical Coverage (descending) so Local agreements appear first
     useEffect(() => {
         if (selectedCountry && prevSelectedCountryRef.current !== selectedCountry) {
@@ -208,14 +211,14 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
             const isGlobal = item.fa_geographical_coverage?.toLowerCase() === 'global';
             const isLocal = item.fa_geographical_coverage?.toLowerCase() === 'local';
             const matchesCountry = item.pa_bu_country_name?.toLowerCase() === selectedCountry.toLowerCase();
-            
+
             // Show Global agreements always, or Local agreements for the selected country
             const matchesMapSelection = isGlobal || (isLocal && matchesCountry);
             if (!matchesMapSelection) {
                 return false;
             }
         }
-        
+
         const matchesRegion = !selectedRegion
             || item.pa_bu_region_name === selectedRegion;
         const matchesCountry = selectedCountries.length === 0

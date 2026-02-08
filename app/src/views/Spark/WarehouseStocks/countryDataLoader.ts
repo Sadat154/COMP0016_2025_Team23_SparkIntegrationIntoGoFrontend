@@ -82,3 +82,5 @@ export async function loadISO3ToCentroidMap(): Promise<Map<string, [number, numb
     const countries = await loadCountriesData();
     return buildISO3ToCentroidMapFromData(countries);
 }
+
+export default loadISO3ToCentroidMap;

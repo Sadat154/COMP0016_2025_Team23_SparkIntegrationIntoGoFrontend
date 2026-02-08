@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+
 import {
     useCallback,
     useEffect,
@@ -104,7 +106,7 @@ function WarehouseStocksMap(props: Props) {
     }, []);
 
     // Keep country names from the API
-    const countriesRaw = useCountryRaw();
+    const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
 
     const iso3ToName = useMemo(() => {
         const map = new Map<string, string>();

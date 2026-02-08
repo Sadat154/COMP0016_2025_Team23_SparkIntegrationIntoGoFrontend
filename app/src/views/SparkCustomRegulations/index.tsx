@@ -240,6 +240,7 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
             )}
         >
             <TextInput
+                id="modalSearch"
                 name="modalSearch"
                 value={modalSearch}
                 onChange={handleModalSearchChange}
@@ -780,8 +781,10 @@ function CustomRegulationsMatrix() {
 }
 
 /** @knipignore */
-export function Component() {
+function Component() {
     return <CustomRegulationsMatrix />;
 }
 
 Component.displayName = 'SparkCustomRegulations';
+
+export default Component;
