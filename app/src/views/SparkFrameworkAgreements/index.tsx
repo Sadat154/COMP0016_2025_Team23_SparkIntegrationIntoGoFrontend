@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+
 import {
     useEffect,
     useMemo,
@@ -10,6 +12,7 @@ import Papa from 'papaparse';
 import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
+
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 
 // ============================================================================
@@ -64,16 +67,16 @@ export function Component() {
         const hasGlobal = agreementData.some(
             (row) => row.fa_geographical_coverage?.toLowerCase() === 'global',
         );
-        
+
         if (hasGlobal) {
             // If there are Global agreements, all countries should be highlighted
             return 'all';
         }
-        
+
         // Otherwise, only highlight countries with Local agreements
         const countrySet = new Set<string>();
         agreementData.forEach((row) => {
-            if (row.fa_geographical_coverage?.toLowerCase() === 'local' 
+            if (row.fa_geographical_coverage?.toLowerCase() === 'local'
                 && row.pa_bu_country_name) {
                 countrySet.add(row.pa_bu_country_name.toLowerCase());
             }
@@ -89,30 +92,29 @@ export function Component() {
     useEffect(() => {
         const csvFilePath = '/SPARK_framework_agreements_cleaned.csv';
 
+        function transformHeaderFn(header: string) {
+            // Convert "PA BU Region Name" → "pa_bu_region_name"
+            return header
+                .toLowerCase()
+                .replace(/\s+/g, '_') // Replace spaces with underscores
+                .replace(/[^\w_]/g, ''); // Remove special characters like parentheses
+        }
+
         Papa.parse<FrameworkAgreementData>(csvFilePath, {
             download: true,
-            header: true, // Treat first row as column headers
+            header: true,
             dynamicTyping: true, // Automatically convert numbers
             skipEmptyLines: true,
-            transformHeader: (header) => {
-                // Convert "PA BU Region Name" → "pa_bu_region_name"
-                return header
-                    .toLowerCase()
-                    .replace(/\s+/g, '_')  // Replace spaces with underscores
-                    .replace(/[^\w_]/g, '');  // Remove special characters like parentheses
-            },
+            transformHeader: transformHeaderFn,
             complete: (results) => {
                 if (results.errors.length > 0) {
-                    console.error('CSV parsing errors:', results.errors);
                     setError('Failed to parse CSV file');
                 } else {
                     setAgreementData(results.data);
-                    console.log('Loaded agreement data:', results.data);
                 }
                 setIsLoading(false);
             },
-            error: (err) => {
-                console.error('CSV loading error:', err);
+            error: () => {
                 setError('Failed to load CSV file');
                 setIsLoading(false);
             },
@@ -125,8 +127,8 @@ export function Component() {
     // Paint style for country polygons: transparent red by default, opaque red when selected
     const adminZeroFillPaint = useMemo<mapboxgl.FillPaint>(() => {
         // Build the match expression for countries with Local agreements
-        const localCountryMatchExpression = countriesWithAgreements !== 'all' 
-            ? Array.from(countriesWithAgreements).flatMap(country => [country, true])
+        const localCountryMatchExpression = countriesWithAgreements !== 'all'
+            ? Array.from(countriesWithAgreements).flatMap((country) => [country, true])
             : [];
 
         return {
@@ -163,7 +165,7 @@ export function Component() {
     // Handle country click on map
     const handleCountryClick = (feature: AdminZeroFeatureProperties) => {
         const countryName = feature.name;
-        
+
         // Toggle selection: if clicking the same country, deselect it
         if (selectedCountry?.toLowerCase() === countryName.toLowerCase()) {
             setSelectedCountry(undefined);
@@ -197,7 +199,10 @@ export function Component() {
         return (
             <Container>
                 <h2>Framework Agreements</h2>
-                <p>Error: {error}</p>
+                <p>
+                    Error:
+                    {error}
+                </p>
             </Container>
         );
     }
@@ -209,27 +214,29 @@ export function Component() {
     // agreementData is now available and can be used to add features to the map
     return (
         <>
-        {/* container is a wrapper which enforces layout structure like max-width, responsive spacing
+            {/* container is a wrapper which enforces layout structure like max-width, responsive spacing
         put things outside of it if i want it to span the very edges of the page  */}
-        <Container>
-            <h2>Framework Agreements</h2>
-            <GlobalMap
-                adminZeroFillPaint={adminZeroFillPaint}
-                onAdminZeroFillClick={handleCountryClick}
-            >
-                <GoMapContainer
-                    title="Framework Agreements Map"
+            <Container>
+                <h2>Framework Agreements</h2>
+                <GlobalMap
+                    adminZeroFillPaint={adminZeroFillPaint}
+                    onAdminZeroFillClick={handleCountryClick}
+                >
+                    <GoMapContainer
+                        title="Framework Agreements Map"
+                    />
+                </GlobalMap>
+                <FrameworkAgreementsTable
+                    data={agreementData}
+                    pending={isLoading}
+                    selectedCountry={selectedCountry}
                 />
-            </GlobalMap>
-        <FrameworkAgreementsTable 
-            data={agreementData}
-            pending={isLoading}
-            selectedCountry={selectedCountry}
-        />
-        </Container>
+            </Container>
 
         </>
     );
 }
 
 Component.displayName = 'SparkFrameworkAgreements';
+
+export default Component;

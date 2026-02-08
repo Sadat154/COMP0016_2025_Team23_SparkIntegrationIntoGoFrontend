@@ -4,10 +4,10 @@ import {
     useState,
 } from 'react';
 import {
-    Table,
+    Button,
     Container,
     SelectInput,
-    Button,
+    Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
@@ -22,6 +22,7 @@ import {
 
 import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
+
 import styles from './ProBonoServicesTable.module.css';
 
 interface ProBonoService {
@@ -52,9 +53,9 @@ function ProBonoServicesTable() {
     const {
         pending,
         response,
-    } = useRequest({
+    } = useRequest<ApiResponse>({
         url: '/api/v1/pro-bono-services/',
-    } as any);
+    });
 
     const tableData = (response as ApiResponse | undefined)?.results ?? [];
 
@@ -167,15 +168,23 @@ function ProBonoServicesTable() {
         setFilterService(undefined);
     }, []);
 
+    const handleCompanyChange = useCallback((newValue: string | undefined) => {
+        setFilterCompany(newValue);
+    }, []);
+
+    const handleServiceChange = useCallback((newValue: string | undefined) => {
+        setFilterService(newValue);
+    }, []);
+
     return (
         <Container>
             <div className={styles.filters}>
                 <SelectInput
                     placeholder="All Companies"
                     label="Company"
-                    name={undefined}
+                    name="company"
                     value={filterCompany}
-                    onChange={setFilterCompany}
+                    onChange={handleCompanyChange}
                     keySelector={stringKeySelector}
                     labelSelector={stringLabelSelector}
                     options={companyOptions}
@@ -183,17 +192,17 @@ function ProBonoServicesTable() {
                 <SelectInput
                     placeholder="All Transport Services"
                     label="Transport Means & Services"
-                    name={undefined}
+                    name="service"
                     value={filterService}
-                    onChange={setFilterService}
+                    onChange={handleServiceChange}
                     keySelector={stringKeySelector}
                     labelSelector={stringLabelSelector}
                     options={serviceOptions}
                 />
                 {(filterCompany || filterService) && (
                     <Button
-                        name={undefined}
-                        onClick={handleClearFilters}
+                        name="clear_pro_bono"
+                        onClick={() => handleClearFilters()}
                     >
                         Clear Filters
                     </Button>

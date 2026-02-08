@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+
 import {
     useCallback,
     useMemo,
@@ -85,6 +87,10 @@ interface DetailModalProps {
 function DetailModal({ countryData, onClose }: DetailModalProps) {
     const [modalSearch, setModalSearch] = useState<string>('');
 
+    const handleModalSearchChange = useCallback((value: string | undefined) => {
+        setModalSearch(value ?? '');
+    }, []);
+
     if (!countryData) {
         return null;
     }
@@ -116,9 +122,10 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
             )}
         >
             <TextInput
+                id="modalSearch"
                 name="modalSearch"
                 value={modalSearch}
-                onChange={setModalSearch}
+                onChange={handleModalSearchChange}
                 placeholder="Search questions and answers..."
                 className={styles.modalSearchInput}
             />
@@ -157,10 +164,9 @@ function CustomRegulationsMatrix() {
     const [searchCountry, setSearchCountry] = useState<string>('');
     const [searchAnswer, setSearchAnswer] = useState<string>('');
 
-    const { pending, response } = useRequest({
+    const { pending, response } = useRequest<RegulationsApiResponse>({
         url: '/api/v2/country-regulations/',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    });
 
     const apiData = response as RegulationsApiResponse | undefined;
     const countries = useMemo(
@@ -262,42 +268,57 @@ function CustomRegulationsMatrix() {
         const rowIndex = Array.from(tableRow.parentElement?.children ?? []).indexOf(tableRow);
         if (rowIndex >= 0 && rowIndex < sortedData.length) {
             const clickedRow = sortedData[rowIndex];
+            if (!clickedRow) {
+                return;
+            }
             if (clickedRow.countryData) {
                 setSelectedCountry(clickedRow.countryData);
             }
         }
     }, [sortedData]);
 
+    const handleSearchCountryChange = useCallback((value: string | undefined) => {
+        setSearchCountry(value ?? '');
+    }, []);
+
+    const handleSearchAnswerChange = useCallback((value: string | undefined) => {
+        setSearchAnswer(value ?? '');
+    }, []);
+
     return (
         <Container className={styles.container}>
             <div className={styles.searchSection}>
                 <div className={styles.searchContainer}>
                     <div className={styles.searchField}>
-                        <label htmlFor="searchCountry" className={styles.searchLabel}>
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                        <label className={styles.searchLabel}>
                             Country
+                            <TextInput
+                                id="searchCountry"
+                                name="searchCountry"
+                                value={searchCountry}
+                                onChange={handleSearchCountryChange}
+                                placeholder="Search countries..."
+                            />
                         </label>
-                        <TextInput
-                            name="searchCountry"
-                            value={searchCountry}
-                            onChange={setSearchCountry}
-                            placeholder="Search countries..."
-                        />
                     </div>
                     <div className={styles.searchField}>
-                        <label htmlFor="searchAnswer" className={styles.searchLabel}>
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                        <label className={styles.searchLabel}>
                             Content
+                            <TextInput
+                                id="searchAnswer"
+                                name="searchAnswer"
+                                value={searchAnswer}
+                                onChange={handleSearchAnswerChange}
+                                placeholder="Search answers..."
+                            />
                         </label>
-                        <TextInput
-                            name="searchAnswer"
-                            value={searchAnswer}
-                            onChange={setSearchAnswer}
-                            placeholder="Search answers..."
-                        />
                     </div>
                 </div>
                 <div className={styles.searchActions}>
                     <Button
-                        name={undefined}
+                        name="clear_filters"
                         onClick={() => {
                             setSearchCountry('');
                             setSearchAnswer('');
@@ -339,8 +360,10 @@ function CustomRegulationsMatrix() {
 }
 
 /** @knipignore */
-export function Component() {
+function Component() {
     return <CustomRegulationsMatrix />;
 }
 
 Component.displayName = 'SparkCustomRegulations';
+
+export default Component;
