@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+
 import {
     useCallback,
     useEffect,
@@ -188,7 +190,7 @@ function WarehouseStocksTable() {
         if (hasFiltersChanged) {
             // abort outstanding prefetches and clear cache
             prefetchControllersRef.current.forEach((c) => {
-                try { c.abort(); } catch (_) { /* ignore */ }
+                try { c.abort(); } catch { /* ignore */ }
             });
             prefetchControllersRef.current.clear();
             prefetchCacheRef.current.clear();
@@ -205,7 +207,7 @@ function WarehouseStocksTable() {
         }
 
         const controller = new AbortController();
-        const signal = controller.signal;
+        const { signal } = controller;
 
         const params = new URLSearchParams();
         params.set('page', String(page));
@@ -312,7 +314,7 @@ function WarehouseStocksTable() {
     // On component unmount, abort any outstanding prefetch controllers
     useEffect(() => () => {
         prefetchControllersRef.current.forEach((c) => {
-            try { c.abort(); } catch (_) { /* ignore */ }
+            try { c.abort(); } catch { /* ignore */ }
         });
         prefetchControllersRef.current.clear();
         prefetchCacheRef.current.clear();
@@ -403,17 +405,9 @@ function WarehouseStocksTable() {
         ]);
         return combined.map((r) => ({ key: r as string, label: r as string }));
     }, [regionsOpt, aggregatedData, allData]);
-    const countriesRaw = useCountryRaw();
+    const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
 
-    const iso3ToName = useMemo(() => {
-        const m = new Map<string, string>();
-        (countriesRaw ?? []).forEach((c) => {
-            if (c.iso3 && c.name) {
-                m.set(c.iso3, c.name);
-            }
-        });
-        return m;
-    }, [countriesRaw]);
+    // `countriesRaw` is a lightweight list of country objects
 
     const countryOptions = useMemo(() => {
         const results = countriesRaw ?? [];
@@ -535,6 +529,22 @@ function WarehouseStocksTable() {
     const stringKeySelector = useCallback((option: SelectOption) => option.key, []);
     const stringLabelSelector = useCallback((option: SelectOption) => option.label, []);
     const emptyOptions = useMemo<SelectOption[]>(() => [], []);
+
+    const handleRegionChange = useCallback((newValue: string | undefined) => {
+        setFilterRegion(newValue);
+    }, []);
+
+    const handleCountriesChange = useCallback((newValue: (string | number)[] | undefined) => {
+        setFilterCountries(newValue as string[] | undefined);
+    }, []);
+
+    const handleItemGroupChange = useCallback((newValue: string | undefined) => {
+        setFilterItemGroup(newValue);
+    }, []);
+
+    const handleItemNameChange = useCallback((newValue: string | undefined) => {
+        setFilterItemName(newValue);
+    }, []);
 
     const handleClearAll = useCallback(() => {
         setFilterRegion(undefined);
@@ -756,9 +766,9 @@ function WarehouseStocksTable() {
                         <SelectInput
                             placeholder="All Regions"
                             label="Region"
-                            name={undefined}
+                            name="region"
                             value={filterRegion}
-                            onChange={setFilterRegion}
+                            onChange={handleRegionChange}
                             keySelector={stringKeySelector}
                             labelSelector={stringLabelSelector}
                             options={regionOptions}
@@ -768,9 +778,9 @@ function WarehouseStocksTable() {
                         <MultiSelectInput
                             placeholder="All Countries"
                             label="Country"
-                            name={undefined}
+                            name="countries"
                             value={filterCountries}
-                            onChange={setFilterCountries}
+                            onChange={handleCountriesChange}
                             keySelector={stringKeySelector}
                             labelSelector={stringLabelSelector}
                             options={countryOptions}
@@ -780,9 +790,9 @@ function WarehouseStocksTable() {
                         <SelectInput
                             placeholder="All Item categories"
                             label="Item category"
-                            name={undefined}
+                            name="item_group"
                             value={filterItemGroup}
-                            onChange={setFilterItemGroup}
+                            onChange={handleItemGroupChange}
                             keySelector={stringKeySelector}
                             labelSelector={stringLabelSelector}
                             options={itemGroupOptions}
@@ -792,9 +802,9 @@ function WarehouseStocksTable() {
                         <SelectInput
                             placeholder="All Item names"
                             label="Item name"
-                            name={undefined}
+                            name="item_name"
                             value={filterItemName}
-                            onChange={setFilterItemName}
+                            onChange={handleItemNameChange}
                             keySelector={stringKeySelector}
                             labelSelector={stringLabelSelector}
                             options={itemNameOptions}
@@ -804,7 +814,7 @@ function WarehouseStocksTable() {
                         <SelectInput
                             placeholder="All Organisations"
                             label="Organisation"
-                            name={undefined}
+                            name="organisation"
                             value={undefined}
                             onChange={() => undefined}
                             keySelector={stringKeySelector}
@@ -815,8 +825,8 @@ function WarehouseStocksTable() {
 
                     <div className={styles.clearRow}>
                         <Button
-                            name={undefined}
-                            onClick={handleClearAll}
+                            name="clear_filters"
+                            onClick={() => handleClearAll()}
                         >
                             Clear Filters
                         </Button>
@@ -895,7 +905,7 @@ function WarehouseStocksTable() {
                             </div>
                             {filterItemGroup && (
                                 <Button
-                                    name={undefined}
+                                    name="clear_item_group"
                                     onClick={() => setFilterItemGroup(undefined)}
                                 >
                                     Clear

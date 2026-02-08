@@ -114,3 +114,5 @@ export function Component() {
 }
 
 Component.displayName = 'Spark';
+
+export default Component;
