@@ -89,6 +89,19 @@
     margin: 0;
 }
 
+/* FA expiring cell: green when expiry > 90 days, orange when 0–90 days (wireframe) */
+.faExpiringGood {
+    padding: var(--go-ui-spacing-2xs) var(--go-ui-spacing-xs);
+    border-radius: var(--go-ui-border-radius-sm);
+    background-color: rgba(127, 184, 69, 0.2); /* --go-ui-color-green with alpha */
+}
+
+.faExpiringSoon {
+    padding: var(--go-ui-spacing-2xs) var(--go-ui-spacing-xs);
+    border-radius: var(--go-ui-border-radius-sm);
+    background-color: rgba(255, 128, 0, 0.2); /* --go-ui-color-orange with alpha */
+}
+
 .tableContainer {
     overflow-x: auto;
     overflow-y: auto;
