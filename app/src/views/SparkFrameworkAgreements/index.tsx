@@ -9,6 +9,8 @@ import {
 import {
     Button,
     Container,
+    InfoPopup,
+    Legend,
     MultiSelectInput,
     SelectInput,
 } from '@ifrc-go/ui';
@@ -26,6 +28,18 @@ import styles from './SparkFrameworkAgreements.module.css';
 // Placeholder for fields to be provided by backend
 const LAST_UPDATE_PLACEHOLDER = '—';
 const EMPTY_SELECT_OPTIONS: { id: string; name: string }[] = [];
+
+interface MapLegendItem {
+    id: string;
+    label: string;
+    color: string;
+}
+
+const MAP_LEGEND_ITEMS: MapLegendItem[] = [
+    { id: 'ifrc', label: 'IFRC FAs', color: '#4a4a4a' },
+    { id: 'icrc', label: 'ICRC FAs', color: '#8a8a8a' },
+    { id: 'ns', label: 'NS FAs', color: '#b8b8b8' },
+];
 
 // ============================================================================
 // DATA STRUCTURE
@@ -169,24 +183,22 @@ export function Component() {
         return Array.from(set).sort().map((name) => ({ id: name, name }));
     }, [agreementData]);
 
-    const filteredData = useMemo(() => {
-        return agreementData.filter((row) => {
-            if (selectedCountry) {
-                const isGlobal = row.fa_geographical_coverage?.toLowerCase() === 'global';
-                const isLocal = row.fa_geographical_coverage?.toLowerCase() === 'local';
-                const matchesCountry = row.pa_bu_country_name?.toLowerCase() === selectedCountry.toLowerCase();
-                if (!isGlobal && !(isLocal && matchesCountry)) return false;
-            }
-            if (filterRegion && row.pa_bu_region_name !== filterRegion) return false;
-            if (filterCountry?.length && !filterCountry.includes(row.pa_bu_country_name)) return false;
-            const cat = row.item_category || row.pa_line_procurement_category;
-            if (filterItemCategory && cat !== filterItemCategory) return false;
-            if (filterItemSubcategory && row.pa_line_product_type !== filterItemSubcategory) return false;
-            if (filterOrganisation) return false; // No field yet; placeholder
-            if (filterIncoterms) return false; // No field yet; placeholder
-            return true;
-        });
-    }, [
+    const filteredData = useMemo(() => agreementData.filter((row) => {
+        if (selectedCountry) {
+            const isGlobal = row.fa_geographical_coverage?.toLowerCase() === 'global';
+            const isLocal = row.fa_geographical_coverage?.toLowerCase() === 'local';
+            const matchesCountry = row.pa_bu_country_name?.toLowerCase() === selectedCountry.toLowerCase();
+            if (!isGlobal && !(isLocal && matchesCountry)) return false;
+        }
+        if (filterRegion && row.pa_bu_region_name !== filterRegion) return false;
+        if (filterCountry?.length && !filterCountry.includes(row.pa_bu_country_name)) return false;
+        const cat = row.item_category || row.pa_line_procurement_category;
+        if (filterItemCategory && cat !== filterItemCategory) return false;
+        if (filterItemSubcategory && row.pa_line_product_type !== filterItemSubcategory) return false;
+        if (filterOrganisation) return false; // No field yet; placeholder
+        if (filterIncoterms) return false; // No field yet; placeholder
+        return true;
+    }), [
         agreementData,
         selectedCountry,
         filterRegion,
@@ -499,6 +511,24 @@ export function Component() {
                     >
                         <GoMapContainer
                             title="Framework Agreements Map"
+                            withPresentationMode
+                            footer={(
+                                <>
+                                    <div className={styles.mapFooterSources}>
+                                        <InfoPopup
+                                            infoLabel="Map Sources: ICRC, UN."
+                                            description="Map sources: ICRC, UN."
+                                        />
+                                    </div>
+                                    <Legend<MapLegendItem>
+                                        items={MAP_LEGEND_ITEMS}
+                                        keySelector={(item) => item.id}
+                                        colorSelector={(item) => item.color}
+                                        labelSelector={(item) => item.label}
+                                        colorElementClassName={styles.mapLegendCircle}
+                                    />
+                                </>
+                            )}
                         />
                     </GlobalMap>
                 </div>

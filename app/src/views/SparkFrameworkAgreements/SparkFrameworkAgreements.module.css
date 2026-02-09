@@ -103,3 +103,15 @@
     min-height: 400px;
     overflow: hidden;
 }
+
+/* Map footer: left = map sources + info icon, right = legend */
+.mapFooterSources {
+    display: flex;
+    align-items: center;
+    gap: var(--go-ui-spacing-2xs);
+}
+
+/* Legend items as circles (wireframe) */
+.mapLegendCircle {
+    border-radius: 50%;
+}
