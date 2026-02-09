@@ -1,11 +1,18 @@
 /* eslint-disable max-len */
 
 import {
+    useCallback,
     useEffect,
     useMemo,
     useState,
 } from 'react';
-import { Container } from '@ifrc-go/ui';
+import {
+    Button,
+    Container,
+    Legend,
+    MultiSelectInput,
+    SelectInput,
+} from '@ifrc-go/ui';
 import Papa from 'papaparse';
 
 // GlobalMap: Provides base map with country boundaries and interaction handlers
@@ -14,6 +21,23 @@ import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/G
 import GoMapContainer from '#components/GoMapContainer';
 
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
+
+import styles from './SparkFrameworkAgreements.module.css';
+
+// Placeholder for fields to be provided by backend
+const EMPTY_SELECT_OPTIONS: { id: string; name: string }[] = [];
+
+interface MapLegendItem {
+    id: string;
+    label: string;
+    color: string;
+}
+
+const MAP_LEGEND_ITEMS: MapLegendItem[] = [
+    { id: 'ifrc', label: 'IFRC FAs', color: '#4a4a4a' },
+    { id: 'icrc', label: 'ICRC FAs', color: '#8a8a8a' },
+    { id: 'ns', label: 'NS FAs', color: '#b8b8b8' },
+];
 
 // ============================================================================
 // DATA STRUCTURE
@@ -83,6 +107,119 @@ export function Component() {
         });
         return countrySet;
     }, [agreementData]);
+
+    // Summary stats (derived from data; placeholders for "other" FAs until backend)
+    const summaryStats = useMemo(() => {
+        const uniqueSuppliers = new Set(agreementData.map((d) => d.supplier_name).filter(Boolean));
+        const uniqueCountries = new Set<string>();
+        agreementData.forEach((d) => {
+            if (d.pa_bu_country_name) uniqueCountries.add(d.pa_bu_country_name);
+            if (d.region_countries_covered) {
+                d.region_countries_covered.split(/[,;]/).forEach((c) => {
+                    const t = c.trim();
+                    if (t) uniqueCountries.add(t);
+                });
+            }
+        });
+        const uniqueItemCategories = new Set(
+            agreementData.map((d) => d.item_category || d.pa_line_procurement_category).filter(Boolean),
+        );
+        const uniqueFaNumbers = new Set(agreementData.map((d) => d.fa_number).filter(Boolean));
+        return {
+            ifrcFrameworkAgreements: uniqueFaNumbers.size,
+            suppliers: uniqueSuppliers.size,
+            otherFrameworkAgreements: 0, // Placeholder until backend
+            otherSuppliers: 0, // Placeholder until backend
+            countriesCovered: uniqueCountries.size,
+            itemCategoriesCovered: uniqueItemCategories.size,
+        };
+    }, [agreementData]);
+
+    // Filter state (parent owns filters so table receives pre-filtered data)
+    const [filterRegion, setFilterRegion] = useState<string | undefined>();
+    const [filterCountry, setFilterCountry] = useState<string[] | undefined>();
+    const [filterItemCategory, setFilterItemCategory] = useState<string | undefined>();
+    const [filterItemSubcategory, setFilterItemSubcategory] = useState<string | undefined>();
+    const [filterOrganisation, setFilterOrganisation] = useState<string | undefined>();
+    const [filterIncoterms, setFilterIncoterms] = useState<string | undefined>();
+
+    const selectKeySelector = useCallback((opt: { id: string; name: string }) => opt.id, []);
+    const selectLabelSelector = useCallback((opt: { id: string; name: string }) => opt.name, []);
+
+    const regionOptions = useMemo(() => {
+        const set = new Set(agreementData.map((d) => d.pa_bu_region_name).filter(Boolean));
+        return Array.from(set).sort().map((name) => ({ id: name, name }));
+    }, [agreementData]);
+
+    const countryOptions = useMemo(() => {
+        if (!filterRegion) {
+            const set = new Set(agreementData.map((d) => d.pa_bu_country_name).filter(Boolean));
+            return Array.from(set).sort().map((name) => ({ id: name, name }));
+        }
+        const set = new Set(
+            agreementData
+                .filter((d) => d.pa_bu_region_name === filterRegion)
+                .map((d) => d.pa_bu_country_name)
+                .filter(Boolean),
+        );
+        return Array.from(set).sort().map((name) => ({ id: name, name }));
+    }, [agreementData, filterRegion]);
+
+    const itemCategoryOptions = useMemo(() => {
+        const set = new Set(
+            agreementData
+                .map((d) => d.item_category || d.pa_line_procurement_category)
+                .filter(Boolean),
+        );
+        return Array.from(set).sort().map((name) => ({ id: name, name }));
+    }, [agreementData]);
+
+    const itemSubcategoryOptions = useMemo(() => {
+        const set = new Set(
+            agreementData.map((d) => d.pa_line_product_type).filter(Boolean),
+        );
+        return Array.from(set).sort().map((name) => ({ id: name, name }));
+    }, [agreementData]);
+
+    const filteredData = useMemo(() => agreementData.filter((row) => {
+        if (selectedCountry) {
+            const isGlobal = row.fa_geographical_coverage?.toLowerCase() === 'global';
+            const isLocal = row.fa_geographical_coverage?.toLowerCase() === 'local';
+            const matchesCountry = row.pa_bu_country_name?.toLowerCase() === selectedCountry.toLowerCase();
+            if (!isGlobal && !(isLocal && matchesCountry)) return false;
+        }
+        if (filterRegion && row.pa_bu_region_name !== filterRegion) return false;
+        if (filterCountry?.length && !filterCountry.includes(row.pa_bu_country_name)) return false;
+        const cat = row.item_category || row.pa_line_procurement_category;
+        if (filterItemCategory && cat !== filterItemCategory) return false;
+        if (filterItemSubcategory && row.pa_line_product_type !== filterItemSubcategory) return false;
+        if (filterOrganisation) return false; // No field yet; placeholder
+        if (filterIncoterms) return false; // No field yet; placeholder
+        return true;
+    }), [
+        agreementData,
+        selectedCountry,
+        filterRegion,
+        filterCountry,
+        filterItemCategory,
+        filterItemSubcategory,
+        filterOrganisation,
+        filterIncoterms,
+    ]);
+
+    const handleClearFilters = useCallback(() => {
+        setFilterRegion(undefined);
+        setFilterCountry(undefined);
+        setFilterItemCategory(undefined);
+        setFilterItemSubcategory(undefined);
+        setFilterOrganisation(undefined);
+        setFilterIncoterms(undefined);
+        setSelectedCountry(undefined);
+    }, []);
+
+    const handleExport = useCallback(() => {
+        // Placeholder: backend will implement export
+    }, []);
 
     // --------------------------------------------------------------------
     // CSV DATA LOADING
@@ -210,30 +347,196 @@ export function Component() {
     // --------------------------------------------------------------------
     // MAIN RENDER
     // --------------------------------------------------------------------
-    // Display the map with framework agreement data
-    // agreementData is now available and can be used to add features to the map
     return (
-        <>
-            {/* container is a wrapper which enforces layout structure like max-width, responsive spacing
-        put things outside of it if i want it to span the very edges of the page  */}
-            <Container>
-                <h2>Framework Agreements</h2>
-                <GlobalMap
-                    adminZeroFillPaint={adminZeroFillPaint}
-                    onAdminZeroFillClick={handleCountryClick}
-                >
-                    <GoMapContainer
-                        title="Framework Agreements Map"
-                    />
-                </GlobalMap>
-                <FrameworkAgreementsTable
-                    data={agreementData}
-                    pending={isLoading}
-                    selectedCountry={selectedCountry}
-                />
-            </Container>
+        <Container
+            className={styles.page}
+            headingLevel={2}
+        >
+            <div className={styles.layout}>
+                {/* Summary: 3 separate cards, each with a line between agreements and suppliers */}
+                <div className={styles.summaryCards}>
+                    <div className={styles.summaryCard}>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.ifrcFrameworkAgreements}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                IFRC Framework Agreements
+                            </div>
+                        </div>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.suppliers}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Suppliers
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.summaryCard}>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.otherFrameworkAgreements}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Other Framework Agreements
+                            </div>
+                        </div>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.otherSuppliers}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Suppliers
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.summaryCard}>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.countriesCovered}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Countries Covered
+                            </div>
+                        </div>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.itemCategoriesCovered}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Item Categories Covered
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        </>
+                {/* Filter row */}
+                <div className={styles.filtersCard}>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            label="Region"
+                            name="region"
+                            value={filterRegion}
+                            options={regionOptions}
+                            keySelector={selectKeySelector}
+                            labelSelector={selectLabelSelector}
+                            onChange={setFilterRegion}
+                            placeholder="All Regions"
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <MultiSelectInput
+                            label="Country"
+                            name="country"
+                            value={filterCountry ?? []}
+                            options={countryOptions}
+                            keySelector={selectKeySelector}
+                            labelSelector={selectLabelSelector}
+                            onChange={(v) => setFilterCountry(v?.length ? v : undefined)}
+                            placeholder="All Countries"
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            label="Item Category"
+                            name="item_category"
+                            value={filterItemCategory}
+                            options={itemCategoryOptions}
+                            keySelector={selectKeySelector}
+                            labelSelector={selectLabelSelector}
+                            onChange={setFilterItemCategory}
+                            placeholder="All Item categories"
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            label="Item Subcategory"
+                            name="item_subcategory"
+                            value={filterItemSubcategory}
+                            options={itemSubcategoryOptions}
+                            keySelector={selectKeySelector}
+                            labelSelector={selectLabelSelector}
+                            onChange={setFilterItemSubcategory}
+                            placeholder="All Item subcategories"
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            label="Organisation"
+                            name="organisation"
+                            value={filterOrganisation}
+                            options={EMPTY_SELECT_OPTIONS}
+                            keySelector={selectKeySelector}
+                            labelSelector={selectLabelSelector}
+                            onChange={setFilterOrganisation}
+                            placeholder="All Organisations"
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            label="Incoterms"
+                            name="incoterms"
+                            value={filterIncoterms}
+                            options={EMPTY_SELECT_OPTIONS}
+                            keySelector={selectKeySelector}
+                            labelSelector={selectLabelSelector}
+                            onChange={setFilterIncoterms}
+                            placeholder="All Incoterms"
+                        />
+                    </div>
+                    <div className={styles.clearAndExportRow}>
+                        <Button
+                            name="clear_filters"
+                            onClick={handleClearFilters}
+                        >
+                            Clear Filters
+                        </Button>
+                        <button
+                            type="button"
+                            className={styles.exportLink}
+                            onClick={handleExport}
+                        >
+                            Export
+                        </button>
+                    </div>
+                </div>
+
+                {/* Map */}
+                <div className={styles.mapCard}>
+                    <GlobalMap
+                        adminZeroFillPaint={adminZeroFillPaint}
+                        onAdminZeroFillClick={handleCountryClick}
+                    >
+                        <GoMapContainer
+                            title="Framework Agreements Map"
+                            withPresentationMode
+                            footer={(
+                                <div className={styles.mapFooterLegend}>
+                                    <Legend<MapLegendItem>
+                                        items={MAP_LEGEND_ITEMS}
+                                        keySelector={(item) => item.id}
+                                        colorSelector={(item) => item.color}
+                                        labelSelector={(item) => item.label}
+                                        colorElementClassName={styles.mapLegendCircle}
+                                    />
+                                </div>
+                            )}
+                        />
+                    </GlobalMap>
+                </div>
+
+                {/* Table */}
+                <div className={styles.tableCard}>
+                    <FrameworkAgreementsTable
+                        data={filteredData}
+                        pending={isLoading}
+                        selectedCountry={selectedCountry}
+                        showFiltersSection={false}
+                    />
+                </div>
+            </div>
+        </Container>
     );
 }
 

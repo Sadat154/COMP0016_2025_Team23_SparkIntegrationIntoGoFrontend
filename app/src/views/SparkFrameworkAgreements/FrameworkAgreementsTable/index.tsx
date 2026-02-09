@@ -11,16 +11,59 @@ import {
 import {
     Button,
     Container,
+    DateOutput,
     MultiSelectInput,
     SelectInput,
     Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
-import { createStringColumn } from '@ifrc-go/ui/utils';
+import {
+    createElementColumn,
+    createStringColumn,
+} from '@ifrc-go/ui/utils';
+import { compareDate } from '@togglecorp/fujs';
 
 import useFilterState from '#hooks/useFilterState';
 
 import styles from './FrameworkAgreementsTable.module.css';
+
+const PLACEHOLDER_EMPTY = '—';
+
+/** Days from today beyond which FA expiring is shown as "good" (green); otherwise "soon" (orange) */
+const FA_EXPIRING_GOOD_DAYS_THRESHOLD = 90;
+
+/** Incoterm info for table header tooltip */
+const INCOTERM_INFO_DESCRIPTION = 'International Commercial Terms (Incoterms) define responsibilities between buyer and seller for delivery of goods.';
+
+function getExpiryStatusClass(dateStr: string | undefined | null): 'good' | 'soon' | undefined {
+    if (!dateStr) return undefined;
+    const expiry = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
+    const daysFromNow = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysFromNow > FA_EXPIRING_GOOD_DAYS_THRESHOLD) return 'good';
+    if (daysFromNow >= 0) return 'soon';
+    return undefined;
+}
+
+interface FAExpiringCellProps {
+    value?: string | null;
+    statusClass?: 'good' | 'soon';
+    className?: string;
+}
+
+function FAExpiringCell({ value, statusClass, className }: FAExpiringCellProps) {
+    const wrapperClass = statusClass ? styles[`faExpiring${statusClass.charAt(0).toUpperCase() + statusClass.slice(1)}`] : undefined;
+    return (
+        <div className={wrapperClass ?? className}>
+            <DateOutput
+                value={value}
+                invalidText={PLACEHOLDER_EMPTY}
+            />
+        </div>
+    );
+}
 
 interface FrameworkAgreement {
     fa_number: string;
@@ -38,6 +81,17 @@ interface FrameworkAgreement {
     pa_status: string;
     fa_geographical_coverage: string;
     item_service_short_description: string;
+    /** From CSV/API; optional for table display */
+    fa_owner_name?: string;
+    item_category?: string;
+    /** Placeholder until backend: unit price (e.g. "2.35 EUR") */
+    unit_price?: string;
+    /** Placeholder until backend: lead time (e.g. "3 days") */
+    lead_time?: string;
+    /** Placeholder until backend: incoterm code (e.g. "FCA") */
+    incoterm?: string;
+    /** Placeholder until backend: contact email */
+    contact?: string;
 }
 
 // Data transformation types for pre-built components
@@ -55,9 +109,16 @@ interface Props {
     data: FrameworkAgreement[];
     pending?: boolean;
     selectedCountry?: string;
+    /** When false, filter section is hidden (parent provides filters and pre-filtered data). */
+    showFiltersSection?: boolean;
 }
 
-function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Props) {
+function FrameworkAgreementsTable({
+    data,
+    pending = false,
+    selectedCountry,
+    showFiltersSection = true,
+}: Props) {
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
         sorting: sortState.sorting,
@@ -293,83 +354,81 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
     const columns = useMemo(
         () => [
             createStringColumn(
-                'fa_number',
-                'FA Number',
-                (item: FrameworkAgreement) => item.fa_number,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'supplier_name',
-                'Supplier Name',
-                (item: FrameworkAgreement) => item.supplier_name,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_type',
-                'PA Type',
-                (item: FrameworkAgreement) => item.pa_type,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_bu_region_name',
-                'PA BU Region Name',
-                (item: FrameworkAgreement) => item.pa_bu_region_name,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_line_product_type',
-                'PA Line Product Type',
-                (item: FrameworkAgreement) => item.pa_line_product_type,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_line_procurement_category',
-                'PA Line Procurement Category',
-                (item: FrameworkAgreement) => item.pa_line_procurement_category,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_effective_date_fa_start_date',
-                'PA Effective Date',
-                (item: FrameworkAgreement) => item.pa_effective_date_fa_start_date,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_expiration_date_fa_end_date',
-                'PA Expiration Date',
-                (item: FrameworkAgreement) => item.pa_expiration_date_fa_end_date,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'supplier_country',
-                'Supplier Country',
-                (item: FrameworkAgreement) => item.supplier_country,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_status',
-                'PA Status',
-                (item: FrameworkAgreement) => item.pa_status,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'item_service_short_description',
-                'Item / Service Short Description',
-                (item: FrameworkAgreement) => item.item_service_short_description,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_bu_country_name',
-                'PA BU Country Name',
-                (item: FrameworkAgreement) => item.pa_bu_country_name,
-                { sortable: true },
+                'fa_owner_name',
+                'FA Owner',
+                (item: FrameworkAgreement) => item.fa_owner_name,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
             createStringColumn(
                 'fa_geographical_coverage',
-                'FA Geographical Coverage',
-                (item: FrameworkAgreement) => item.fa_geographical_coverage,
-                { sortable: true },
+                'Coverage',
+                (item: FrameworkAgreement) => item.fa_geographical_coverage || item.pa_bu_region_name,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
+            createStringColumn(
+                'item_category',
+                'Item categories',
+                (item: FrameworkAgreement) => item.item_category || item.pa_line_procurement_category,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'pa_line_product_type',
+                'Item sub-categories',
+                (item: FrameworkAgreement) => item.pa_line_product_type,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'unit_price',
+                'Unit price',
+                (item: FrameworkAgreement) => item.unit_price,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'supplier_country',
+                'Shipping from',
+                (item: FrameworkAgreement) => item.supplier_country,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'lead_time',
+                'Lead time',
+                (item: FrameworkAgreement) => item.lead_time,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'incoterm',
+                'Incoterm',
+                (item: FrameworkAgreement) => item.incoterm,
+                {
+                    sortable: true,
+                    defaultEmptyValue: PLACEHOLDER_EMPTY,
+                    headerInfoTitle: 'Incoterm',
+                    headerInfoDescription: INCOTERM_INFO_DESCRIPTION,
+                },
+            ),
+            createStringColumn(
+                'contact',
+                'Contact',
+                (item: FrameworkAgreement) => item.contact || 'ifrcagreements@ifrc.org',
+                { sortable: true, defaultEmptyValue: 'ifrcagreements@ifrc.org' },
+            ),
+            {
+                ...createElementColumn<FrameworkAgreement, string | number, FAExpiringCellProps>(
+                    'pa_expiration_date_fa_end_date',
+                    'FA expiring',
+                    FAExpiringCell,
+                    (_key, datum) => ({
+                        value: datum.pa_expiration_date_fa_end_date,
+                        statusClass: getExpiryStatusClass(datum.pa_expiration_date_fa_end_date),
+                    }),
+                    { sortable: true },
+                ),
+                valueSelector: (item: FrameworkAgreement) => item.pa_expiration_date_fa_end_date,
+                valueComparator: (a: FrameworkAgreement, b: FrameworkAgreement) => compareDate(
+                    a.pa_expiration_date_fa_end_date,
+                    b.pa_expiration_date_fa_end_date,
+                ),
+            },
         ],
         [],
     );
@@ -400,180 +459,182 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
 
     return (
         <Container>
-            <div className={styles.filterSection}>
-                <div className={styles.filterHeader}>
-                    <h3>Filter Framework Agreements</h3>
-                    <Button
-                        name="toggleFilters"
-                        onClick={() => setShowFilters(!showFilters)}
-                    >
-                        {showFilters ? 'Hide Filters' : 'Show Filters'}
-                    </Button>
-                </div>
-
-                {showFilters && (
-                    <div className={styles.filtersContainer}>
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>FA Coverage Region</label>
-                            <SelectInput
-                                className={styles.selectInputWrapper}
-                                name="region"
-                                value={selectedRegion}
-                                options={regions}
-                                keySelector={selectOptionKeySelector}
-                                labelSelector={selectOptionLabelSelector}
-                                onChange={(value) => setSelectedRegion(value)}
-                                disabled={pending}
-                                placeholder="Select region..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Country</label>
-                            <MultiSelectInput
-                                className={styles.multiSelectInputWrapper}
-                                name="countries"
-                                value={selectedCountries}
-                                options={availableCountries}
-                                keySelector={multiSelectOptionKeySelector}
-                                labelSelector={multiSelectOptionLabelSelector}
-                                onChange={(values) => setSelectedCountries(values)}
-                                disabled={pending}
-                                placeholder="Select countries..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Item Category</label>
-                            <SelectInput
-                                className={styles.selectInputWrapper}
-                                name="category"
-                                value={selectedItemCategory}
-                                options={itemCategories}
-                                keySelector={selectOptionKeySelector}
-                                labelSelector={selectOptionLabelSelector}
-                                onChange={(value) => setSelectedItemCategory(value)}
-                                disabled={pending}
-                                placeholder="Select item category..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Item Name</label>
-                            <MultiSelectInput
-                                className={styles.multiSelectInputWrapper}
-                                name="itemNames"
-                                value={selectedItemNames}
-                                options={itemNamesByCategory}
-                                keySelector={multiSelectOptionKeySelector}
-                                labelSelector={multiSelectOptionLabelSelector}
-                                onChange={(values) => setSelectedItemNames(values)}
-                                disabled={pending}
-                                placeholder="Select item names..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Effective Date Range</label>
-                            <div className={styles.dateRangeDisplay}>
-                                {tempStartDate ? new Date(tempStartDate).toLocaleDateString() : 'Start'}
-                                {' '}
-                                —
-                                {tempEndDate ? new Date(tempEndDate).toLocaleDateString() : 'End'}
-                            </div>
-                            <div className={styles.rangeSliderContainer}>
-                                <div className={styles.rangeTrackBase} />
-                                <div
-                                    className={styles.rangeTrackFill}
-                                    style={{
-                                        left: `${tempStartDate && tempEndDate
-                                            ? ((new Date(tempStartDate).getTime()
-                                                - new Date(minDate).getTime())
-                                                / (new Date(maxDate).getTime()
-                                                    - new Date(minDate).getTime())) * 100
-                                            : 0}%`,
-                                        width: `${tempStartDate && tempEndDate ? ((new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 100}%`,
-                                    }}
-                                />
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={(((new Date(tempStartDate || minDate).getTime()
-                                        - new Date(minDate).getTime())
-                                        / (new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime())) * 100)}
-                                    onChange={(e) => {
-                                        const percent = parseFloat(e.target.value);
-                                        const totalMs = new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime();
-                                        const newStartMs = new Date(minDate).getTime()
-                                            + ((totalMs * percent) / 100);
-                                        const newStart = new Date(newStartMs)
-                                            .toISOString().split('T')[0];
-                                        if (newStart && newStart <= tempEndDate) {
-                                            setTempStartDate(newStart);
-                                        }
-                                    }}
-                                    disabled={pending}
-                                    className={styles.rangeSliderStart}
-                                />
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={(((new Date(tempEndDate || maxDate).getTime()
-                                        - new Date(minDate).getTime())
-                                        / (new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime())) * 100)}
-                                    onChange={(e) => {
-                                        const percent = parseFloat(e.target.value);
-                                        const totalMs = new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime();
-                                        const newEndMs = new Date(minDate).getTime()
-                                            + ((totalMs * percent) / 100);
-                                        const newEnd = new Date(newEndMs)
-                                            .toISOString().split('T')[0];
-                                        if (newEnd && newEnd >= tempStartDate) {
-                                            setTempEndDate(newEnd);
-                                        }
-                                    }}
-                                    disabled={pending}
-                                    className={styles.rangeSliderEnd}
-                                />
-                            </div>
-                            <Button
-                                type="button"
-                                name="applyDateFilter"
-                                onClick={() => {
-                                    setStartDate(tempStartDate);
-                                    setEndDate(tempEndDate);
-                                }}
-                                disabled={pending}
-                            >
-                                Apply Date Range
-                            </Button>
-                        </div>
+            {showFiltersSection && (
+                <div className={styles.filterSection}>
+                    <div className={styles.filterHeader}>
+                        <h3>Filter Framework Agreements</h3>
+                        <Button
+                            name="toggleFilters"
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            {showFilters ? 'Hide Filters' : 'Show Filters'}
+                        </Button>
                     </div>
-                )}
 
-                <p className={styles.resultCount}>
-                    Showing
-                    {' '}
-                    {paginatedData.length}
-                    {' '}
-                    of
-                    {' '}
-                    {filteredData.length}
-                    {' '}
-                    results
-                </p>
-            </div>
+                    {showFilters && (
+                        <div className={styles.filtersContainer}>
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>FA Coverage Region</label>
+                                <SelectInput
+                                    className={styles.selectInputWrapper}
+                                    name="region"
+                                    value={selectedRegion}
+                                    options={regions}
+                                    keySelector={selectOptionKeySelector}
+                                    labelSelector={selectOptionLabelSelector}
+                                    onChange={(value) => setSelectedRegion(value)}
+                                    disabled={pending}
+                                    placeholder="Select region..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Country</label>
+                                <MultiSelectInput
+                                    className={styles.multiSelectInputWrapper}
+                                    name="countries"
+                                    value={selectedCountries}
+                                    options={availableCountries}
+                                    keySelector={multiSelectOptionKeySelector}
+                                    labelSelector={multiSelectOptionLabelSelector}
+                                    onChange={(values) => setSelectedCountries(values)}
+                                    disabled={pending}
+                                    placeholder="Select countries..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Item Category</label>
+                                <SelectInput
+                                    className={styles.selectInputWrapper}
+                                    name="category"
+                                    value={selectedItemCategory}
+                                    options={itemCategories}
+                                    keySelector={selectOptionKeySelector}
+                                    labelSelector={selectOptionLabelSelector}
+                                    onChange={(value) => setSelectedItemCategory(value)}
+                                    disabled={pending}
+                                    placeholder="Select item category..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Item Name</label>
+                                <MultiSelectInput
+                                    className={styles.multiSelectInputWrapper}
+                                    name="itemNames"
+                                    value={selectedItemNames}
+                                    options={itemNamesByCategory}
+                                    keySelector={multiSelectOptionKeySelector}
+                                    labelSelector={multiSelectOptionLabelSelector}
+                                    onChange={(values) => setSelectedItemNames(values)}
+                                    disabled={pending}
+                                    placeholder="Select item names..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Effective Date Range</label>
+                                <div className={styles.dateRangeDisplay}>
+                                    {tempStartDate ? new Date(tempStartDate).toLocaleDateString() : 'Start'}
+                                    {' '}
+                                    —
+                                    {tempEndDate ? new Date(tempEndDate).toLocaleDateString() : 'End'}
+                                </div>
+                                <div className={styles.rangeSliderContainer}>
+                                    <div className={styles.rangeTrackBase} />
+                                    <div
+                                        className={styles.rangeTrackFill}
+                                        style={{
+                                            left: `${tempStartDate && tempEndDate
+                                                ? ((new Date(tempStartDate).getTime()
+                                                    - new Date(minDate).getTime())
+                                                    / (new Date(maxDate).getTime()
+                                                        - new Date(minDate).getTime())) * 100
+                                                : 0}%`,
+                                            width: `${tempStartDate && tempEndDate ? ((new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 100}%`,
+                                        }}
+                                    />
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={(((new Date(tempStartDate || minDate).getTime()
+                                            - new Date(minDate).getTime())
+                                            / (new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime())) * 100)}
+                                        onChange={(e) => {
+                                            const percent = parseFloat(e.target.value);
+                                            const totalMs = new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime();
+                                            const newStartMs = new Date(minDate).getTime()
+                                                + ((totalMs * percent) / 100);
+                                            const newStart = new Date(newStartMs)
+                                                .toISOString().split('T')[0];
+                                            if (newStart && newStart <= tempEndDate) {
+                                                setTempStartDate(newStart);
+                                            }
+                                        }}
+                                        disabled={pending}
+                                        className={styles.rangeSliderStart}
+                                    />
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={(((new Date(tempEndDate || maxDate).getTime()
+                                            - new Date(minDate).getTime())
+                                            / (new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime())) * 100)}
+                                        onChange={(e) => {
+                                            const percent = parseFloat(e.target.value);
+                                            const totalMs = new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime();
+                                            const newEndMs = new Date(minDate).getTime()
+                                                + ((totalMs * percent) / 100);
+                                            const newEnd = new Date(newEndMs)
+                                                .toISOString().split('T')[0];
+                                            if (newEnd && newEnd >= tempStartDate) {
+                                                setTempEndDate(newEnd);
+                                            }
+                                        }}
+                                        disabled={pending}
+                                        className={styles.rangeSliderEnd}
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    name="applyDateFilter"
+                                    onClick={() => {
+                                        setStartDate(tempStartDate);
+                                        setEndDate(tempEndDate);
+                                    }}
+                                    disabled={pending}
+                                >
+                                    Apply Date Range
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    <p className={styles.resultCount}>
+                        Showing
+                        {' '}
+                        {paginatedData.length}
+                        {' '}
+                        of
+                        {' '}
+                        {filteredData.length}
+                        {' '}
+                        results
+                    </p>
+                </div>
+            )}
 
             <div className={styles.tableContainer}>
                 <SortContext.Provider value={triStateSort}>
