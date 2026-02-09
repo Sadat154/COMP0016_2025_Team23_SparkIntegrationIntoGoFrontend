@@ -55,9 +55,16 @@ interface Props {
     data: FrameworkAgreement[];
     pending?: boolean;
     selectedCountry?: string;
+    /** When false, filter section is hidden (parent provides filters and pre-filtered data). */
+    showFiltersSection?: boolean;
 }
 
-function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Props) {
+function FrameworkAgreementsTable({
+    data,
+    pending = false,
+    selectedCountry,
+    showFiltersSection = true,
+}: Props) {
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
         sorting: sortState.sorting,
@@ -400,180 +407,182 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
 
     return (
         <Container>
-            <div className={styles.filterSection}>
-                <div className={styles.filterHeader}>
-                    <h3>Filter Framework Agreements</h3>
-                    <Button
-                        name="toggleFilters"
-                        onClick={() => setShowFilters(!showFilters)}
-                    >
-                        {showFilters ? 'Hide Filters' : 'Show Filters'}
-                    </Button>
-                </div>
-
-                {showFilters && (
-                    <div className={styles.filtersContainer}>
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>FA Coverage Region</label>
-                            <SelectInput
-                                className={styles.selectInputWrapper}
-                                name="region"
-                                value={selectedRegion}
-                                options={regions}
-                                keySelector={selectOptionKeySelector}
-                                labelSelector={selectOptionLabelSelector}
-                                onChange={(value) => setSelectedRegion(value)}
-                                disabled={pending}
-                                placeholder="Select region..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Country</label>
-                            <MultiSelectInput
-                                className={styles.multiSelectInputWrapper}
-                                name="countries"
-                                value={selectedCountries}
-                                options={availableCountries}
-                                keySelector={multiSelectOptionKeySelector}
-                                labelSelector={multiSelectOptionLabelSelector}
-                                onChange={(values) => setSelectedCountries(values)}
-                                disabled={pending}
-                                placeholder="Select countries..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Item Category</label>
-                            <SelectInput
-                                className={styles.selectInputWrapper}
-                                name="category"
-                                value={selectedItemCategory}
-                                options={itemCategories}
-                                keySelector={selectOptionKeySelector}
-                                labelSelector={selectOptionLabelSelector}
-                                onChange={(value) => setSelectedItemCategory(value)}
-                                disabled={pending}
-                                placeholder="Select item category..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Item Name</label>
-                            <MultiSelectInput
-                                className={styles.multiSelectInputWrapper}
-                                name="itemNames"
-                                value={selectedItemNames}
-                                options={itemNamesByCategory}
-                                keySelector={multiSelectOptionKeySelector}
-                                labelSelector={multiSelectOptionLabelSelector}
-                                onChange={(values) => setSelectedItemNames(values)}
-                                disabled={pending}
-                                placeholder="Select item names..."
-                            />
-                        </div>
-
-                        <div className={styles.filterGroup}>
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label>Effective Date Range</label>
-                            <div className={styles.dateRangeDisplay}>
-                                {tempStartDate ? new Date(tempStartDate).toLocaleDateString() : 'Start'}
-                                {' '}
-                                —
-                                {tempEndDate ? new Date(tempEndDate).toLocaleDateString() : 'End'}
-                            </div>
-                            <div className={styles.rangeSliderContainer}>
-                                <div className={styles.rangeTrackBase} />
-                                <div
-                                    className={styles.rangeTrackFill}
-                                    style={{
-                                        left: `${tempStartDate && tempEndDate
-                                            ? ((new Date(tempStartDate).getTime()
-                                                - new Date(minDate).getTime())
-                                                / (new Date(maxDate).getTime()
-                                                    - new Date(minDate).getTime())) * 100
-                                            : 0}%`,
-                                        width: `${tempStartDate && tempEndDate ? ((new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 100}%`,
-                                    }}
-                                />
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={(((new Date(tempStartDate || minDate).getTime()
-                                        - new Date(minDate).getTime())
-                                        / (new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime())) * 100)}
-                                    onChange={(e) => {
-                                        const percent = parseFloat(e.target.value);
-                                        const totalMs = new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime();
-                                        const newStartMs = new Date(minDate).getTime()
-                                            + ((totalMs * percent) / 100);
-                                        const newStart = new Date(newStartMs)
-                                            .toISOString().split('T')[0];
-                                        if (newStart && newStart <= tempEndDate) {
-                                            setTempStartDate(newStart);
-                                        }
-                                    }}
-                                    disabled={pending}
-                                    className={styles.rangeSliderStart}
-                                />
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={(((new Date(tempEndDate || maxDate).getTime()
-                                        - new Date(minDate).getTime())
-                                        / (new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime())) * 100)}
-                                    onChange={(e) => {
-                                        const percent = parseFloat(e.target.value);
-                                        const totalMs = new Date(maxDate).getTime()
-                                            - new Date(minDate).getTime();
-                                        const newEndMs = new Date(minDate).getTime()
-                                            + ((totalMs * percent) / 100);
-                                        const newEnd = new Date(newEndMs)
-                                            .toISOString().split('T')[0];
-                                        if (newEnd && newEnd >= tempStartDate) {
-                                            setTempEndDate(newEnd);
-                                        }
-                                    }}
-                                    disabled={pending}
-                                    className={styles.rangeSliderEnd}
-                                />
-                            </div>
-                            <Button
-                                type="button"
-                                name="applyDateFilter"
-                                onClick={() => {
-                                    setStartDate(tempStartDate);
-                                    setEndDate(tempEndDate);
-                                }}
-                                disabled={pending}
-                            >
-                                Apply Date Range
-                            </Button>
-                        </div>
+            {showFiltersSection && (
+                <div className={styles.filterSection}>
+                    <div className={styles.filterHeader}>
+                        <h3>Filter Framework Agreements</h3>
+                        <Button
+                            name="toggleFilters"
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            {showFilters ? 'Hide Filters' : 'Show Filters'}
+                        </Button>
                     </div>
-                )}
 
-                <p className={styles.resultCount}>
-                    Showing
-                    {' '}
-                    {paginatedData.length}
-                    {' '}
-                    of
-                    {' '}
-                    {filteredData.length}
-                    {' '}
-                    results
-                </p>
-            </div>
+                    {showFilters && (
+                        <div className={styles.filtersContainer}>
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>FA Coverage Region</label>
+                                <SelectInput
+                                    className={styles.selectInputWrapper}
+                                    name="region"
+                                    value={selectedRegion}
+                                    options={regions}
+                                    keySelector={selectOptionKeySelector}
+                                    labelSelector={selectOptionLabelSelector}
+                                    onChange={(value) => setSelectedRegion(value)}
+                                    disabled={pending}
+                                    placeholder="Select region..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Country</label>
+                                <MultiSelectInput
+                                    className={styles.multiSelectInputWrapper}
+                                    name="countries"
+                                    value={selectedCountries}
+                                    options={availableCountries}
+                                    keySelector={multiSelectOptionKeySelector}
+                                    labelSelector={multiSelectOptionLabelSelector}
+                                    onChange={(values) => setSelectedCountries(values)}
+                                    disabled={pending}
+                                    placeholder="Select countries..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Item Category</label>
+                                <SelectInput
+                                    className={styles.selectInputWrapper}
+                                    name="category"
+                                    value={selectedItemCategory}
+                                    options={itemCategories}
+                                    keySelector={selectOptionKeySelector}
+                                    labelSelector={selectOptionLabelSelector}
+                                    onChange={(value) => setSelectedItemCategory(value)}
+                                    disabled={pending}
+                                    placeholder="Select item category..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Item Name</label>
+                                <MultiSelectInput
+                                    className={styles.multiSelectInputWrapper}
+                                    name="itemNames"
+                                    value={selectedItemNames}
+                                    options={itemNamesByCategory}
+                                    keySelector={multiSelectOptionKeySelector}
+                                    labelSelector={multiSelectOptionLabelSelector}
+                                    onChange={(values) => setSelectedItemNames(values)}
+                                    disabled={pending}
+                                    placeholder="Select item names..."
+                                />
+                            </div>
+
+                            <div className={styles.filterGroup}>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                                <label>Effective Date Range</label>
+                                <div className={styles.dateRangeDisplay}>
+                                    {tempStartDate ? new Date(tempStartDate).toLocaleDateString() : 'Start'}
+                                    {' '}
+                                    —
+                                    {tempEndDate ? new Date(tempEndDate).toLocaleDateString() : 'End'}
+                                </div>
+                                <div className={styles.rangeSliderContainer}>
+                                    <div className={styles.rangeTrackBase} />
+                                    <div
+                                        className={styles.rangeTrackFill}
+                                        style={{
+                                            left: `${tempStartDate && tempEndDate
+                                                ? ((new Date(tempStartDate).getTime()
+                                                    - new Date(minDate).getTime())
+                                                    / (new Date(maxDate).getTime()
+                                                        - new Date(minDate).getTime())) * 100
+                                                : 0}%`,
+                                            width: `${tempStartDate && tempEndDate ? ((new Date(tempEndDate).getTime() - new Date(tempStartDate).getTime()) / (new Date(maxDate).getTime() - new Date(minDate).getTime())) * 100 : 100}%`,
+                                        }}
+                                    />
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={(((new Date(tempStartDate || minDate).getTime()
+                                            - new Date(minDate).getTime())
+                                            / (new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime())) * 100)}
+                                        onChange={(e) => {
+                                            const percent = parseFloat(e.target.value);
+                                            const totalMs = new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime();
+                                            const newStartMs = new Date(minDate).getTime()
+                                                + ((totalMs * percent) / 100);
+                                            const newStart = new Date(newStartMs)
+                                                .toISOString().split('T')[0];
+                                            if (newStart && newStart <= tempEndDate) {
+                                                setTempStartDate(newStart);
+                                            }
+                                        }}
+                                        disabled={pending}
+                                        className={styles.rangeSliderStart}
+                                    />
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={(((new Date(tempEndDate || maxDate).getTime()
+                                            - new Date(minDate).getTime())
+                                            / (new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime())) * 100)}
+                                        onChange={(e) => {
+                                            const percent = parseFloat(e.target.value);
+                                            const totalMs = new Date(maxDate).getTime()
+                                                - new Date(minDate).getTime();
+                                            const newEndMs = new Date(minDate).getTime()
+                                                + ((totalMs * percent) / 100);
+                                            const newEnd = new Date(newEndMs)
+                                                .toISOString().split('T')[0];
+                                            if (newEnd && newEnd >= tempStartDate) {
+                                                setTempEndDate(newEnd);
+                                            }
+                                        }}
+                                        disabled={pending}
+                                        className={styles.rangeSliderEnd}
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    name="applyDateFilter"
+                                    onClick={() => {
+                                        setStartDate(tempStartDate);
+                                        setEndDate(tempEndDate);
+                                    }}
+                                    disabled={pending}
+                                >
+                                    Apply Date Range
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    <p className={styles.resultCount}>
+                        Showing
+                        {' '}
+                        {paginatedData.length}
+                        {' '}
+                        of
+                        {' '}
+                        {filteredData.length}
+                        {' '}
+                        results
+                    </p>
+                </div>
+            )}
 
             <div className={styles.tableContainer}>
                 <SortContext.Provider value={triStateSort}>

@@ -1,0 +1,105 @@
+/* stylelint-disable csstools/value-no-unknown-custom-properties */
+
+.page {
+    background-color: var(--go-ui-color-foreground);
+}
+
+.layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--go-ui-spacing-md);
+    padding: var(--go-ui-spacing-md);
+}
+
+.summaryCards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--go-ui-spacing-md);
+}
+
+.summaryCard {
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-foreground);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    padding: var(--go-ui-spacing-md);
+}
+
+.summaryCardValue {
+    font-weight: var(--go-ui-font-weight-bold);
+    color: var(--go-ui-color-text);
+    font-size: var(--go-ui-font-size-2xl);
+    line-height: var(--go-ui-line-height-tight);
+}
+
+.summaryCardLabel {
+    margin-top: var(--go-ui-spacing-3xs);
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.filtersCard {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: var(--go-ui-spacing-md);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-foreground);
+    padding: var(--go-ui-spacing-md);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+}
+
+.filterItem {
+    flex: 1 1 160px;
+    min-width: 160px;
+}
+
+.lastUpdate {
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-sm);
+    align-self: center;
+    margin-right: var(--go-ui-spacing-sm);
+}
+
+.clearAndExportRow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--go-ui-spacing-sm);
+    margin-left: auto;
+}
+
+.clearFiltersLink {
+    color: var(--go-ui-color-primary-red);
+    font-size: var(--go-ui-font-size-sm);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.clearFiltersLink:hover {
+    text-decoration: none;
+}
+
+.mapCard {
+    display: flex;
+    flex-direction: column;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-background);
+    min-height: 420px;
+    overflow: hidden;
+}
+
+.tableCard {
+    display: flex;
+    flex-direction: column;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-foreground);
+    min-height: 400px;
+    overflow: hidden;
+}
