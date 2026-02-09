@@ -409,8 +409,8 @@ function FrameworkAgreementsTable({
             createStringColumn(
                 'contact',
                 'Contact',
-                (item: FrameworkAgreement) => item.contact,
-                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+                (item: FrameworkAgreement) => item.contact || 'ifrcagreements@ifrc.org',
+                { sortable: true, defaultEmptyValue: 'ifrcagreements@ifrc.org' },
             ),
             {
                 ...createElementColumn<FrameworkAgreement, string | number, FAExpiringCellProps>(

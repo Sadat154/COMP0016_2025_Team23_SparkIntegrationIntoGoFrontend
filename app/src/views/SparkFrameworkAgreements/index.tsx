@@ -9,7 +9,6 @@ import {
 import {
     Button,
     Container,
-    InfoPopup,
     Legend,
     MultiSelectInput,
     SelectInput,
@@ -513,13 +512,7 @@ export function Component() {
                             title="Framework Agreements Map"
                             withPresentationMode
                             footer={(
-                                <>
-                                    <div className={styles.mapFooterSources}>
-                                        <InfoPopup
-                                            infoLabel="Map Sources: ICRC, UN."
-                                            description="Map sources: ICRC, UN."
-                                        />
-                                    </div>
+                                <div className={styles.mapFooterLegend}>
                                     <Legend<MapLegendItem>
                                         items={MAP_LEGEND_ITEMS}
                                         keySelector={(item) => item.id}
@@ -527,7 +520,7 @@ export function Component() {
                                         labelSelector={(item) => item.label}
                                         colorElementClassName={styles.mapLegendCircle}
                                     />
-                                </>
+                                </div>
                             )}
                         />
                     </GlobalMap>
