@@ -355,54 +355,60 @@ export function Component() {
             headingLevel={2}
         >
             <div className={styles.layout}>
-                {/* Summary cards */}
+                {/* Summary: 3 separate cards, each with a line between agreements and suppliers */}
                 <div className={styles.summaryCards}>
                     <div className={styles.summaryCard}>
-                        <div className={styles.summaryCardValue}>
-                            {summaryStats.ifrcFrameworkAgreements}
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.ifrcFrameworkAgreements}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                IFRC Framework Agreements
+                            </div>
                         </div>
-                        <div className={styles.summaryCardLabel}>
-                            IFRC Framework Agreements
-                        </div>
-                    </div>
-                    <div className={styles.summaryCard}>
-                        <div className={styles.summaryCardValue}>
-                            {summaryStats.suppliers}
-                        </div>
-                        <div className={styles.summaryCardLabel}>
-                            Suppliers
-                        </div>
-                    </div>
-                    <div className={styles.summaryCard}>
-                        <div className={styles.summaryCardValue}>
-                            {summaryStats.otherFrameworkAgreements}
-                        </div>
-                        <div className={styles.summaryCardLabel}>
-                            Other Framework Agreements
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.suppliers}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Suppliers
+                            </div>
                         </div>
                     </div>
                     <div className={styles.summaryCard}>
-                        <div className={styles.summaryCardValue}>
-                            {summaryStats.otherSuppliers}
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.otherFrameworkAgreements}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Other Framework Agreements
+                            </div>
                         </div>
-                        <div className={styles.summaryCardLabel}>
-                            Suppliers
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.otherSuppliers}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Suppliers
+                            </div>
                         </div>
                     </div>
                     <div className={styles.summaryCard}>
-                        <div className={styles.summaryCardValue}>
-                            {summaryStats.countriesCovered}
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.countriesCovered}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Countries Covered
+                            </div>
                         </div>
-                        <div className={styles.summaryCardLabel}>
-                            Countries Covered
-                        </div>
-                    </div>
-                    <div className={styles.summaryCard}>
-                        <div className={styles.summaryCardValue}>
-                            {summaryStats.itemCategoriesCovered}
-                        </div>
-                        <div className={styles.summaryCardLabel}>
-                            Item Categories Covered
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {summaryStats.itemCategoriesCovered}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Item Categories Covered
+                            </div>
                         </div>
                     </div>
                 </div>
