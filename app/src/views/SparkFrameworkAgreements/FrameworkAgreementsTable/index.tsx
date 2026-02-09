@@ -16,11 +16,19 @@ import {
     Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
-import { createStringColumn } from '@ifrc-go/ui/utils';
+import {
+    createDateColumn,
+    createStringColumn,
+} from '@ifrc-go/ui/utils';
 
 import useFilterState from '#hooks/useFilterState';
 
 import styles from './FrameworkAgreementsTable.module.css';
+
+const PLACEHOLDER_EMPTY = '—';
+
+/** Incoterm info for table header tooltip */
+const INCOTERM_INFO_DESCRIPTION = 'International Commercial Terms (Incoterms) define responsibilities between buyer and seller for delivery of goods.';
 
 interface FrameworkAgreement {
     fa_number: string;
@@ -38,6 +46,17 @@ interface FrameworkAgreement {
     pa_status: string;
     fa_geographical_coverage: string;
     item_service_short_description: string;
+    /** From CSV/API; optional for table display */
+    fa_owner_name?: string;
+    item_category?: string;
+    /** Placeholder until backend: unit price (e.g. "2.35 EUR") */
+    unit_price?: string;
+    /** Placeholder until backend: lead time (e.g. "3 days") */
+    lead_time?: string;
+    /** Placeholder until backend: incoterm code (e.g. "FCA") */
+    incoterm?: string;
+    /** Placeholder until backend: contact email */
+    contact?: string;
 }
 
 // Data transformation types for pre-built components
@@ -300,81 +319,68 @@ function FrameworkAgreementsTable({
     const columns = useMemo(
         () => [
             createStringColumn(
-                'fa_number',
-                'FA Number',
-                (item: FrameworkAgreement) => item.fa_number,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'supplier_name',
-                'Supplier Name',
-                (item: FrameworkAgreement) => item.supplier_name,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_type',
-                'PA Type',
-                (item: FrameworkAgreement) => item.pa_type,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_bu_region_name',
-                'PA BU Region Name',
-                (item: FrameworkAgreement) => item.pa_bu_region_name,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_line_product_type',
-                'PA Line Product Type',
-                (item: FrameworkAgreement) => item.pa_line_product_type,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_line_procurement_category',
-                'PA Line Procurement Category',
-                (item: FrameworkAgreement) => item.pa_line_procurement_category,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_effective_date_fa_start_date',
-                'PA Effective Date',
-                (item: FrameworkAgreement) => item.pa_effective_date_fa_start_date,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_expiration_date_fa_end_date',
-                'PA Expiration Date',
-                (item: FrameworkAgreement) => item.pa_expiration_date_fa_end_date,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'supplier_country',
-                'Supplier Country',
-                (item: FrameworkAgreement) => item.supplier_country,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_status',
-                'PA Status',
-                (item: FrameworkAgreement) => item.pa_status,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'item_service_short_description',
-                'Item / Service Short Description',
-                (item: FrameworkAgreement) => item.item_service_short_description,
-                { sortable: true },
-            ),
-            createStringColumn(
-                'pa_bu_country_name',
-                'PA BU Country Name',
-                (item: FrameworkAgreement) => item.pa_bu_country_name,
-                { sortable: true },
+                'fa_owner_name',
+                'FA Owner',
+                (item: FrameworkAgreement) => item.fa_owner_name,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
             createStringColumn(
                 'fa_geographical_coverage',
-                'FA Geographical Coverage',
-                (item: FrameworkAgreement) => item.fa_geographical_coverage,
+                'Coverage',
+                (item: FrameworkAgreement) => item.fa_geographical_coverage || item.pa_bu_region_name,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'item_category',
+                'Item categories',
+                (item: FrameworkAgreement) => item.item_category || item.pa_line_procurement_category,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'pa_line_product_type',
+                'Item sub-categories',
+                (item: FrameworkAgreement) => item.pa_line_product_type,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'unit_price',
+                'Unit price',
+                (item: FrameworkAgreement) => item.unit_price,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'supplier_country',
+                'Shipping from',
+                (item: FrameworkAgreement) => item.supplier_country,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'lead_time',
+                'Lead time',
+                (item: FrameworkAgreement) => item.lead_time,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
+                'incoterm',
+                'Incoterm',
+                (item: FrameworkAgreement) => item.incoterm,
+                {
+                    sortable: true,
+                    defaultEmptyValue: PLACEHOLDER_EMPTY,
+                    headerInfoTitle: 'Incoterm',
+                    headerInfoDescription: INCOTERM_INFO_DESCRIPTION,
+                },
+            ),
+            createStringColumn(
+                'contact',
+                'Contact',
+                (item: FrameworkAgreement) => item.contact,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createDateColumn(
+                'pa_expiration_date_fa_end_date',
+                'FA expiring',
+                (item: FrameworkAgreement) => item.pa_expiration_date_fa_end_date,
                 { sortable: true },
             ),
         ],
