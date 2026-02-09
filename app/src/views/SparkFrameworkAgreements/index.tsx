@@ -26,7 +26,6 @@ import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 import styles from './SparkFrameworkAgreements.module.css';
 
 // Placeholder for fields to be provided by backend
-const LAST_UPDATE_PLACEHOLDER = '—';
 const EMPTY_SELECT_OPTIONS: { id: string; name: string }[] = [];
 
 interface MapLegendItem {
@@ -415,11 +414,6 @@ export function Component() {
 
                 {/* Filter row */}
                 <div className={styles.filtersCard}>
-                    <span className={styles.lastUpdate}>
-                        Last update:
-                        {' '}
-                        {LAST_UPDATE_PLACEHOLDER}
-                    </span>
                     <div className={styles.filterItem}>
                         <SelectInput
                             label="Region"
@@ -493,19 +487,19 @@ export function Component() {
                         />
                     </div>
                     <div className={styles.clearAndExportRow}>
-                        <button
-                            type="button"
-                            className={styles.clearFiltersLink}
+                        <Button
+                            name="clear_filters"
                             onClick={handleClearFilters}
                         >
                             Clear Filters
-                        </button>
-                        <Button
-                            name="export"
+                        </Button>
+                        <button
+                            type="button"
+                            className={styles.exportLink}
                             onClick={handleExport}
                         >
                             Export
-                        </Button>
+                        </button>
                     </div>
                 </div>
 

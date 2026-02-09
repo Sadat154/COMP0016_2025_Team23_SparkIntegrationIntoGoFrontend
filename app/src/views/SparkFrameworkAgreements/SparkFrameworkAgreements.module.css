@@ -58,10 +58,7 @@
     align-items: flex-end;
     flex-wrap: wrap;
     gap: var(--go-ui-spacing-md);
-    border-radius: var(--go-ui-border-radius-lg);
-    background-color: var(--go-ui-color-foreground);
-    padding: var(--go-ui-spacing-md);
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    padding: 0;
 }
 
 .filterItem {
@@ -69,23 +66,15 @@
     min-width: 160px;
 }
 
-.lastUpdate {
-    color: var(--go-ui-color-text-description);
-    font-size: var(--go-ui-font-size-sm);
-    align-self: center;
-    margin-right: var(--go-ui-spacing-sm);
-}
-
 .clearAndExportRow {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: var(--go-ui-spacing-sm);
+    gap: var(--go-ui-spacing-md);
     margin-left: auto;
 }
 
-.clearFiltersLink {
-    color: var(--go-ui-color-primary-red);
+.exportLink {
+    color: var(--go-ui-color-text-description);
     font-size: var(--go-ui-font-size-sm);
     background: none;
     border: none;
@@ -94,7 +83,8 @@
     text-decoration: underline;
 }
 
-.clearFiltersLink:hover {
+.exportLink:hover {
+    color: var(--go-ui-color-primary-red);
     text-decoration: none;
 }
 
