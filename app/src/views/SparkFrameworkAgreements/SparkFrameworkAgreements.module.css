@@ -18,20 +18,20 @@
 }
 
 .summaryCard {
-    flex: 1;
-    min-width: 0;
     display: flex;
+    flex: 1;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: var(--go-ui-border-radius-lg);
     background-color: var(--go-ui-color-foreground);
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    min-width: 0;
     overflow: hidden;
 }
 
 .summaryCardBlock {
     flex: 1;
-    min-width: 0;
-    padding: var(--go-ui-spacing-md);
     border-right: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    padding: var(--go-ui-spacing-md);
+    min-width: 0;
 }
 
 .summaryCardBlock:last-child {
@@ -39,18 +39,18 @@
 }
 
 .summaryCardValue {
-    font-weight: var(--go-ui-font-weight-bold);
+    line-height: var(--go-ui-line-height-tight);
     color: var(--go-ui-color-text);
     font-size: var(--go-ui-font-size-2xl);
-    line-height: var(--go-ui-line-height-tight);
+    font-weight: var(--go-ui-font-weight-bold);
 }
 
 .summaryCardLabel {
     margin-top: var(--go-ui-spacing-3xs);
-    color: var(--go-ui-color-text-description);
-    font-size: var(--go-ui-font-size-xs);
     text-transform: uppercase;
     letter-spacing: 0.02em;
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-xs);
 }
 
 .filtersCard {
@@ -74,18 +74,18 @@
 }
 
 .exportLink {
-    color: var(--go-ui-color-text-description);
-    font-size: var(--go-ui-font-size-sm);
-    background: none;
     border: none;
+    background: none;
     cursor: pointer;
     padding: 0;
     text-decoration: underline;
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-sm);
 }
 
 .exportLink:hover {
-    color: var(--go-ui-color-primary-red);
     text-decoration: none;
+    color: var(--go-ui-color-primary-red);
 }
 
 .mapCard {
