@@ -53,9 +53,10 @@ function ProBonoServicesTable() {
     const {
         pending,
         response,
-    } = useRequest<ApiResponse>({
+    } = useRequest({
         url: '/api/v1/pro-bono-services/',
-    });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
 
     const tableData = (response as ApiResponse | undefined)?.results ?? [];
 

@@ -95,9 +95,13 @@ function normalizeYesNo(value: string): 'Yes' | 'No' | 'N/A' {
 }
 
 function normalizeName(value: string | null | undefined): string {
-    return (value ?? '')
+    const normalized = (value ?? '')
         .toLowerCase()
-        .split(',')[0]
+        .split(',')[0];
+    
+    if (!normalized) return '';
+    
+    return normalized
         .replace(/\(.*?\)/g, '')
         .replace(/[^a-z\s]/g, ' ')
         .replace(/\s+/g, ' ')
@@ -144,7 +148,10 @@ async function loadCountryNameToRegionLabelFromCsv(): Promise<Map<string, string
         return new Map();
     }
 
-    const header = parseCsvLine(lines[0]);
+    const headerLine = lines[0];
+    if (!headerLine) return new Map();
+    
+    const header = parseCsvLine(headerLine);
     const idxName = header.indexOf('name');
     const idxRegion = header.indexOf('region');
 
@@ -155,7 +162,9 @@ async function loadCountryNameToRegionLabelFromCsv(): Promise<Map<string, string
     const map = new Map<string, string>();
 
     for (let i = 1; i < lines.length; i += 1) {
-        const cols = parseCsvLine(lines[i]);
+        const line = lines[i];
+        if (!line) continue;
+        const cols = parseCsvLine(line);
 
         const name = cols[idxName] ?? '';
         const regionRaw = cols[idxRegion] ?? '';
@@ -418,8 +427,7 @@ function CustomRegulationsMatrix() {
      * Keep your existing useCountryRaw alone, but stop relying on it for ISO3.
      * We build ISO3 mapping from countries.json instead.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const countriesRaw = useCountryRaw();
+    useCountryRaw();
 
     const normalizedNameToIso3 = useMemo(() => {
         const mapFromJson = buildNormalizedNameToIso3FromCountriesJson(countriesJson);
@@ -639,7 +647,7 @@ function CustomRegulationsMatrix() {
         }
 
         const clickedRow = sortedData[rowIndex];
-        if (clickedRow.countryData) {
+        if (clickedRow?.countryData) {
             setSelectedCountry(clickedRow.countryData);
         }
     }, [sortedData]);
@@ -671,7 +679,7 @@ function CustomRegulationsMatrix() {
                         keySelector={(o: Option) => o.key}
                         labelSelector={(o: Option) => o.label}
                         value={regionFilter}
-                        onChange={setRegionFilter}
+                        onChange={(value) => setRegionFilter(value ?? '')}
                     />
                     <SelectInput
                         name="countryFilter"
@@ -680,7 +688,7 @@ function CustomRegulationsMatrix() {
                         keySelector={(o: Option) => o.key}
                         labelSelector={(o: Option) => o.label}
                         value={countryFilter}
-                        onChange={setCountryFilter}
+                        onChange={(value) => setCountryFilter(value ?? '')}
                     />
                     <SelectInput
                         name="ifrcLegalStatusFilter"
@@ -689,7 +697,7 @@ function CustomRegulationsMatrix() {
                         keySelector={(o: Option) => o.key}
                         labelSelector={(o: Option) => o.label}
                         value={ifrcLegalStatusFilter}
-                        onChange={setIfrcLegalStatusFilter}
+                        onChange={(value) => setIfrcLegalStatusFilter(value ?? '')}
                     />
                     <SelectInput
                         name="cargoExemptionsFilter"
@@ -698,7 +706,7 @@ function CustomRegulationsMatrix() {
                         keySelector={(o: Option) => o.key}
                         labelSelector={(o: Option) => o.label}
                         value={cargoExemptionsFilter}
-                        onChange={setCargoExemptionsFilter}
+                        onChange={(value) => setCargoExemptionsFilter(value ?? '')}
                     />
 
                     <Button
