@@ -594,8 +594,11 @@ function CustomRegulationsMatrix() {
 
         const columnToSort = columns.find((c) => c.id === sortState.sorting?.name);
 
-        const comparator = (columnToSort as any)?.valueComparator as
-                ((a: MatrixRow, b: MatrixRow) => number) | undefined;
+        type ColumnWithComparator = {
+            valueComparator?: (a: MatrixRow, b: MatrixRow) => number;
+        };
+
+        const comparator = (columnToSort as ColumnWithComparator | undefined)?.valueComparator;
 
         if (!comparator) {
             return rows;
@@ -716,6 +719,7 @@ function CustomRegulationsMatrix() {
                 <div className={styles.searchSection}>
                     <div className={styles.searchContainer}>
                         <div className={styles.searchField}>
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                             <label htmlFor="searchCountry" className={styles.searchLabel}>
                                 Country
                             </label>
@@ -727,6 +731,7 @@ function CustomRegulationsMatrix() {
                             />
                         </div>
                         <div className={styles.searchField}>
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                             <label htmlFor="searchAnswer" className={styles.searchLabel}>
                                 Content
                             </label>
@@ -785,6 +790,7 @@ function CustomRegulationsMatrix() {
 }
 
 /** @knipignore */
+// eslint-disable-next-line import/prefer-default-export
 export function Component() {
     return <CustomRegulationsMatrix />;
 }
