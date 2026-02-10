@@ -1,11 +1,16 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import {
     Button,
     Container,
     Modal,
+    SelectInput,
     Table,
     TextInput,
-    SelectInput,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
@@ -18,14 +23,15 @@ import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
 
 import CustomsRegulationsMap from './CustomsMap/CustomsRegulationsMap';
-import styles from './styles.module.css';
 
+// eslint-disable-next-line import/no-relative-packages
+import countriesJson from '../../../prototypes/world-dashboard/public/data/countries.json';
 // IMPORTANT: adjust this import path to wherever your countries.json actually lives
 // Example options you might be using in your project:
 // - './countries.json'
 // - '/data/countries.json' (this would not work with import, only fetch)
 // - '#utils/countries.json'
-import countriesJson from '/home/naf154/go-web-app-ucl/app/prototypes/world-dashboard/public/data/countries.json';
+import styles from './styles.module.css';
 
 interface RegulationItem {
     question: string;
@@ -114,16 +120,12 @@ function parseCsvLine(line: string): string[] {
             } else {
                 inQuotes = !inQuotes;
             }
-            continue;
-        }
-
-        if (ch === ',' && !inQuotes) {
+        } else if (ch === ',' && !inQuotes) {
             out.push(cur);
             cur = '';
-            continue;
+        } else {
+            cur += ch;
         }
-
-        cur += ch;
     }
 
     out.push(cur);
@@ -159,21 +161,14 @@ async function loadCountryNameToRegionLabelFromCsv(): Promise<Map<string, string
         const regionRaw = cols[idxRegion] ?? '';
 
         const nameKey = normalizeName(name);
-        if (!nameKey) {
-            continue;
-        }
-
         const regionId = Number(regionRaw);
-        if (!Number.isFinite(regionId)) {
-            continue;
-        }
+        const label = Number.isFinite(regionId)
+            ? REGION_ID_TO_LABEL[regionId]
+            : undefined;
 
-        const label = REGION_ID_TO_LABEL[regionId];
-        if (!label) {
-            continue;
+        if (nameKey && Number.isFinite(regionId) && label) {
+            map.set(nameKey, label);
         }
-
-        map.set(nameKey, label);
     }
 
     return map;
@@ -240,7 +235,6 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
             )}
         >
             <TextInput
-                id="modalSearch"
                 name="modalSearch"
                 value={modalSearch}
                 onChange={handleModalSearchChange}
@@ -291,8 +285,7 @@ function coerceCountriesJsonArray(input: unknown): CountriesJsonEntry[] {
     if (Array.isArray(input)) return input as CountriesJsonEntry[];
     if (input && typeof input === 'object') {
         const obj = input as Record<string, unknown>;
-        const maybe =
-            (obj.countries as unknown)
+        const maybe = (obj.countries as unknown)
             ?? (obj.data as unknown)
             ?? (obj.items as unknown)
             ?? (obj.results as unknown);
@@ -311,8 +304,8 @@ function pickIso3(entry: CountriesJsonEntry): string | undefined {
         entry.iso3,
         entry.iso3_code,
         entry.iso_3,
-        entry['ISO3'],
-        entry['ISO_3'],
+        entry.ISO3,
+        entry.ISO_3,
         entry['alpha-3'],
         entry.alpha3,
     ];
@@ -380,7 +373,9 @@ function CustomRegulationsMatrix() {
     const [ifrcLegalStatusFilter, setIfrcLegalStatusFilter] = useState<string>(''); // Yes | No | N/A | ''
     const [cargoExemptionsFilter, setCargoExemptionsFilter] = useState<string>('');
 
-    const [countryNameToRegionLabel, setCountryNameToRegionLabel] = useState<Map<string, string>>(new Map());
+    const [countryNameToRegionLabel, setCountryNameToRegionLabel] = useState<
+        Map<string, string>
+    >(new Map());
 
     const handleSearchCountryChange = useCallback((value: string | undefined) => {
         setSearchCountry(value ?? '');
@@ -451,7 +446,10 @@ function CustomRegulationsMatrix() {
                 const regionLabel = countryNameToRegionLabel.get(normalizeName(country.country)) ?? 'N/A';
 
                 const legal = getAnswerForQuestion(IFRC_LEGAL_STATUS_QUESTION, countryItems);
-                const cargo = getAnswerForQuestion(HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION, countryItems);
+                const cargo = getAnswerForQuestion(
+                    HUMANITARIAN_CARGO_EXEMPTIONS_QUESTION,
+                    countryItems,
+                );
 
                 const iso3 = normalizedNameToIso3.get(normalizeName(country.country)) ?? undefined;
 
@@ -498,7 +496,11 @@ function CustomRegulationsMatrix() {
         () => baseRows
             .filter((r) => (!regionFilter ? true : r.region === regionFilter))
             .filter((r) => (!countryFilter ? true : r.country === countryFilter))
-            .filter((r) => (!ifrcLegalStatusFilter ? true : normalizeYesNo(r.ifrcLegalStatus) === ifrcLegalStatusFilter)),
+            .filter((r) => (
+                !ifrcLegalStatusFilter
+                    ? true
+                    : normalizeYesNo(r.ifrcLegalStatus) === ifrcLegalStatusFilter
+            )),
         [baseRows, regionFilter, countryFilter, ifrcLegalStatusFilter],
     );
 
@@ -507,8 +509,16 @@ function CustomRegulationsMatrix() {
         () => baseRows
             .filter((r) => (!regionFilter ? true : r.region === regionFilter))
             .filter((r) => (!countryFilter ? true : r.country === countryFilter))
-            .filter((r) => (!ifrcLegalStatusFilter ? true : normalizeYesNo(r.ifrcLegalStatus) === ifrcLegalStatusFilter))
-            .filter((r) => (!cargoExemptionsFilter ? true : r.humanitarianCargoExemptions === cargoExemptionsFilter))
+            .filter((r) => (
+                !ifrcLegalStatusFilter
+                    ? true
+                    : normalizeYesNo(r.ifrcLegalStatus) === ifrcLegalStatusFilter
+            ))
+            .filter((r) => (
+                !cargoExemptionsFilter
+                    ? true
+                    : r.humanitarianCargoExemptions === cargoExemptionsFilter
+            ))
             .filter((r) => {
                 if (!searchCountry.trim()) return true;
                 return r.country?.toLowerCase?.().includes(searchCountry.toLowerCase()) ?? false;
@@ -535,11 +545,6 @@ function CustomRegulationsMatrix() {
         ],
     );
 
-    const openDetails = useCallback((row: MatrixRow) => {
-        if (row.countryData) {
-            setSelectedCountry(row.countryData);
-        }
-    }, []);
 
     const columns = useMemo(
         () => ([
@@ -590,7 +595,10 @@ function CustomRegulationsMatrix() {
 
         const columnToSort = columns.find((c) => c.id === sortState.sorting?.name);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const comparator = (columnToSort as any)?.valueComparator as ((a: MatrixRow, b: MatrixRow) => number) | undefined;
+        const comparator =
+            (columnToSort as any)?.valueComparator as
+                ((a: MatrixRow, b: MatrixRow) => number) | undefined;
+
 
         if (!comparator) {
             return rows;
@@ -645,8 +653,7 @@ function CustomRegulationsMatrix() {
         setSearchAnswer('');
     }, []);
 
-    const anyFilters =
-        !!regionFilter
+    const anyFilters = !!regionFilter
         || !!countryFilter
         || !!ifrcLegalStatusFilter
         || !!cargoExemptionsFilter
@@ -781,10 +788,8 @@ function CustomRegulationsMatrix() {
 }
 
 /** @knipignore */
-function Component() {
+export function Component() {
     return <CustomRegulationsMatrix />;
 }
 
 Component.displayName = 'SparkCustomRegulations';
-
-export default Component;
