@@ -1,13 +1,17 @@
 import { useMemo } from 'react';
-import { MapLayer, MapSource } from '@togglecorp/re-map';
-import type { FillLayer, LineLayer, SymbolLayer, VectorSource } from 'mapbox-gl';
+import {
+    MapLayer,
+    MapSource,
+} from '@togglecorp/re-map';
+import type {
+    FillLayer,
+    LineLayer,
+    VectorSource,
+} from 'mapbox-gl';
 
 import GlobalMap from '#components/domain/GlobalMap';
 import GoMapContainer from '#components/GoMapContainer';
 import { mbtoken } from '#config';
-
-
-
 
 import styles from './CustomsRegulationsMap.module.css';
 
@@ -112,7 +116,6 @@ function CustomsRegulationsMap(props: Props) {
                         layerKey="customs-outline"
                         layerOptions={outlineLayer}
                     />
-                    
 
                 </MapSource>
 
@@ -121,6 +124,24 @@ function CustomsRegulationsMap(props: Props) {
                     title={title}
                     withoutDownloadButton
                 />
+
+                <div className={styles.legend}>
+                    <div className={styles.legendTitle}>IFRC Legal Status</div>
+                    <div className={styles.legendItem}>
+                        <div 
+                            className={styles.legendColor}
+                            style={{ backgroundColor: '#F6B26B' }}
+                        />
+                        <div className={styles.legendLabel}>IFRC Legal Status</div>
+                    </div>
+                    <div className={styles.legendItem}>
+                        <div 
+                            className={styles.legendColor}
+                            style={{ backgroundColor: '#4DD0E1' }}
+                        />
+                        <div className={styles.legendLabel}>No IFRC Legal Status</div>
+                    </div>
+                </div>
             </GlobalMap>
         </div>
     );
