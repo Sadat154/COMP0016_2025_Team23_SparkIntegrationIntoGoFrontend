@@ -545,7 +545,6 @@ function CustomRegulationsMatrix() {
         ],
     );
 
-
     const columns = useMemo(
         () => ([
             createStringColumn<MatrixRow, number>(
@@ -594,11 +593,9 @@ function CustomRegulationsMatrix() {
         }
 
         const columnToSort = columns.find((c) => c.id === sortState.sorting?.name);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const comparator =
-            (columnToSort as any)?.valueComparator as
-                ((a: MatrixRow, b: MatrixRow) => number) | undefined;
 
+        const comparator = (columnToSort as any)?.valueComparator as
+                ((a: MatrixRow, b: MatrixRow) => number) | undefined;
 
         if (!comparator) {
             return rows;

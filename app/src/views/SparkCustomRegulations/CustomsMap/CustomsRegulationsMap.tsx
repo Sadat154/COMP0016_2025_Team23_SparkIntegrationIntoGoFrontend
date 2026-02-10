@@ -128,14 +128,14 @@ function CustomsRegulationsMap(props: Props) {
                 <div className={styles.legend}>
                     <div className={styles.legendTitle}>IFRC Legal Status</div>
                     <div className={styles.legendItem}>
-                        <div 
+                        <div
                             className={styles.legendColor}
                             style={{ backgroundColor: '#F6B26B' }}
                         />
                         <div className={styles.legendLabel}>IFRC Legal Status</div>
                     </div>
                     <div className={styles.legendItem}>
-                        <div 
+                        <div
                             className={styles.legendColor}
                             style={{ backgroundColor: '#4DD0E1' }}
                         />
