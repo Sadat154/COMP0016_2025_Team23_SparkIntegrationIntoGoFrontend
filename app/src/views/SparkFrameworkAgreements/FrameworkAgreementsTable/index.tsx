@@ -11,7 +11,6 @@ import {
     DateOutput,
     SelectInput,
     Table,
-    TextInput,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
@@ -23,6 +22,7 @@ import {
 import { compareDate } from '@togglecorp/fujs';
 
 import useFilterState from '#hooks/useFilterState';
+import { useRequest } from '#utils/restRequest';
 import useCountry, { type Country } from '#hooks/domain/useCountry';
 import CountrySelectInput from '#components/domain/CountrySelectInput';
 
@@ -111,6 +111,10 @@ interface TableFilters {
     itemCategory?: string;
 }
 
+interface ItemCategoryOptionsResponse {
+    results: string[];
+}
+
 interface Props {
     data: FrameworkAgreement[];
     pending?: boolean;
@@ -124,6 +128,10 @@ interface Props {
 }
 
 type CoverageCountryOption = Pick<Country, 'id' | 'name'>;
+type ItemCategoryOption = {
+    id: string;
+    name: string;
+};
 
 const GLOBAL_COVERAGE_OPTION: CoverageCountryOption = {
     id: 0,
@@ -148,6 +156,18 @@ function FrameworkAgreementsTable({
         }
         return [GLOBAL_COVERAGE_OPTION, ...countries];
     }, [countries]);
+
+    const { response: itemCategoryResponse } = useRequest({
+        url: '/api/v2/fabric/cleaned-framework-agreements/item-categories/' as never,
+    });
+
+    const itemCategoryOptions = useMemo<ItemCategoryOption[]>(() => {
+        const response = itemCategoryResponse as ItemCategoryOptionsResponse | undefined;
+        return (response?.results ?? []).map((value) => ({
+            id: value,
+            name: value,
+        }));
+    }, [itemCategoryResponse]);
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
         sorting: sortState.sorting,
@@ -222,7 +242,7 @@ function FrameworkAgreementsTable({
     }, [onFiltersChange]);
 
     const handleItemCategoryChange = useCallback((value: string | undefined) => {
-        onFiltersChange({ itemCategory: value?.trim() || undefined });
+        onFiltersChange({ itemCategory: value || undefined });
     }, [onFiltersChange]);
 
     const columns = useMemo(
@@ -368,13 +388,16 @@ function FrameworkAgreementsTable({
                     <div className={styles.filterGroup}>
                         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                         <label>Item Category</label>
-                        <TextInput
+                        <SelectInput
                             className={styles.selectInputWrapper}
                             name="itemCategory"
+                            options={itemCategoryOptions}
+                            keySelector={stringNameSelector}
+                            labelSelector={stringNameSelector}
                             value={filters.itemCategory}
                             onChange={handleItemCategoryChange}
                             disabled={pending}
-                            placeholder="Enter item category"
+                            placeholder="Select item category..."
                         />
                     </div>
                 </div>
