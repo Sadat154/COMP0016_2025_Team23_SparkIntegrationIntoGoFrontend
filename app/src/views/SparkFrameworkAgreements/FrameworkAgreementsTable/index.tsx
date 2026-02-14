@@ -29,8 +29,6 @@ const PLACEHOLDER_EMPTY = '—';
 /** Days from today beyond which FA expiring is shown as "good" (green); otherwise "soon" (orange) */
 const FA_EXPIRING_GOOD_DAYS_THRESHOLD = 90;
 
-/** Incoterm info for table header tooltip */
-const INCOTERM_INFO_DESCRIPTION = 'International Commercial Terms (Incoterms) define responsibilities between buyer and seller for delivery of goods.';
 
 function getExpiryStatusClass(dateStr: string | undefined | null): 'good' | 'soon' | undefined {
     if (!dateStr) return undefined;
@@ -52,8 +50,25 @@ interface FAExpiringCellProps {
 
 function FAExpiringCell({ value, statusClass, className }: FAExpiringCellProps) {
     const wrapperClass = statusClass ? styles[`faExpiring${statusClass.charAt(0).toUpperCase() + statusClass.slice(1)}`] : undefined;
+    const combinedClassName = [wrapperClass, className].filter(Boolean).join(' ') || undefined;
     return (
-        <div className={wrapperClass ?? className}>
+        <div className={combinedClassName}>
+            <DateOutput
+                value={value}
+                invalidText={PLACEHOLDER_EMPTY}
+            />
+        </div>
+    );
+}
+
+interface DateCellProps {
+    value?: string | null;
+    className?: string;
+}
+
+function DateCell({ value, className }: DateCellProps) {
+    return (
+        <div className={className}>
             <DateOutput
                 value={value}
                 invalidText={PLACEHOLDER_EMPTY}
@@ -219,6 +234,12 @@ function FrameworkAgreementsTable({
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
             createStringColumn(
+                'vendorName',
+                'Vendor name',
+                (item: FrameworkAgreement) => item.vendorName,
+                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createStringColumn(
                 'pricePerUnit',
                 'Unit price',
                 (item: FrameworkAgreement) => item.pricePerUnit,
@@ -230,37 +251,32 @@ function FrameworkAgreementsTable({
                 (item: FrameworkAgreement) => item.vendorCountry,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
-            createStringColumn(
-                'lead_time',
-                'Lead time',
-                () => undefined,
-                { sortable: false, defaultEmptyValue: PLACEHOLDER_EMPTY },
-            ),
-            createStringColumn(
-                'incoterm',
-                'Incoterm',
-                () => undefined,
-                {
-                    sortable: false,
-                    defaultEmptyValue: PLACEHOLDER_EMPTY,
-                    headerInfoTitle: 'Incoterm',
-                    headerInfoDescription: INCOTERM_INFO_DESCRIPTION,
-                },
-            ),
-            createStringColumn(
-                'contact',
-                'Contact',
-                () => 'ifrcagreements@ifrc.org',
-                { sortable: false, defaultEmptyValue: 'ifrcagreements@ifrc.org' },
-            ),
+            {
+                ...createElementColumn<FrameworkAgreement, string | number, DateCellProps>(
+                    'vendorValidTo',
+                    'Vendor expiring',
+                    DateCell,
+                    (_key, datum) => ({
+                        value: datum.vendorValidTo,
+                        className: styles.expiringDateCell,
+                    }),
+                    { sortable: true },
+                ),
+                valueSelector: (item: FrameworkAgreement) => item.vendorValidTo,
+                valueComparator: (a: FrameworkAgreement, b: FrameworkAgreement) => compareDate(
+                    a.vendorValidTo,
+                    b.vendorValidTo,
+                ),
+            },
             {
                 ...createElementColumn<FrameworkAgreement, string | number, FAExpiringCellProps>(
                     'defaultAgreementLineExpirationDate',
-                    'FA expiring',
+                    'FA Expiring',
                     FAExpiringCell,
                     (_key, datum) => ({
                         value: datum.defaultAgreementLineExpirationDate,
                         statusClass: getExpiryStatusClass(datum.defaultAgreementLineExpirationDate),
+                        className: styles.expiringDateCell,
                     }),
                     { sortable: true },
                 ),
