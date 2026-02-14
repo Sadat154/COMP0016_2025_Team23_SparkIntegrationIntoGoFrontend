@@ -4,12 +4,16 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 import {
     Container,
     Legend,
+    TextOutput,
 } from '@ifrc-go/ui';
+import getBbox from '@turf/bbox';
+import { type MapboxGeoJSONFeature } from 'mapbox-gl';
 
 import { useRequest } from '#utils/restRequest';
 
@@ -18,6 +22,7 @@ import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/G
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
 import useCountry from '#hooks/domain/useCountry';
+import MapPopup from '#components/MapPopup';
 
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 
@@ -81,6 +86,19 @@ interface FrameworkAgreementSummaryResponse {
     itemCategoriesCovered: number;
 }
 
+interface FrameworkAgreementMapStat {
+    iso3: string;
+    countryName?: string | null;
+    exclusiveFrameworkAgreements: number;
+    exclusiveIfrcAgreements: number;
+    exclusiveOtherAgreements: number;
+    vendorCountryAgreements: number;
+}
+
+interface FrameworkAgreementMapStatsResponse {
+    results: FrameworkAgreementMapStat[];
+}
+
 interface TableFilters {
     coverageCountryId?: number;
     coverageCountryName?: string;
@@ -104,6 +122,9 @@ export function Component() {
     // error: Stores any error message if loading fails
     const [error, setError] = useState<string | undefined>();
     const selectedCountry = filters.coverageCountryName;
+    const hoverTimeoutRef = useRef<number | undefined>(undefined);
+    const [hoveredCountry, setHoveredCountry] = useState<AdminZeroFeatureProperties | undefined>();
+    const [hoveredCoords, setHoveredCoords] = useState<[number, number] | undefined>();
 
     const countries = useCountry();
     const countryByName = useMemo(() => {
@@ -113,6 +134,13 @@ export function Component() {
         });
         return map;
     }, [countries]);
+
+    const selectedIso3 = useMemo(() => {
+        if (!selectedCountry) {
+            return undefined;
+        }
+        return countryByName.get(selectedCountry.toLowerCase())?.iso3;
+    }, [countryByName, selectedCountry]);
 
     const handleFiltersChange = useCallback((next: Partial<TableFilters>) => {
         setFilters((prev) => ({
@@ -152,38 +180,24 @@ export function Component() {
 
     const isLoading = pending && agreementData.length === 0;
 
-    // Calculate which countries have framework agreements (Local agreements)
-    // Since Global agreements apply to all countries, all countries will be highlighted
-    const countriesWithAgreements = useMemo(() => {
-        const hasGlobal = agreementData.some((row) => (
-            row.classification?.toLowerCase() === 'global'
-            || row.regionCountriesCovered?.toLowerCase() === 'global'
-        ));
-
-        if (hasGlobal) {
-            // If there are Global agreements, all countries should be highlighted
-            return 'all';
-        }
-
-        // Otherwise, only highlight countries with Local agreements
-        const countrySet = new Set<string>();
-        agreementData.forEach((row) => {
-            if (!row.regionCountriesCovered) {
-                return;
-            }
-            row.regionCountriesCovered.split(/[,;]/).forEach((country) => {
-                const trimmed = country.trim();
-                if (trimmed) {
-                    countrySet.add(trimmed.toLowerCase());
-                }
-            });
-        });
-        return countrySet;
-    }, [agreementData]);
-
     const { response: summaryResponse } = useRequest({
         url: '/api/v2/fabric/cleaned-framework-agreements/summary/' as never,
     });
+
+    const { response: mapStatsResponse } = useRequest({
+        url: '/api/v2/fabric/cleaned-framework-agreements/map-stats/' as never,
+    });
+
+    const mapStatsByIso3 = useMemo(() => {
+        const response = mapStatsResponse as FrameworkAgreementMapStatsResponse | undefined;
+        const map = new Map<string, FrameworkAgreementMapStat>();
+        response?.results?.forEach((stat) => {
+            if (stat.iso3) {
+                map.set(stat.iso3, stat);
+            }
+        });
+        return map;
+    }, [mapStatsResponse]);
 
     const summaryStats = useMemo(() => ({
         ifrcFrameworkAgreements: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.ifrcFrameworkAgreements ?? 0,
@@ -194,6 +208,8 @@ export function Component() {
         itemCategoriesCovered: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.itemCategoriesCovered ?? 0,
     }), [summaryResponse]);
 
+    const iso3WithAgreements = useMemo(() => new Set(mapStatsByIso3.keys()), [mapStatsByIso3]);
+
     const handleExport = useCallback(() => {
         // Placeholder: backend will implement export
     }, []);
@@ -203,10 +219,8 @@ export function Component() {
     // --------------------------------------------------------------------
     // Paint style for country polygons: transparent red by default, opaque red when selected
     const adminZeroFillPaint = useMemo<mapboxgl.FillPaint>(() => {
-        // Build the match expression for countries with Local agreements
-        const localCountryMatchExpression = countriesWithAgreements !== 'all'
-            ? Array.from(countriesWithAgreements).flatMap((country) => [country, true])
-            : [];
+        const localCountryMatchExpression = Array.from(iso3WithAgreements)
+            .flatMap((iso3) => [iso3, true]);
 
         return {
             'fill-color': [
@@ -216,7 +230,7 @@ export function Component() {
                 [
                     'case',
                     // Highlight selected country in stronger red
-                    ['==', ['downcase', ['get', 'name']], selectedCountry?.toLowerCase() ?? ''],
+                    ['==', ['get', 'iso3'], selectedIso3 ?? ''],
                     'rgba(220, 53, 69, 0.6)', // Stronger red
                     // Unhighlight all other countries
                     'rgba(0, 0, 0, 0)', // Transparent
@@ -224,12 +238,9 @@ export function Component() {
                 // No country selected - show countries with agreements
                 [
                     'case',
-                    // If there are Global agreements, highlight all countries
-                    countriesWithAgreements === 'all',
-                    'rgba(220, 53, 69, 0.3)', // Transparent red for all
                     // Otherwise, check if country has Local agreement
                     localCountryMatchExpression.length > 0
-                        ? ['match', ['downcase', ['get', 'name']], ...localCountryMatchExpression, false]
+                        ? ['match', ['get', 'iso3'], ...localCountryMatchExpression, false]
                         : false,
                     'rgba(220, 53, 69, 0.3)', // Transparent red for countries with Local agreements
                     'rgba(0, 0, 0, 0)', // Transparent for countries without agreements
@@ -237,7 +248,34 @@ export function Component() {
             ],
             'fill-opacity': 1,
         };
-    }, [selectedCountry, countriesWithAgreements]);
+    }, [selectedIso3, iso3WithAgreements]);
+
+    const handleCountryHover = useCallback((feature: MapboxGeoJSONFeature | undefined) => {
+        if (hoverTimeoutRef.current) {
+            window.clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = undefined;
+        }
+
+        if (!feature) {
+            setHoveredCountry(undefined);
+            setHoveredCoords(undefined);
+            return;
+        }
+
+        hoverTimeoutRef.current = window.setTimeout(() => {
+            const geometry = feature.geometry as GeoJSON.Geometry | undefined;
+            if (!geometry) {
+                return;
+            }
+            const bbox = getBbox({ type: 'Feature', geometry, properties: {} } as GeoJSON.Feature);
+            const coords: [number, number] = [
+                (bbox[0] + bbox[2]) / 2,
+                (bbox[1] + bbox[3]) / 2,
+            ];
+            setHoveredCountry(feature.properties as AdminZeroFeatureProperties);
+            setHoveredCoords(coords);
+        }, 2000);
+    }, []);
 
     // Handle country click on map
     const handleCountryClick = (feature: AdminZeroFeatureProperties) => {
@@ -374,7 +412,35 @@ export function Component() {
                     <GlobalMap
                         adminZeroFillPaint={adminZeroFillPaint}
                         onAdminZeroFillClick={handleCountryClick}
+                        onAdminZeroFillHover={handleCountryHover}
                     >
+                        {hoveredCountry?.iso3 && hoveredCoords && (
+                            <MapPopup
+                                coordinates={hoveredCoords}
+                                onCloseButtonClick={() => {
+                                    setHoveredCountry(undefined);
+                                    setHoveredCoords(undefined);
+                                }}
+                                heading={hoveredCountry.name}
+                            >
+                                <TextOutput
+                                    label="Exclusive FAs"
+                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.exclusiveFrameworkAgreements ?? 0}
+                                />
+                                <TextOutput
+                                    label="Exclusive IFRC FAs"
+                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.exclusiveIfrcAgreements ?? 0}
+                                />
+                                <TextOutput
+                                    label="Exclusive other FAs"
+                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.exclusiveOtherAgreements ?? 0}
+                                />
+                                <TextOutput
+                                    label="Vendor country FAs"
+                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.vendorCountryAgreements ?? 0}
+                                />
+                            </MapPopup>
+                        )}
                         <GoMapContainer
                             title="Framework Agreements Map"
                             withPresentationMode
