@@ -9,6 +9,7 @@ import {
     Button,
     Container,
     DateOutput,
+    SelectInput,
     Table,
     TextInput,
 } from '@ifrc-go/ui';
@@ -16,10 +17,13 @@ import { SortContext } from '@ifrc-go/ui/contexts';
 import {
     createElementColumn,
     createStringColumn,
+    numericIdSelector,
+    stringNameSelector,
 } from '@ifrc-go/ui/utils';
 import { compareDate } from '@togglecorp/fujs';
 
 import useFilterState from '#hooks/useFilterState';
+import useCountry, { type Country } from '#hooks/domain/useCountry';
 import CountrySelectInput from '#components/domain/CountrySelectInput';
 
 import styles from './FrameworkAgreementsTable.module.css';
@@ -119,6 +123,13 @@ interface Props {
     onPageChange: (nextPage: number) => void;
 }
 
+type CoverageCountryOption = Pick<Country, 'id' | 'name'>;
+
+const GLOBAL_COVERAGE_OPTION: CoverageCountryOption = {
+    id: 0,
+    name: 'Global',
+};
+
 function FrameworkAgreementsTable({
     data,
     pending = false,
@@ -130,6 +141,13 @@ function FrameworkAgreementsTable({
     onClearFilters,
     onPageChange,
 }: Props) {
+    const countries = useCountry();
+    const coverageCountryOptions = useMemo(() => {
+        if (!countries) {
+            return [GLOBAL_COVERAGE_OPTION];
+        }
+        return [GLOBAL_COVERAGE_OPTION, ...countries];
+    }, [countries]);
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
         sorting: sortState.sorting,
@@ -184,7 +202,7 @@ function FrameworkAgreementsTable({
     const handleCoverageCountryChange = useCallback((
         value: number | undefined,
         _name: string,
-        option: { name: string } | undefined,
+        option: CoverageCountryOption | undefined,
     ) => {
         onFiltersChange({
             coverageCountryId: value ?? undefined,
@@ -321,9 +339,12 @@ function FrameworkAgreementsTable({
                     <div className={styles.filterGroup}>
                         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                         <label>FA Coverage Country</label>
-                        <CountrySelectInput
+                        <SelectInput
                             className={styles.selectInputWrapper}
                             name="coverageCountry"
+                            options={coverageCountryOptions}
+                            keySelector={numericIdSelector}
+                            labelSelector={stringNameSelector}
                             value={filters.coverageCountryId}
                             onChange={handleCoverageCountryChange}
                             disabled={pending}
