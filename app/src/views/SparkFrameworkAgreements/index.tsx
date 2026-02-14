@@ -223,7 +223,12 @@ export function Component() {
         itemCategoriesCovered: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.itemCategoriesCovered ?? 0,
     }), [summaryResponse]);
 
-    const iso3WithAgreements = useMemo(() => new Set(mapStatsByIso3.keys()), [mapStatsByIso3]);
+    const iso3WithAgreements = useMemo(() => {
+        const entries = Array.from(mapStatsByIso3.values())
+            .filter((stat) => (stat.exclusiveFrameworkAgreements ?? 0) > 0)
+            .map((stat) => stat.iso3);
+        return new Set(entries);
+    }, [mapStatsByIso3]);
 
     const handleExport = useCallback(() => {
         // Placeholder: backend will implement export
