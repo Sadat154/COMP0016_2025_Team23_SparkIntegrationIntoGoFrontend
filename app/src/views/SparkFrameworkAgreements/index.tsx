@@ -41,7 +41,7 @@ const MAP_LEGEND_ITEMS: MapLegendItem[] = [
 ];
 
 const PAGE_SIZE = 100;
-const MAP_HOVER_DELAY_MS = 2000;
+const MAP_HOVER_DELAY_MS = 600;
 
 // ============================================================================
 // DATA STRUCTURE
