@@ -2,14 +2,15 @@
 
 import {
     type SetStateAction,
-    useEffect,
+    useCallback,
     useMemo,
-    useState,
 } from 'react';
 import {
+    Button,
     Container,
     DateOutput,
     Table,
+    TextInput,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
@@ -19,6 +20,7 @@ import {
 import { compareDate } from '@togglecorp/fujs';
 
 import useFilterState from '#hooks/useFilterState';
+import CountrySelectInput from '#components/domain/CountrySelectInput';
 
 import styles from './FrameworkAgreementsTable.module.css';
 
@@ -82,14 +84,36 @@ interface FrameworkAgreement {
     updatedAt?: string | null;
 }
 
+interface TableFilters {
+    coverageCountryId?: number;
+    coverageCountryName?: string;
+    vendorCountryId?: number;
+    vendorCountryIso3?: string;
+    itemCategory?: string;
+}
+
 interface Props {
     data: FrameworkAgreement[];
     pending?: boolean;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    filters: TableFilters;
+    onFiltersChange: (next: Partial<TableFilters>) => void;
+    onClearFilters: () => void;
+    onPageChange: (nextPage: number) => void;
 }
 
 function FrameworkAgreementsTable({
     data,
     pending = false,
+    page,
+    pageSize,
+    totalCount,
+    filters,
+    onFiltersChange,
+    onClearFilters,
+    onPageChange,
 }: Props) {
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
@@ -107,11 +131,7 @@ function FrameworkAgreementsTable({
         },
     }), [sortState.sorting, sortState.setSorting]);
 
-    // Pagination
-    const rowsPerPage = 1000;
-    const totalPages = Math.ceil(data.length / rowsPerPage);
-
-    const [currentPage, setCurrentPage] = useState(0);
+    const totalPages = Math.ceil(totalCount / pageSize);
 
     const displayedPages = useMemo(() => {
         if (totalPages <= 1) {
@@ -125,8 +145,8 @@ function FrameworkAgreementsTable({
         const windowSize = 5;
         const half = Math.floor(windowSize / 2);
 
-        let start = Math.max(1, currentPage - half);
-        let end = Math.min(totalPages - 2, currentPage + half);
+        let start = Math.max(1, page - half);
+        let end = Math.min(totalPages - 2, page + half);
 
         const visibleCount = end - start + 1;
         if (visibleCount < windowSize) {
@@ -144,7 +164,33 @@ function FrameworkAgreementsTable({
         }
 
         return Array.from(pages).sort((a, b) => a - b);
-    }, [currentPage, totalPages]);
+    }, [page, totalPages]);
+
+    const handleCoverageCountryChange = useCallback((
+        value: number | undefined,
+        _name: string,
+        option: { name: string } | undefined,
+    ) => {
+        onFiltersChange({
+            coverageCountryId: value ?? undefined,
+            coverageCountryName: option?.name,
+        });
+    }, [onFiltersChange]);
+
+    const handleVendorCountryChange = useCallback((
+        value: number | undefined,
+        _name: string,
+        option: { iso3: string } | undefined,
+    ) => {
+        onFiltersChange({
+            vendorCountryId: value ?? undefined,
+            vendorCountryIso3: option?.iso3,
+        });
+    }, [onFiltersChange]);
+
+    const handleItemCategoryChange = useCallback((value: string | undefined) => {
+        onFiltersChange({ itemCategory: value?.trim() || undefined });
+    }, [onFiltersChange]);
 
     const columns = useMemo(
         () => [
@@ -242,22 +288,77 @@ function FrameworkAgreementsTable({
         return sortState.sorting.direction === 'dsc' ? sorted.reverse() : sorted;
     }, [data, sortState.sorting, columns]);
 
-    const paginatedData = sortedData.slice(
-        currentPage * rowsPerPage,
-        (currentPage + 1) * rowsPerPage,
-    );
-
-    // Reset page when data changes
-    useEffect(() => {
-        setCurrentPage(0);
-    }, [data]);
-
     return (
         <Container>
+            <div className={styles.filterSection}>
+                <div className={styles.filterHeader}>
+                    <h3>Filter Framework Agreements</h3>
+                    <Button
+                        name="clear_filters"
+                        onClick={onClearFilters}
+                    >
+                        Clear Filters
+                    </Button>
+                </div>
+
+                <div className={styles.filtersContainer}>
+                    <div className={styles.filterGroup}>
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                        <label>FA Coverage Country</label>
+                        <CountrySelectInput
+                            className={styles.selectInputWrapper}
+                            name="coverageCountry"
+                            value={filters.coverageCountryId}
+                            onChange={handleCoverageCountryChange}
+                            disabled={pending}
+                            placeholder="Select country..."
+                        />
+                    </div>
+
+                    <div className={styles.filterGroup}>
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                        <label>Vendor Country</label>
+                        <CountrySelectInput
+                            className={styles.selectInputWrapper}
+                            name="vendorCountry"
+                            value={filters.vendorCountryId}
+                            onChange={handleVendorCountryChange}
+                            disabled={pending}
+                            placeholder="Select vendor country..."
+                        />
+                    </div>
+
+                    <div className={styles.filterGroup}>
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                        <label>Item Category</label>
+                        <TextInput
+                            className={styles.selectInputWrapper}
+                            name="itemCategory"
+                            value={filters.itemCategory}
+                            onChange={handleItemCategoryChange}
+                            disabled={pending}
+                            placeholder="Enter item category"
+                        />
+                    </div>
+                </div>
+
+                <p className={styles.resultCount}>
+                    Showing
+                    {' '}
+                    {data.length}
+                    {' '}
+                    of
+                    {' '}
+                    {totalCount}
+                    {' '}
+                    results
+                </p>
+            </div>
+
             <div className={styles.tableContainer}>
                 <SortContext.Provider value={triStateSort}>
                     <Table
-                        data={paginatedData}
+                        data={sortedData}
                         keySelector={(_row, index) => index}
                         columns={columns}
                         pending={pending}
@@ -270,19 +371,19 @@ function FrameworkAgreementsTable({
                     <button
                         type="button"
                         className={styles.navButton}
-                        onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
-                        disabled={pending || currentPage === 0}
+                        onClick={() => onPageChange(Math.max(0, page - 1))}
+                        disabled={pending || page === 0}
                         aria-label="Previous page"
                     >
                         &lt;
                     </button>
 
-                    {displayedPages.map((page, index) => {
+                    {displayedPages.map((pageNumber, index) => {
                         const previousPage = displayedPages[index - 1];
-                        const showEllipsis = index > 0 && previousPage !== undefined && page - previousPage > 1;
+                        const showEllipsis = index > 0 && previousPage !== undefined && pageNumber - previousPage > 1;
 
                         return (
-                            <span key={page} className={styles.pageWrapper}>
+                            <span key={pageNumber} className={styles.pageWrapper}>
                                 {showEllipsis && (
                                     <span className={styles.pageEllipsis} aria-hidden>
                                         …
@@ -290,15 +391,15 @@ function FrameworkAgreementsTable({
                                 )}
                                 <button
                                     type="button"
-                                    onClick={() => setCurrentPage(page)}
-                                    className={page === currentPage
+                                    onClick={() => onPageChange(pageNumber)}
+                                    className={pageNumber === page
                                         ? styles.pageButtonActive
                                         : styles.pageButton}
                                     disabled={pending}
-                                    aria-label={`Page ${page + 1}`}
-                                    aria-current={page === currentPage ? 'page' : undefined}
+                                    aria-label={`Page ${pageNumber + 1}`}
+                                    aria-current={pageNumber === page ? 'page' : undefined}
                                 >
-                                    {page + 1}
+                                    {pageNumber + 1}
                                 </button>
                             </span>
                         );
@@ -307,8 +408,8 @@ function FrameworkAgreementsTable({
                     <button
                         type="button"
                         className={styles.navButton}
-                        onClick={() => setCurrentPage((page) => Math.min(totalPages - 1, page + 1))}
-                        disabled={pending || currentPage >= totalPages - 1}
+                        onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
+                        disabled={pending || page >= totalPages - 1}
                         aria-label="Next page"
                     >
                         &gt;

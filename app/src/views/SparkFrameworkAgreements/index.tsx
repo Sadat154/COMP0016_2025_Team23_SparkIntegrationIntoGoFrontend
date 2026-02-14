@@ -2,6 +2,7 @@
 
 import {
     useCallback,
+    useEffect,
     useMemo,
     useState,
 } from 'react';
@@ -10,10 +11,13 @@ import {
     Legend,
 } from '@ifrc-go/ui';
 
+import { useRequest } from '#utils/restRequest';
+
 // GlobalMap: Provides base map with country boundaries and interaction handlers
 import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
+import useCountry from '#hooks/domain/useCountry';
 
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 
@@ -30,6 +34,8 @@ const MAP_LEGEND_ITEMS: MapLegendItem[] = [
     { id: 'icrc', label: 'ICRC FAs', color: '#8a8a8a' },
     { id: 'ns', label: 'NS FAs', color: '#b8b8b8' },
 ];
+
+const PAGE_SIZE = 100;
 
 // ============================================================================
 // DATA STRUCTURE
@@ -59,6 +65,21 @@ interface FrameworkAgreementData {
     updatedAt?: string | null;
 }
 
+interface CleanedFrameworkAgreementResponse {
+    count: number;
+    next?: string | null;
+    previous?: string | null;
+    results: FrameworkAgreementData[];
+}
+
+interface TableFilters {
+    coverageCountryId?: number;
+    coverageCountryName?: string;
+    vendorCountryId?: number;
+    vendorCountryIso3?: string;
+    itemCategory?: string;
+}
+
 // MAIN COMPONENT
 /** @knipignore */
 export function Component() {
@@ -67,13 +88,60 @@ export function Component() {
     // --------------------------------------------------------------------
     // agreementData: Stores all framework agreement records from the CSV
     // agreementData is an array of objects. each object represents one row of the csv file
-    const [agreementData] = useState<FrameworkAgreementData[]>([]);
-    // isLoading: Tracks whether the dataset is still being loaded
-    const [isLoading] = useState(false);
+    const [agreementData, setAgreementData] = useState<FrameworkAgreementData[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const [tablePage, setTablePage] = useState(0);
+    const [filters, setFilters] = useState<TableFilters>({});
     // error: Stores any error message if loading fails
-    const [error] = useState<string | undefined>();
-    // selectedCountry: Tracks the country clicked on the map (undefined = show all)
-    const [selectedCountry, setSelectedCountry] = useState<string | undefined>();
+    const [error, setError] = useState<string | undefined>();
+    const selectedCountry = filters.coverageCountryName;
+
+    const countries = useCountry();
+    const countryByName = useMemo(() => {
+        const map = new Map<string, (typeof countries)[number]>();
+        countries?.forEach((country) => {
+            map.set(country.name.toLowerCase(), country);
+        });
+        return map;
+    }, [countries]);
+
+    const handleFiltersChange = useCallback((next: Partial<TableFilters>) => {
+        setFilters((prev) => ({
+            ...prev,
+            ...next,
+        }));
+    }, []);
+
+    const handleClearFilters = useCallback(() => {
+        setFilters({});
+    }, []);
+
+    useEffect(() => {
+        setTablePage(0);
+    }, [filters.coverageCountryName, filters.vendorCountryIso3, filters.itemCategory]);
+
+    const { pending } = useRequest({
+        skip: Boolean(error),
+        url: '/api/v2/fabric/cleaned-framework-agreements/' as never,
+        query: {
+            page: tablePage + 1,
+            pageSize: PAGE_SIZE,
+            regionCountriesCovered: filters.coverageCountryName,
+            itemCategory: filters.itemCategory,
+            vendorCountry: filters.vendorCountryIso3,
+        } as never,
+        onSuccess: (response) => {
+            const data = response as CleanedFrameworkAgreementResponse;
+            const results = data.results ?? [];
+            setAgreementData(results);
+            setTotalCount(data.count ?? 0);
+        },
+        onFailure: () => {
+            setError('Failed to load framework agreements.');
+        },
+    });
+
+    const isLoading = pending && agreementData.length === 0;
 
     // Calculate which countries have framework agreements (Local agreements)
     // Since Global agreements apply to all countries, all countries will be highlighted
@@ -179,12 +247,20 @@ export function Component() {
     // Handle country click on map
     const handleCountryClick = (feature: AdminZeroFeatureProperties) => {
         const countryName = feature.name;
+        const normalizedName = countryName?.toLowerCase();
+        const matchedCountry = normalizedName ? countryByName.get(normalizedName) : undefined;
 
         // Toggle selection: if clicking the same country, deselect it
-        if (selectedCountry?.toLowerCase() === countryName.toLowerCase()) {
-            setSelectedCountry(undefined);
+        if (selectedCountry?.toLowerCase() === normalizedName) {
+            handleFiltersChange({
+                coverageCountryId: undefined,
+                coverageCountryName: undefined,
+            });
         } else {
-            setSelectedCountry(countryName);
+            handleFiltersChange({
+                coverageCountryId: matchedCountry?.id,
+                coverageCountryName: countryName,
+            });
         }
     };
 
@@ -326,7 +402,14 @@ export function Component() {
                 <div className={styles.tableCard}>
                     <FrameworkAgreementsTable
                         data={agreementData}
-                        pending={isLoading}
+                        pending={pending}
+                        page={tablePage}
+                        pageSize={PAGE_SIZE}
+                        totalCount={totalCount}
+                        filters={filters}
+                        onFiltersChange={handleFiltersChange}
+                        onClearFilters={handleClearFilters}
+                        onPageChange={setTablePage}
                     />
                 </div>
             </div>
