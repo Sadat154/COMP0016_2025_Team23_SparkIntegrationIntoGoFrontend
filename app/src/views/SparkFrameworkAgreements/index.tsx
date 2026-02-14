@@ -71,6 +71,15 @@ interface CleanedFrameworkAgreementResponse {
     previous?: string | null;
     results: FrameworkAgreementData[];
 }
+// 
+interface FrameworkAgreementSummaryResponse {
+    ifrcFrameworkAgreements: number;
+    suppliers: number;
+    otherFrameworkAgreements: number;
+    otherSuppliers: number;
+    countriesCovered: number;
+    itemCategoriesCovered: number;
+}
 
 interface TableFilters {
     coverageCountryId?: number;
@@ -172,32 +181,18 @@ export function Component() {
         return countrySet;
     }, [agreementData]);
 
-    // Summary stats (derived from data; placeholders for "other" FAs until backend)
-    const summaryStats = useMemo(() => {
-        const uniqueSuppliers = new Set(agreementData.map((d) => d.vendorName).filter(Boolean));
-        const uniqueCountries = new Set<string>();
-        agreementData.forEach((d) => {
-            if (d.vendorCountry) uniqueCountries.add(d.vendorCountry);
-            if (d.regionCountriesCovered) {
-                d.regionCountriesCovered.split(/[,;]/).forEach((c) => {
-                    const t = c.trim();
-                    if (t) uniqueCountries.add(t);
-                });
-            }
-        });
-        const uniqueItemCategories = new Set(
-            agreementData.map((d) => d.itemCategory || d.paLineProcurementCategory).filter(Boolean),
-        );
-        const uniqueFaNumbers = new Set(agreementData.map((d) => d.agreementId).filter(Boolean));
-        return {
-            ifrcFrameworkAgreements: uniqueFaNumbers.size,
-            suppliers: uniqueSuppliers.size,
-            otherFrameworkAgreements: 0, // Placeholder until backend
-            otherSuppliers: 0, // Placeholder until backend
-            countriesCovered: uniqueCountries.size,
-            itemCategoriesCovered: uniqueItemCategories.size,
-        };
-    }, [agreementData]);
+    const { response: summaryResponse } = useRequest({
+        url: '/api/v2/fabric/cleaned-framework-agreements/summary/' as never,
+    });
+
+    const summaryStats = useMemo(() => ({
+        ifrcFrameworkAgreements: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.ifrcFrameworkAgreements ?? 0,
+        suppliers: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.suppliers ?? 0,
+        otherFrameworkAgreements: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.otherFrameworkAgreements ?? 0,
+        otherSuppliers: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.otherSuppliers ?? 0,
+        countriesCovered: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.countriesCovered ?? 0,
+        itemCategoriesCovered: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.itemCategoriesCovered ?? 0,
+    }), [summaryResponse]);
 
     const handleExport = useCallback(() => {
         // Placeholder: backend will implement export
