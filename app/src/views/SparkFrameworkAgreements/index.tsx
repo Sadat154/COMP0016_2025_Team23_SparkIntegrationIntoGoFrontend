@@ -41,6 +41,7 @@ const MAP_LEGEND_ITEMS: MapLegendItem[] = [
 ];
 
 const PAGE_SIZE = 100;
+const MAP_HOVER_DELAY_MS = 2000;
 
 // ============================================================================
 // DATA STRUCTURE
@@ -199,6 +200,20 @@ export function Component() {
         return map;
     }, [mapStatsResponse]);
 
+    const hoveredMapStats = useMemo(() => {
+        if (!hoveredCountry?.iso3) {
+            return undefined;
+        }
+        return mapStatsByIso3.get(hoveredCountry.iso3) ?? {
+            iso3: hoveredCountry.iso3,
+            countryName: hoveredCountry.name,
+            exclusiveFrameworkAgreements: 0,
+            exclusiveIfrcAgreements: 0,
+            exclusiveOtherAgreements: 0,
+            vendorCountryAgreements: 0,
+        };
+    }, [hoveredCountry, mapStatsByIso3]);
+
     const summaryStats = useMemo(() => ({
         ifrcFrameworkAgreements: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.ifrcFrameworkAgreements ?? 0,
         suppliers: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.suppliers ?? 0,
@@ -274,7 +289,7 @@ export function Component() {
             ];
             setHoveredCountry(feature.properties as AdminZeroFeatureProperties);
             setHoveredCoords(coords);
-        }, 2000);
+        }, MAP_HOVER_DELAY_MS);
     }, []);
 
     // Handle country click on map
@@ -414,7 +429,7 @@ export function Component() {
                         onAdminZeroFillClick={handleCountryClick}
                         onAdminZeroFillHover={handleCountryHover}
                     >
-                        {hoveredCountry?.iso3 && hoveredCoords && (
+                        {hoveredCountry?.iso3 && hoveredCoords && hoveredMapStats && (
                             <MapPopup
                                 coordinates={hoveredCoords}
                                 onCloseButtonClick={() => {
@@ -425,19 +440,27 @@ export function Component() {
                             >
                                 <TextOutput
                                     label="Exclusive FAs"
-                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.exclusiveFrameworkAgreements ?? 0}
+                                    value={hoveredMapStats.exclusiveFrameworkAgreements ?? 0}
+                                    valueType="number"
+                                    invalidText="0"
                                 />
                                 <TextOutput
                                     label="Exclusive IFRC FAs"
-                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.exclusiveIfrcAgreements ?? 0}
+                                    value={hoveredMapStats.exclusiveIfrcAgreements ?? 0}
+                                    valueType="number"
+                                    invalidText="0"
                                 />
                                 <TextOutput
                                     label="Exclusive other FAs"
-                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.exclusiveOtherAgreements ?? 0}
+                                    value={hoveredMapStats.exclusiveOtherAgreements ?? 0}
+                                    valueType="number"
+                                    invalidText="0"
                                 />
                                 <TextOutput
                                     label="Vendor country FAs"
-                                    value={mapStatsByIso3.get(hoveredCountry.iso3)?.vendorCountryAgreements ?? 0}
+                                    value={hoveredMapStats.vendorCountryAgreements ?? 0}
+                                    valueType="number"
+                                    invalidText="0"
                                 />
                             </MapPopup>
                         )}
