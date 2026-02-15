@@ -1,0 +1,165 @@
+.customsDataCard {
+    margin-top: 2rem;
+}
+
+.contentContainer {
+    padding: 1rem;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.generatedDate {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.summarySection {
+    background-color: var(--color-background-light);
+    padding: 1.25rem;
+    border-radius: 4px;
+}
+
+.summaryText {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--color-text);
+}
+
+.loadingContainer {
+    background-color: var(--color-background-light);
+    border: 1px solid var(--color-border);
+    padding: 2rem;
+    border-radius: 4px;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.errorContainer {
+    background-color: var(--color-danger-light);
+    border-left: 4px solid var(--color-danger);
+    padding: 1.5rem;
+    border-radius: 4px;
+}
+
+.error {
+    margin: 0;
+    color: var(--color-danger-dark);
+    font-weight: 500;
+}
+
+.detailsModal {
+    padding: 1rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modalSection {
+    margin-bottom: 2rem;
+}
+
+.modalSectionTitle {
+    margin: 0 0 1.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.bulletList {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.bulletList li {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.sourceDetailCard {
+    background-color: var(--color-background-light);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.sourceDetailHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+}
+
+.sourceDetailTitle {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    flex: 1;
+}
+
+.sourceDetailTitle:hover {
+    text-decoration: underline;
+}
+
+.sourceRank {
+    background-color: var(--color-background-secondary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 1rem;
+    flex-shrink: 0;
+}
+
+.sourceDetailInfo {
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.scoreInfo {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background-color: var(--color-background);
+    border-radius: 3px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.scoreInfo strong {
+    color: var(--color-text);
+}
+
+.snippetsContainer {
+    margin-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 1rem;
+}
+
+.snippetsTitle {
+    margin: 0;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.snippetBox {
+    background-color: var(--color-background);
+    border-left: 3px solid var(--color-primary);
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-radius: 2px;
+}
+
+.snippetText {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--color-text);
+}
