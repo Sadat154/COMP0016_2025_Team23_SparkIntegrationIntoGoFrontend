@@ -4,6 +4,7 @@ extend-exclude = [
     "translationMigrations/*",
     "patches/*",
     "CHANGELOG.md"
+    ,"app/public/data/countries.json"
 ]
 [default.extend-identifiers]
     CoordinatedAssessementIcon = "CoordinatedAssessementIcon"
