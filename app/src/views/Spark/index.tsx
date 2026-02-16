@@ -15,7 +15,6 @@ import useRouting from '#hooks/useRouting';
 
 import ProBonoServicesTable from './tables/ProBonoServicesTable';
 import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
-import CustomsUpdates from './CustomsUpdates';
 
 import styles from './styles.module.css';
 
@@ -24,8 +23,7 @@ type SparkTabKey =
     | 'warehouse-stocks'
     | 'framework-agreements'
     | 'pro-bono-services'
-    | 'custom-regulations'
-    | 'customs-updates';
+    | 'custom-regulations';
 
 export function Component() {
     const location = useLocation();
@@ -76,7 +74,6 @@ export function Component() {
                         <Tab name="warehouse-stocks">Stock Inventory</Tab>
                         <Tab name="framework-agreements">Framework Agreements</Tab>
                         <Tab name="pro-bono-services">Pro Bono Services</Tab>
-                        <Tab name="customs-updates">Customs Updates</Tab>
                         <Tab name="custom-regulations">Custom Regulations</Tab>
                     </TabList>
 
@@ -109,11 +106,6 @@ export function Component() {
                         </div>
                     </TabPanel>
 
-                    <TabPanel name="customs-updates">
-                        <div className={styles.tabContent}>
-                            <CustomsUpdates />
-                        </div>
-                    </TabPanel>
 
                     <TabPanel name="custom-regulations">
                         <div className={styles.tabContent}>
