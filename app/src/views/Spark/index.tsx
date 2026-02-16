@@ -25,6 +25,7 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
+// eslint-disable-next-line import/prefer-default-export
 export function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
