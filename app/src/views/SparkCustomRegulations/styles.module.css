@@ -53,8 +53,8 @@
 }
 
 .resultCount {
-    background: var(--go-ui-color-background-subtle);
     border-radius: 999px;
+    background: var(--go-ui-color-background-subtle);
     padding: 0.25rem 0.75rem;
     color: var(--go-ui-color-text-label);
     font-size: 0.95rem;
@@ -63,12 +63,12 @@
 
 /* Table wrapper with max height and scroll */
 .tableSurface {
+    border-radius: 8px;
+    background: var(--go-ui-color-background-default);
     width: 100%;
     max-height: 70vh;
     overflow-x: auto;
     overflow-y: auto;
-    border-radius: 8px;
-    background: var(--go-ui-color-background-default);
 }
 
 /* Sticky header */
@@ -161,8 +161,8 @@
 
 .notesLabel {
     margin-bottom: 0.35rem;
-    letter-spacing: 0.5px;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     color: var(--go-ui-color-text-label);
     font-size: 0.8rem;
     font-weight: 600;
@@ -189,9 +189,9 @@
 }
 
 .mapRoot {
+    margin-bottom: 18px;
     width: 100%;
     height: 420px;
-    margin-bottom: 18px;
 }
 
 .mapContainer {

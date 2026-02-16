@@ -1,3 +1,4 @@
+/* stylelint-disable csstools/value-no-unknown-custom-properties */
 .customsDataCard {
     margin-top: 2rem;
 }
@@ -11,8 +12,8 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.75rem;
 }
 
 .generatedDate {
@@ -22,9 +23,9 @@
 }
 
 .summarySection {
+    border-radius: 4px;
     background-color: var(--color-background-light);
     padding: 1.25rem;
-    border-radius: 4px;
 }
 
 .summaryText {
@@ -34,19 +35,19 @@
 }
 
 .loadingContainer {
-    background-color: var(--color-background-light);
     border: 1px solid var(--color-border);
-    padding: 2rem;
     border-radius: 4px;
+    background-color: var(--color-background-light);
+    padding: 2rem;
     text-align: center;
     color: var(--color-text-secondary);
 }
 
 .errorContainer {
-    background-color: var(--color-danger-light);
     border-left: 4px solid var(--color-danger);
-    padding: 1.5rem;
     border-radius: 4px;
+    background-color: var(--color-danger-light);
+    padding: 1.5rem;
 }
 
 .error {
@@ -67,9 +68,9 @@
 
 .modalSectionTitle {
     margin: 0 0 1.5rem 0;
+    color: var(--color-text);
     font-size: 1rem;
     font-weight: 600;
-    color: var(--color-text);
 }
 
 .bulletList {
@@ -83,25 +84,25 @@
 }
 
 .sourceDetailCard {
-    background-color: var(--color-background-light);
+    margin-bottom: 1.5rem;
     border: 1px solid var(--color-border);
     border-radius: 4px;
+    background-color: var(--color-background-light);
     padding: 1.25rem;
-    margin-bottom: 1.5rem;
 }
 
 .sourceDetailHeader {
     display: flex;
-    justify-content: space-between;
     align-items: baseline;
+    justify-content: space-between;
     margin-bottom: 1rem;
 }
 
 .sourceDetailTitle {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 600;
     flex: 1;
+    text-decoration: none;
+    color: var(--color-primary);
+    font-weight: 600;
 }
 
 .sourceDetailTitle:hover {
@@ -109,28 +110,28 @@
 }
 
 .sourceRank {
+    flex-shrink: 0;
+    margin-left: 1rem;
+    border-radius: 3px;
     background-color: var(--color-background-secondary);
     padding: 0.25rem 0.75rem;
-    border-radius: 3px;
     font-size: 0.75rem;
     font-weight: 600;
-    margin-left: 1rem;
-    flex-shrink: 0;
 }
 
 .sourceDetailInfo {
     margin: 0.5rem 0;
-    font-size: 0.875rem;
     color: var(--color-text-secondary);
+    font-size: 0.875rem;
 }
 
 .scoreInfo {
     margin: 1rem 0;
-    padding: 0.75rem;
-    background-color: var(--color-background);
     border-radius: 3px;
-    font-size: 0.8rem;
+    background-color: var(--color-background);
+    padding: 0.75rem;
     line-height: 1.6;
+    font-size: 0.8rem;
 }
 
 .scoreInfo strong {
@@ -144,22 +145,22 @@
 }
 
 .snippetsTitle {
-    margin: 0;
     display: block;
+    margin: 0;
     margin-bottom: 0.75rem;
 }
 
 .snippetBox {
-    background-color: var(--color-background);
-    border-left: 3px solid var(--color-primary);
-    padding: 0.75rem;
     margin-bottom: 0.75rem;
+    border-left: 3px solid var(--color-primary);
     border-radius: 2px;
+    background-color: var(--color-background);
+    padding: 0.75rem;
 }
 
 .snippetText {
     margin: 0;
-    font-size: 0.875rem;
     line-height: 1.6;
     color: var(--color-text);
+    font-size: 0.875rem;
 }

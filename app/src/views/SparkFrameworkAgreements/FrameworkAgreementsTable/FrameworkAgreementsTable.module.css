@@ -48,17 +48,17 @@
 }
 
 .selectInputWrapper :global(input) {
-    width: 100%;
     border: 1px solid var(--color-border);
     border-radius: 4px;
     background-color: var(--color-white);
     padding: var(--spacing-xs) var(--spacing-sm);
+    width: 100%;
     font-size: 0.9rem;
 }
 
 .selectInputWrapper :global(input:disabled) {
-    cursor: not-allowed;
     opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Styling for MultiSelectInput pre-built component */
@@ -71,17 +71,17 @@
 }
 
 .multiSelectInputWrapper :global(input) {
-    width: 100%;
     border: 1px solid var(--color-border);
     border-radius: 4px;
     background-color: var(--color-white);
     padding: var(--spacing-xs) var(--spacing-sm);
+    width: 100%;
     font-size: 0.9rem;
 }
 
 .multiSelectInputWrapper :global(input:disabled) {
-    cursor: not-allowed;
     opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .resultCount {
@@ -91,19 +91,19 @@
 }
 
 .tableContainer {
+    padding: var(--spacing-md);
     max-height: 400px;
     overflow-x: auto;
     overflow-y: auto;
-    padding: var(--spacing-md);
 }
 
 .paginationContainer {
     display: flex;
     align-items: center;
-    justify-content: center;
     flex-wrap: wrap;
-    gap: var(--spacing-xs);
+    justify-content: center;
     padding: var(--spacing-md);
+    gap: var(--spacing-xs);
 }
 
 .navButton {
@@ -113,13 +113,13 @@
     cursor: pointer;
     padding: 0.35rem 0.65rem;
     min-width: 2.25rem;
-    color: var(--color-text-primary);
     line-height: 1;
+    color: var(--color-text-primary);
 }
 
 .navButton:disabled {
-    cursor: not-allowed;
     opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .pageWrapper {
@@ -136,6 +136,7 @@
 
 .pageButton,
 .pageButtonActive {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     border: 1px solid var(--color-border);
     border-radius: 999px;
     background-color: var(--color-white);
@@ -143,11 +144,6 @@
     padding: 0.45rem 0.75rem;
     min-width: 2.25rem;
     line-height: 1;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.pageButton:hover:not(:disabled) {
-    border-color: var(--color-border-hover);
 }
 
 .pageButtonActive {
@@ -155,13 +151,6 @@
     background-color: var(--go-ui-color-primary-red) !important;
     color: #ffffff !important;
     font-weight: 600;
-}
-
-/* Increase specificity to override any button base styles */
-.paginationContainer .pageButtonActive,
-.paginationContainer .pageButtonActive:hover,
-.paginationContainer .pageButtonActive:focus-visible {
-    color: #ffffff !important;
 }
 
 .pageButton:focus-visible,
@@ -173,8 +162,19 @@
 
 .pageButton:disabled,
 .pageButtonActive:disabled {
-    cursor: not-allowed;
     opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pageButton:hover:not(:disabled) {
+    border-color: var(--color-border-hover);
+}
+
+/* Increase specificity to override any button base styles */
+.paginationContainer .pageButtonActive,
+.paginationContainer .pageButtonActive:hover,
+.paginationContainer .pageButtonActive:focus-visible {
+    color: #ffffff !important;
 }
 
 .dateRangeDisplay {
@@ -187,57 +187,57 @@
 }
 
 .rangeSliderContainer {
-    position: relative;
     display: flex;
+    position: relative;
     align-items: center;
-    gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
     height: 40px;
+    gap: var(--spacing-sm);
 }
 
 .rangeTrackBase {
     position: absolute;
-    width: 100%;
-    height: 6px;
     z-index: 1;
     border-radius: 3px;
     background: #e5e7eb;
+    width: 100%;
+    height: 6px;
 }
 
 .rangeTrackFill {
     position: absolute;
-    height: 6px;
     z-index: 10;
     border-radius: 3px;
     background: #dc2626;
+    height: 6px;
     pointer-events: none;
 }
 
 .rangeSliderStart,
 .rangeSliderEnd {
     position: absolute;
-    width: 100%;
-    height: 6px;
+    outline: none;
     border-radius: 3px;
     background: transparent;
+    width: 100%;
+    height: 6px;
     pointer-events: none;
-    outline: none;
-    appearance: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .rangeSliderStart::-webkit-slider-runnable-track,
 .rangeSliderEnd::-webkit-slider-runnable-track {
-    height: 6px;
     border-radius: 3px;
     background: #e5e7eb;
+    height: 6px;
 }
 
 .rangeSliderStart::-moz-range-track,
 .rangeSliderEnd::-moz-range-track {
-    height: 6px;
     border-radius: 3px;
     background: #e5e7eb;
+    height: 6px;
 }
 
 .rangeSliderStart {
@@ -250,38 +250,38 @@
 
 .rangeSliderStart::-webkit-slider-thumb,
 .rangeSliderEnd::-webkit-slider-thumb {
-    width: 22px;
-    height: 22px;
     border: 3px solid #ffffff;
     border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     background: #1e40af;
     cursor: pointer;
+    width: 22px;
+    height: 22px;
     pointer-events: auto;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    appearance: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .rangeSliderStart::-moz-range-thumb,
 .rangeSliderEnd::-moz-range-thumb {
-    width: 22px;
-    height: 22px;
     border: 3px solid #ffffff;
     border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     background: #1e40af;
     cursor: pointer;
+    width: 22px;
+    height: 22px;
     pointer-events: auto;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .rangeSliderStart::-webkit-slider-thumb:hover,
 .rangeSliderEnd::-webkit-slider-thumb:hover {
-    background: #1e3a8a;
     transform: scale(1.15);
+    background: #1e3a8a;
 }
 
 .rangeSliderStart::-moz-range-thumb:hover,
 .rangeSliderEnd::-moz-range-thumb:hover {
-    background: #1e3a8a;
     transform: scale(1.15);
+    background: #1e3a8a;
 }

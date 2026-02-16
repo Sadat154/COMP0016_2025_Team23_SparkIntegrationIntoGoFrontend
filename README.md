@@ -86,6 +86,7 @@ To begin, ensure you have network access. Then, you'll need the following:
 cd packages/ui
 pnpm install
 pnpm typecheck
+pnpm stylelint "./src/**/*.css" --fix
 pnpm lint:css
 pnpm lint:js
 pnpm build
