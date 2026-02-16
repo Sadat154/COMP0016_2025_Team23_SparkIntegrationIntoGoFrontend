@@ -4,11 +4,9 @@ extend-exclude = [
     "translationMigrations/*",
     "patches/*",
     "CHANGELOG.md"
-    ,"app/public/data/countries.json"
-    ,"app/public/data/world.geojson"
-    ,"app/prototypes/world-dashboard/public/data/countries.json"
-    ,"go-api/api/fixtures/Countries.json"
-    ,"app/prototypes/world-dashboard/public/data/world.geojson"
+    ,"app/public/data/*"
+    ,"app/prototypes/world-dashboard/public/data/*"
+
 
 ]
 [default.extend-identifiers]

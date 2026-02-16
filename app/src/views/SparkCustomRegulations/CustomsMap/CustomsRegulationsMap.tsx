@@ -15,7 +15,7 @@ import { mbtoken } from '#config';
 
 import styles from './CustomsRegulationsMap.module.css';
 
-export type CustomsMapRow = {
+type CustomsMapRow = {
     iso3?: string;
     ifrcLegalStatus: string; // "Yes" | "No" | "N/A" | others
 };
