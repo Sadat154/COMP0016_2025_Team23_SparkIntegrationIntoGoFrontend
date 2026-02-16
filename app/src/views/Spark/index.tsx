@@ -106,7 +106,6 @@ export function Component() {
                         </div>
                     </TabPanel>
 
-
                     <TabPanel name="custom-regulations">
                         <div className={styles.tabContent}>
                             <Outlet />

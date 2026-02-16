@@ -58,7 +58,10 @@ function ProBonoServicesTable() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
-    const tableData = (response as ApiResponse | undefined)?.results ?? [];
+    const tableData = useMemo(
+        () => (response as ApiResponse | undefined)?.results ?? [],
+        [response],
+    );
 
     const companyOptions = useMemo(() => {
         const companies = tableData.map((item) => item.company).filter(isDefined);

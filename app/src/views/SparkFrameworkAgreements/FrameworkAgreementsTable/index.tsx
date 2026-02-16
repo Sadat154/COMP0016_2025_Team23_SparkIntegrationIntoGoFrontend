@@ -72,7 +72,7 @@ function FrameworkAgreementsTable({ data, pending = false, selectedCountry }: Pr
             }
             sortState.setSorting(finalValue);
         },
-    }), [sortState.sorting, sortState.setSorting]);
+    }), [sortState]);
 
     // Track the previous selectedCountry to only set sort when it changes
     const prevSelectedCountryRef = useRef<string | undefined>(selectedCountry);

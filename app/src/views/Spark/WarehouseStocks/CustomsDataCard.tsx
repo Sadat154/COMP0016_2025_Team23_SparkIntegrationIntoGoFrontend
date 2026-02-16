@@ -107,7 +107,9 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                     <div className={styles.header}>
                         <div>
                             <p className={styles.generatedDate}>
-                                Last updated: {formattedDate}
+                                Last updated:
+                                {' '}
+                                {formattedDate}
                             </p>
                         </div>
                         <Button
@@ -129,13 +131,16 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                         >
                             <div className={styles.detailsModal}>
                                 {/* Bullet Points Section */}
-                                {typedResponse.current_situation_bullets && typedResponse.current_situation_bullets.length > 0 && (
+                                {typedResponse.current_situation_bullets
+                                    && typedResponse.current_situation_bullets.length > 0 && (
                                     <div className={styles.modalSection}>
                                         <h4 className={styles.modalSectionTitle}>Key Points</h4>
                                         <ul className={styles.bulletList}>
-                                            {typedResponse.current_situation_bullets.map((bullet: string, idx: number) => (
-                                                <li key={idx}>{bullet}</li>
-                                            ))}
+                                            {typedResponse.current_situation_bullets.map(
+                                                (bullet: string) => (
+                                                    <li key={bullet}>{bullet}</li>
+                                                ),
+                                            )}
                                         </ul>
                                     </div>
                                 )}
@@ -154,29 +159,59 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                                                 >
                                                     {source.title}
                                                 </a>
-                                                <span className={styles.sourceRank}>Rank {source.rank}</span>
+                                                <span className={styles.sourceRank}>
+                                                    Rank
+                                                    {source.rank}
+                                                </span>
                                             </div>
                                             <p className={styles.sourceDetailInfo}>
-                                                <strong>Publisher:</strong> {source.publisher || 'Unknown'}
+                                                <strong>Publisher:</strong>
+                                                {' '}
+                                                {source.publisher || 'Unknown'}
                                             </p>
                                             {source.published_at && (
                                                 <p className={styles.sourceDetailInfo}>
-                                                    <strong>Published:</strong> {new Date(source.published_at).toLocaleDateString()}
+                                                    <strong>Published:</strong>
+                                                    {' '}
+                                                    {new Date(
+                                                        source.published_at,
+                                                    ).toLocaleDateString()}
                                                 </p>
                                             )}
                                             <p className={styles.scoreInfo}>
                                                 <strong>Credibility Scores:</strong>
                                                 <br />
-                                                Authority: {source.authority_score} | Freshness: {source.freshness_score} | Relevance: {source.relevance_score} | Specificity: {source.specificity_score}
+                                                Authority:
+                                                {' '}
+                                                {source.authority_score}
+                                                {' '}
+                                                | Freshness:
+                                                {' '}
+                                                {source.freshness_score}
+                                                {' '}
+                                                | Relevance:
+                                                {' '}
+                                                {source.relevance_score}
+                                                {' '}
+                                                | Specificity:
+                                                {' '}
+                                                {source.specificity_score}
                                                 <br />
-                                                <strong>Total:</strong> {source.total_score}
+                                                <strong>Total:</strong>
+                                                {' '}
+                                                {source.total_score}
                                             </p>
 
                                             {source.snippets && source.snippets.length > 0 && (
                                                 <div className={styles.snippetsContainer}>
-                                                    <strong className={styles.snippetsTitle}>Evidence Snippets:</strong>
+                                                    <strong className={styles.snippetsTitle}>
+                                                        Evidence Snippets:
+                                                    </strong>
                                                     {source.snippets.map((snippet: Snippet) => (
-                                                        <div key={snippet.id} className={styles.snippetBox}>
+                                                        <div
+                                                            key={snippet.id}
+                                                            className={styles.snippetBox}
+                                                        >
                                                             <p className={styles.snippetText}>
                                                                 {snippet.snippet_text}
                                                             </p>

@@ -98,9 +98,9 @@ function normalizeName(value: string | null | undefined): string {
     const normalized = (value ?? '')
         .toLowerCase()
         .split(',')[0];
-    
+
     if (!normalized) return '';
-    
+
     return normalized
         .replace(/\(.*?\)/g, '')
         .replace(/[^a-z\s]/g, ' ')
@@ -150,7 +150,7 @@ async function loadCountryNameToRegionLabelFromCsv(): Promise<Map<string, string
 
     const headerLine = lines[0];
     if (!headerLine) return new Map();
-    
+
     const header = parseCsvLine(headerLine);
     const idxName = header.indexOf('name');
     const idxRegion = header.indexOf('region');
@@ -163,20 +163,21 @@ async function loadCountryNameToRegionLabelFromCsv(): Promise<Map<string, string
 
     for (let i = 1; i < lines.length; i += 1) {
         const line = lines[i];
-        if (!line) continue;
-        const cols = parseCsvLine(line);
+        if (line) {
+            const cols = parseCsvLine(line);
 
-        const name = cols[idxName] ?? '';
-        const regionRaw = cols[idxRegion] ?? '';
+            const name = cols[idxName] ?? '';
+            const regionRaw = cols[idxRegion] ?? '';
 
-        const nameKey = normalizeName(name);
-        const regionId = Number(regionRaw);
-        const label = Number.isFinite(regionId)
-            ? REGION_ID_TO_LABEL[regionId]
-            : undefined;
+            const nameKey = normalizeName(name);
+            const regionId = Number(regionRaw);
+            const label = Number.isFinite(regionId)
+                ? REGION_ID_TO_LABEL[regionId]
+                : undefined;
 
-        if (nameKey && Number.isFinite(regionId) && label) {
-            map.set(nameKey, label);
+            if (nameKey && Number.isFinite(regionId) && label) {
+                map.set(nameKey, label);
+            }
         }
     }
 
