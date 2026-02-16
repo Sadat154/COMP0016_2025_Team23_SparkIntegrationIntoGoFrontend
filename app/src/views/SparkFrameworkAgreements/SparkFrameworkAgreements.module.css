@@ -1,0 +1,119 @@
+/* stylelint-disable csstools/value-no-unknown-custom-properties */
+
+.page {
+    background-color: var(--go-ui-color-foreground);
+}
+
+.layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--go-ui-spacing-md);
+    padding: var(--go-ui-spacing-md);
+}
+
+.summaryCards {
+    display: flex;
+    width: 100%;
+    gap: var(--go-ui-spacing-md);
+}
+
+.summaryCard {
+    display: flex;
+    flex: 1;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-foreground);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.summaryCardBlock {
+    flex: 1;
+    border-right: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    padding: var(--go-ui-spacing-md);
+    min-width: 0;
+}
+
+.summaryCardBlock:last-child {
+    border-right: none;
+}
+
+.summaryCardValue {
+    line-height: var(--go-ui-line-height-tight);
+    color: var(--go-ui-color-text);
+    font-size: var(--go-ui-font-size-2xl);
+    font-weight: var(--go-ui-font-weight-bold);
+}
+
+.summaryCardLabel {
+    margin-top: var(--go-ui-spacing-3xs);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-xs);
+}
+
+.filtersCard {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: var(--go-ui-spacing-md);
+    padding: 0;
+}
+
+.filterItem {
+    flex: 1 1 160px;
+    min-width: 160px;
+}
+
+.clearAndExportRow {
+    display: flex;
+    align-items: center;
+    gap: var(--go-ui-spacing-md);
+    margin-left: auto;
+}
+
+.exportLink {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-sm);
+}
+
+.exportLink:hover {
+    text-decoration: none;
+    color: var(--go-ui-color-primary-red);
+}
+
+.mapCard {
+    display: flex;
+    flex-direction: column;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-background);
+    min-height: 420px;
+    overflow: hidden;
+}
+
+.tableCard {
+    display: flex;
+    flex-direction: column;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-foreground);
+    min-height: 400px;
+    overflow: hidden;
+}
+
+/* Map footer: legend aligned right */
+.mapFooterLegend {
+    margin-left: auto;
+}
+
+/* Legend items as circles (wireframe) */
+.mapLegendCircle {
+    border-radius: 50%;
+}

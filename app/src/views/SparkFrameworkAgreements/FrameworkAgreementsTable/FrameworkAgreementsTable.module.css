@@ -1,15 +1,14 @@
-/* stylelint-disable csstools/value-no-unknown-custom-properties */
 .filterSection {
-    margin-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--color-border);
-    padding: var(--spacing-md);
+    margin-bottom: var(--go-ui-spacing-md);
+    border-bottom: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    padding: var(--go-ui-spacing-md);
 }
 
 .filterHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--go-ui-spacing-md);
 }
 
 .filterHeader h3 {
@@ -19,18 +18,18 @@
 
 .filtersContainer {
     display: grid;
+    margin-bottom: var(--go-ui-spacing-md);
+    border-radius: var(--go-ui-border-radius-md);
+    background-color: var(--go-ui-color-gray-10);
+    padding: var(--go-ui-spacing-md);
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-    border-radius: 4px;
-    background-color: var(--color-background-secondary);
-    padding: var(--spacing-md);
+    gap: var(--go-ui-spacing-md);
 }
 
 .filterGroup {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: var(--go-ui-spacing-xs);
 }
 
 .filterGroup label {
@@ -48,12 +47,12 @@
 }
 
 .selectInputWrapper :global(input) {
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background-color: var(--color-white);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-md);
+    background-color: var(--go-ui-color-white);
+    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
     width: 100%;
-    font-size: 0.9rem;
+    font-size: var(--go-ui-font-size-sm);
 }
 
 .selectInputWrapper :global(input:disabled) {
@@ -71,12 +70,12 @@
 }
 
 .multiSelectInputWrapper :global(input) {
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background-color: var(--color-white);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-md);
+    background-color: var(--go-ui-color-white);
+    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
     width: 100%;
-    font-size: 0.9rem;
+    font-size: var(--go-ui-font-size-sm);
 }
 
 .multiSelectInputWrapper :global(input:disabled) {
@@ -86,12 +85,30 @@
 
 .resultCount {
     margin: 0;
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
+    color: var(--go-ui-color-text-light);
+    font-size: var(--go-ui-font-size-sm);
+}
+
+/* FA expiring cell: green when expiry > 90 days, orange when 0–90 days (wireframe) */
+.faExpiringGood {
+    border-radius: var(--go-ui-border-radius-sm);
+    background-color: rgba(127, 184, 69, 0.2); /* --go-ui-color-green with alpha */
+    padding: var(--go-ui-spacing-2xs) var(--go-ui-spacing-xs);
+}
+
+.faExpiringSoon {
+    border-radius: var(--go-ui-border-radius-sm);
+    background-color: rgba(255, 128, 0, 0.2); /* --go-ui-color-orange with alpha */
+    padding: var(--go-ui-spacing-2xs) var(--go-ui-spacing-xs);
+}
+
+.expiringDateCell {
+    min-width: 8.5rem;
+    white-space: nowrap;
 }
 
 .tableContainer {
-    padding: var(--spacing-md);
+    padding: var(--go-ui-spacing-md);
     max-height: 400px;
     overflow-x: auto;
     overflow-y: auto;
@@ -102,19 +119,19 @@
     align-items: center;
     flex-wrap: wrap;
     justify-content: center;
-    padding: var(--spacing-md);
-    gap: var(--spacing-xs);
+    padding: var(--go-ui-spacing-md);
+    gap: var(--go-ui-spacing-xs);
 }
 
 .navButton {
-    border: 1px solid var(--color-border);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: 999px;
-    background-color: var(--color-white);
+    background-color: var(--go-ui-color-white);
     cursor: pointer;
     padding: 0.35rem 0.65rem;
     min-width: 2.25rem;
     line-height: 1;
-    color: var(--color-text-primary);
+    color: var(--go-ui-color-text);
 }
 
 .navButton:disabled {
@@ -130,20 +147,21 @@
 
 .pageEllipsis {
     padding: 0 0.15rem;
-    color: var(--color-text-secondary);
-    font-size: 0.95rem;
+    color: var(--go-ui-color-text-light);
+    font-size: var(--go-ui-font-size-sm);
 }
 
 .pageButton,
 .pageButtonActive {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid var(--color-border);
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: 999px;
-    background-color: var(--color-white);
+    background-color: var(--go-ui-color-white);
     cursor: pointer;
     padding: 0.45rem 0.75rem;
     min-width: 2.25rem;
     line-height: 1;
+    color: var(--go-ui-color-text);
 }
 
 .pageButtonActive {
@@ -167,7 +185,7 @@
 }
 
 .pageButton:hover:not(:disabled) {
-    border-color: var(--color-border-hover);
+    border-color: var(--go-ui-color-separator);
 }
 
 /* Increase specificity to override any button base styles */
@@ -178,21 +196,21 @@
 }
 
 .dateRangeDisplay {
-    margin-bottom: var(--spacing-sm);
-    border-radius: 4px;
-    background-color: var(--color-background-secondary);
-    padding: var(--spacing-sm);
-    font-size: 0.9rem;
-    font-weight: 600;
+    margin-bottom: var(--go-ui-spacing-sm);
+    border-radius: var(--go-ui-border-radius-md);
+    background-color: var(--go-ui-color-gray-10);
+    padding: var(--go-ui-spacing-sm);
+    font-size: var(--go-ui-font-size-sm);
+    font-weight: var(--go-ui-font-weight-bold);
 }
 
 .rangeSliderContainer {
     display: flex;
     position: relative;
     align-items: center;
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--go-ui-spacing-sm);
     height: 40px;
-    gap: var(--spacing-sm);
+    gap: var(--go-ui-spacing-sm);
 }
 
 .rangeTrackBase {
@@ -221,9 +239,9 @@
     background: transparent;
     width: 100%;
     height: 6px;
-    pointer-events: none;
     -webkit-appearance: none;
     appearance: none;
+    pointer-events: none;
 }
 
 .rangeSliderStart::-webkit-slider-runnable-track,
@@ -257,9 +275,9 @@
     cursor: pointer;
     width: 22px;
     height: 22px;
-    pointer-events: auto;
     -webkit-appearance: none;
     appearance: none;
+    pointer-events: auto;
 }
 
 .rangeSliderStart::-moz-range-thumb,
