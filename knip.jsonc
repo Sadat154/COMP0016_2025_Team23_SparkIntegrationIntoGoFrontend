@@ -37,6 +37,12 @@
                 "powerbi-client",
                 "mkdirp"
             ],
+            "ignoreExports": [
+                "app/src/views/Spark/index.tsx:Component"
+            ],
+            "ignoreExports": [
+                "**/src/views/Spark/index.tsx:Component"
+            ],
             "entry": [
                 "eslint.config.ts",
                 "scripts/translatte/main.ts",
