@@ -21,10 +21,10 @@ import {
 } from '@ifrc-go/ui/utils';
 import { compareDate } from '@togglecorp/fujs';
 
+import CountrySelectInput from '#components/domain/CountrySelectInput';
+import useCountry, { type Country } from '#hooks/domain/useCountry';
 import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
-import useCountry, { type Country } from '#hooks/domain/useCountry';
-import CountrySelectInput from '#components/domain/CountrySelectInput';
 
 import styles from './FrameworkAgreementsTable.module.css';
 
@@ -32,7 +32,6 @@ const PLACEHOLDER_EMPTY = '—';
 
 /** Days from today beyond which FA expiring is shown as "good" (green); otherwise "soon" (orange) */
 const FA_EXPIRING_GOOD_DAYS_THRESHOLD = 90;
-
 
 function getExpiryStatusClass(dateStr: string | undefined | null): 'good' | 'soon' | undefined {
     if (!dateStr) return undefined;
@@ -212,8 +211,8 @@ function FrameworkAgreementsTable({
         }
 
         const pages = new Set<number>([0, totalPages - 1]);
-        for (let page = start; page <= end; page += 1) {
-            pages.add(page);
+        for (let pageStart = start; pageStart <= end; pageStart += 1) {
+            pages.add(pageStart);
         }
 
         return Array.from(pages).sort((a, b) => a - b);

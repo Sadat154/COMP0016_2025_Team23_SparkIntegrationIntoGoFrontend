@@ -15,14 +15,13 @@ import {
 import getBbox from '@turf/bbox';
 import { type MapboxGeoJSONFeature } from 'mapbox-gl';
 
-import { useRequest } from '#utils/restRequest';
-
 // GlobalMap: Provides base map with country boundaries and interaction handlers
 import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
-import useCountry from '#hooks/domain/useCountry';
 import MapPopup from '#components/MapPopup';
+import useCountry from '#hooks/domain/useCountry';
+import { useRequest } from '#utils/restRequest';
 
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 
@@ -77,7 +76,7 @@ interface CleanedFrameworkAgreementResponse {
     previous?: string | null;
     results: FrameworkAgreementData[];
 }
-// 
+//
 interface FrameworkAgreementSummaryResponse {
     ifrcFrameworkAgreements: number;
     suppliers: number;
@@ -129,7 +128,7 @@ export function Component() {
 
     const countries = useCountry();
     const countryByName = useMemo(() => {
-        const map = new Map<string, (typeof countries)[number]>();
+        const map: Map<string, (typeof countries)[number]> = new Map();
         countries?.forEach((country) => {
             map.set(country.name.toLowerCase(), country);
         });

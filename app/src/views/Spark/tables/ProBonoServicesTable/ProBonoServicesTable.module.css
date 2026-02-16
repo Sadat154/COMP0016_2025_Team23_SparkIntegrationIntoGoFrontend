@@ -1,10 +1,10 @@
 .filters {
     display: flex;
-    gap: 2rem;
     align-items: flex-end;
+    flex-wrap: wrap;
     padding: var(--spacing-md);
     padding-bottom: 40px;
-    flex-wrap: wrap;
+    gap: 2rem;
 }
 
 .filters > * {
@@ -12,6 +12,6 @@
 }
 
 .tableContainer {
-    overflow-x: auto;
     padding: var(--spacing-md);
+    overflow-x: auto;
 }
