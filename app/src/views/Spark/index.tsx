@@ -25,7 +25,7 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
-export function Component() {
+function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
 

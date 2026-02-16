@@ -109,7 +109,7 @@ interface TableFilters {
 
 // MAIN COMPONENT
 /** @knipignore */
-export function Component() {
+function Component() {
     // --------------------------------------------------------------------
     // STATE MANAGEMENT
     // --------------------------------------------------------------------
