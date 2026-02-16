@@ -6,6 +6,9 @@ extend-exclude = [
     "CHANGELOG.md"
     ,"app/public/data/countries.json"
     ,"app/public/data/world.geojson"
+    ,"app/prototypes/world-dashboard/public/data/countries.json"
+    ,"go-api/api/fixtures/Countries.json"
+    ,"app/prototypes/world-dashboard/public/data/world.geojson"
 
 ]
 [default.extend-identifiers]
