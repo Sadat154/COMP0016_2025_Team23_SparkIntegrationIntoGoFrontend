@@ -25,6 +25,8 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
+/** @knipignore */
+// eslint-disable-next-line import/prefer-default-export
 export function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
@@ -118,5 +120,3 @@ export function Component() {
 }
 
 Component.displayName = 'Spark';
-
-export default Component;
