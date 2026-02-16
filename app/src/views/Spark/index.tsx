@@ -25,7 +25,7 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
-function Component() {
+export function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
 
@@ -114,5 +114,3 @@ function Component() {
 }
 
 Component.displayName = 'Spark';
-
-export default Component;

@@ -109,7 +109,7 @@ interface TableFilters {
 
 // MAIN COMPONENT
 /** @knipignore */
-function Component() {
+export function Component() {
     // --------------------------------------------------------------------
     // STATE MANAGEMENT
     // --------------------------------------------------------------------
@@ -506,5 +506,3 @@ function Component() {
 }
 
 Component.displayName = 'SparkFrameworkAgreements';
-
-export default Component;
