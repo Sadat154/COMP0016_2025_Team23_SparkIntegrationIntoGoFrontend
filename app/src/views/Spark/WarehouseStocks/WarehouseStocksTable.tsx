@@ -226,7 +226,6 @@ function WarehouseStocksTable() {
             .then((data) => {
                 if (!mounted) return;
                 const results: WarehouseStock[] = (data && data.results) || [];
-                // Coerce total to a number when possible. Some backends return total as string.
                 let totalCount: number | undefined;
                 if (data && data.total != null) {
                     const parsed = Number(data.total);
@@ -241,16 +240,13 @@ function WarehouseStocksTable() {
                 setTableData(results);
                 setTotal(totalCount);
 
-                // Prefetch relevant pages: neighbours, first and last (within bounds)
                 if (totalCount && totalCount > 0) {
                     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
                     const toPrefetchSet = new Set<number>();
-                    // neighbours: -2..+2
                     for (let d = -2; d <= 2; d += 1) {
                         const p = page + d;
                         if (p >= 1 && p <= totalPages && p !== page) toPrefetchSet.add(p);
                     }
-                    // include first and last
                     toPrefetchSet.add(1);
                     toPrefetchSet.add(totalPages);
 
@@ -307,7 +303,6 @@ function WarehouseStocksTable() {
         sortState.sorting,
     ]);
 
-    // On component unmount, abort any outstanding prefetch controllers
     useEffect(() => () => {
         prefetchControllersRef.current.forEach((c) => {
             try { c.abort(); } catch { /* ignore */ }
@@ -345,7 +340,6 @@ function WarehouseStocksTable() {
         };
     }, [filterRegions, filterItemGroup, filterItemName]);
 
-    // Reset to first page when filters change
     useEffect(() => {
         setPage(1);
     }, [
@@ -355,7 +349,6 @@ function WarehouseStocksTable() {
         filterItemName,
     ]);
 
-    // Fetch lightweight summary for charts and counts instead of fetching all rows
     useEffect(() => {
         let mounted = true;
         setSummaryData(undefined);
@@ -367,7 +360,6 @@ function WarehouseStocksTable() {
         }
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
-        // allow frontend to specify low stock threshold if needed
         params.set('low_stock_threshold', '5');
 
         const url = `/api/v1/warehouse-stocks/summary/?${params.toString()}`;
@@ -376,7 +368,6 @@ function WarehouseStocksTable() {
             .then((data) => {
                 if (!mounted) return;
                 setSummaryData(data || undefined);
-                // clear heavy datasets to avoid memory usage
                 setAllData(undefined);
                 setGapsData(undefined);
             })
@@ -412,8 +403,6 @@ function WarehouseStocksTable() {
         return combined.map((r) => ({ key: String(r), label: String(r) }));
     }, [regionsOpt, aggregatedData, allData]);
     const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
-
-    // `countriesRaw` is a lightweight list of country objects
 
     const countryOptions = useMemo(() => {
         const results = countriesRaw ?? [];

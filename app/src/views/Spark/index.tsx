@@ -71,8 +71,6 @@ export function Component() {
                         <Tab name="custom-regulations">Custom Regulations</Tab>
                     </TabList>
 
-
-
                     <TabPanel name="warehouse-stocks">
                         <div className={styles.tabContent}>
                             <WarehouseStocksTable />
