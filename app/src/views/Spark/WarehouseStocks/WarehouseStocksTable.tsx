@@ -391,15 +391,25 @@ function WarehouseStocksTable() {
     }, [filterRegions, filterCountries, filterItemGroup, filterItemName]);
 
     const regionOptions = useMemo(() => {
-        const fromDistinct = (regionsOpt || []).filter(isDefined);
-        const fromAggregated = (aggregatedData || []).map((a) => a.region).filter(isDefined);
-        const fromAll = (allData || []).map((r) => r.region).filter(isDefined);
+        const fromDistinct = (regionsOpt || []).filter((v) => isDefined(v) && String(v).trim() !== '');
+        const fromAggregated = (aggregatedData || []).map((a) => a.region).filter((v) => isDefined(v) && String(v).trim() !== '');
+        const fromAll = (allData || []).map((r) => r.region).filter((v) => isDefined(v) && String(v).trim() !== '');
+        const FALLBACK_REGIONS = [
+            'Americas',
+            'Asia-Pacific',
+            'MENA',
+            'Europe',
+            'Africa',
+        ];
+
         const combined = unique([
             ...fromDistinct,
             ...fromAggregated,
             ...fromAll,
-        ]);
-        return combined.map((r) => ({ key: r as string, label: r as string }));
+            ...FALLBACK_REGIONS,
+        ]).sort((a, b) => String(a).localeCompare(String(b)));
+
+        return combined.map((r) => ({ key: String(r), label: String(r) }));
     }, [regionsOpt, aggregatedData, allData]);
     const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
 
