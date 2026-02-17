@@ -417,13 +417,35 @@ function WarehouseStocksTable() {
 
     const countryOptions = useMemo(() => {
         const results = countriesRaw ?? [];
+
+        const isoSet = new Set<string>();
+
+        (aggregatedData || []).forEach((a) => {
+            const iso = (a.country_iso3 || '').toString().trim();
+            if (!iso) return;
+            const wc = typeof a.warehouse_count === 'number' ? a.warehouse_count : 0;
+            const qty = parseQty(a.total_quantity) ?? 0;
+            if (wc > 0 || qty > 0) {
+                isoSet.add(iso.toUpperCase());
+            }
+        });
+
+        const baseRows = allData ?? tableData;
+        (baseRows || []).forEach((r) => {
+            const iso = (r.country_iso3 || '').toString().trim();
+            if (!iso) return;
+            if (r.warehouse_name) {
+                isoSet.add(iso.toUpperCase());
+            }
+        });
+
         return results
-            .filter((c) => c.iso3 && c.name)
+            .filter((c) => c.iso3 && c.name && isoSet.has((c.iso3 || '').toString().toUpperCase()))
             .map((c) => ({
                 key: c.iso3 as string,
                 label: c.name as string,
             }));
-    }, [countriesRaw]);
+    }, [countriesRaw, aggregatedData, allData, tableData]);
     const itemGroupOptions = useMemo(() => {
         const fromDistinct = (itemGroupsOpt || []).filter(isDefined);
         const fromSummary = (summaryData?.by_item_group || []).map((g) => g.item_group).filter(isDefined);
