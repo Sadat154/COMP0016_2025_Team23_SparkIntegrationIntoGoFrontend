@@ -2,32 +2,32 @@
     margin: 24px 0 32px 0;
 }
 .tabs {
-    margin: 0;
     display: flex;
+    align-items: stretch;
+    margin: 0;
     padding: 0;
     list-style: none;
     gap: 16px;
-    align-items: stretch;
 }
 .tab {
-    background: #f7f7f7;
-    border: none;
-    padding: 18px 28px;
     display: inline-block;
+    border: none;
+    background: #f7f7f7;
     cursor: pointer;
-    color: #000000;
+    padding: 18px 28px;
     letter-spacing: 0.5px;
+    color: #000000;
     font-weight: 700;
 }
 .tab:focus {
     outline: 2px solid rgba(245,51,63,0.2);
 }
 .tabSelected {
-    background: transparent;
     border: none;
-    padding: 18px 28px;
     border-bottom: 4px solid #F5333F;
+    background: transparent;
     cursor: pointer;
+    padding: 18px 28px;
     color: #F5333F;
     font-weight: 700;
 }
@@ -37,9 +37,9 @@
 }
 .placeholder {
     border: 1px solid #efefef;
+    border-radius: 4px;
     background: #ffffff;
     padding: 28px 18px;
-    border-radius: 4px;
 }
 .placeholderTitle {
     margin: 0 0 8px 0;

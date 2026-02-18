@@ -241,26 +241,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN }}
+          fetch-depth: 0
+  
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+  
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
+  
       - name: Install dependencies
         run: pnpm install
-
+  
       - uses: actions/download-artifact@v4
         with:
           name: ui-build
           path: packages/ui/dist
-
+  
       - name: Generate types
         run: pnpm generate:type
-
+  
       - name: Typecheck
         run: pnpm typecheck
+
 
   typos:
     name: Spell Check with Typos

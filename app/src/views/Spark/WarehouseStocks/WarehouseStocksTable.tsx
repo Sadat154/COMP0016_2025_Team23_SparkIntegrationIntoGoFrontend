@@ -29,6 +29,7 @@ import {
 import useCountryRaw from '#hooks/domain/useCountryRaw';
 import useFilterState from '#hooks/useFilterState';
 
+import CustomsDataCard from './CustomsDataCard';
 import WarehouseStocksMap from './WarehouseStocksMap';
 
 import styles from './WarehouseStocksTable.module.css';
@@ -1011,6 +1012,11 @@ function WarehouseStocksTable() {
                         </div>
                     </div>
                 </div>
+
+                {/* Customs Data Card - shown when exactly one country is selected */}
+                {filterCountries && filterCountries.length === 1 && (
+                    <CustomsDataCard countryIso3={filterCountries[0]} />
+                )}
             </div>
         </Container>
     );
