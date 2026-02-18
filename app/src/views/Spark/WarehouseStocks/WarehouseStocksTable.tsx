@@ -29,6 +29,7 @@ import {
 import useCountryRaw from '#hooks/domain/useCountryRaw';
 import useFilterState from '#hooks/useFilterState';
 
+import CustomsDataCard from './CustomsDataCard';
 import WarehouseStocksMap from './WarehouseStocksMap';
 
 import styles from './WarehouseStocksTable.module.css';
@@ -140,6 +141,15 @@ function WarehouseStocksTable() {
     const [gapsData, setGapsData] = useState<WarehouseStock[] | undefined>();
     const [aggregatedPending, setAggregatedPending] = useState(false);
     const [aggregatedData, setAggregatedData] = useState<Array<{
+        country_iso3?: string | null;
+        country?: string | null;
+        region?: string | null;
+        total_quantity?: string | null;
+        warehouse_count?: number | null;
+    }>>([]);
+    // aggregatedData is fetched with current filters (may include region)
+    // mapAggregatedData is fetched without region filter so the map shows all bubbles
+    const [mapAggregatedData, setMapAggregatedData] = useState<Array<{
         country_iso3?: string | null;
         country?: string | null;
         region?: string | null;
@@ -314,7 +324,6 @@ function WarehouseStocksTable() {
     useEffect(() => {
         let mounted = true;
         setAggregatedPending(true);
-
         const params = new URLSearchParams();
         if (filterRegions && filterRegions.length > 0) params.set('region', filterRegions.join(','));
         if (filterItemGroup) params.set('item_group', filterItemGroup);
@@ -333,6 +342,22 @@ function WarehouseStocksTable() {
             })
             .finally(() => {
                 if (mounted) setAggregatedPending(false);
+            });
+
+        // fetch unfiltered aggregated data for map (do not include region filter)
+        const mapParams = new URLSearchParams();
+        if (filterItemGroup) mapParams.set('item_group', filterItemGroup);
+        if (filterItemName) mapParams.set('item_name', filterItemName);
+        const mapUrl = `/api/v1/warehouse-stocks/aggregated/?${mapParams.toString()}`;
+        fetch(mapUrl)
+            .then((r) => r.json())
+            .then((data) => {
+                if (!mounted) return;
+                setMapAggregatedData(Array.isArray(data?.results) ? data.results : []);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setMapAggregatedData([]);
             });
 
         return () => {
@@ -458,7 +483,7 @@ function WarehouseStocksTable() {
     }, [itemNamesOpt, allData, tableData]);
 
     const mapData = useMemo(
-        () => (aggregatedData || []).map((a) => ({
+        () => (mapAggregatedData || []).map((a) => ({
             id: (a.country_iso3 || a.country || '') as string,
             region: a.region ?? null,
             country: a.country ?? null,
@@ -472,7 +497,7 @@ function WarehouseStocksTable() {
             unit: null,
             quantity: a.total_quantity ?? null,
         } as WarehouseStock)),
-        [aggregatedData],
+        [mapAggregatedData],
     );
 
     const selectedCountryHasData = useMemo(() => {
@@ -868,6 +893,7 @@ function WarehouseStocksTable() {
                     <WarehouseStocksMap
                         data={mapData}
                         selectedCountryNames={filterCountries}
+                        selectedRegions={filterRegions}
                         onCountrySelect={setFilterCountries}
                     />
                 </div>
@@ -1011,6 +1037,11 @@ function WarehouseStocksTable() {
                         </div>
                     </div>
                 </div>
+
+                {/* Customs Data Card - shown when exactly one country is selected */}
+                {filterCountries && filterCountries.length === 1 && (
+                    <CustomsDataCard countryIso3={filterCountries[0]} />
+                )}
             </div>
         </Container>
     );
