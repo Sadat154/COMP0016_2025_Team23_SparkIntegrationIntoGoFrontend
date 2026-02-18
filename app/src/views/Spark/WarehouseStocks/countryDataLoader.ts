@@ -78,7 +78,7 @@ async function loadCountriesData(): Promise<CountryDataFromJSON[]> {
 
 // Convenience helper: load and build ISO3 -> centroid map
 // from bundled countries.json
-export async function loadISO3ToCentroidMap(): Promise<Map<string, [number, number]>> {
+async function loadISO3ToCentroidMap(): Promise<Map<string, [number, number]>> {
     const countries = await loadCountriesData();
     return buildISO3ToCentroidMapFromData(countries);
 }

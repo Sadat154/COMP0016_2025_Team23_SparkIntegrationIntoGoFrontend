@@ -102,6 +102,11 @@
     padding: var(--go-ui-spacing-2xs) var(--go-ui-spacing-xs);
 }
 
+.expiringDateCell {
+    min-width: 8.5rem;
+    white-space: nowrap;
+}
+
 .tableContainer {
     padding: var(--go-ui-spacing-md);
     max-height: 400px;

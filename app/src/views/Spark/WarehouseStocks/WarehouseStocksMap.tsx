@@ -23,7 +23,7 @@ import MapPopup from '#components/MapPopup';
 import { mbtoken } from '#config';
 import useCountryRaw from '#hooks/domain/useCountryRaw';
 
-import { loadISO3ToCentroidMap } from './countryDataLoader';
+import loadISO3ToCentroidMap from './countryDataLoader';
 
 import styles from './WarehouseStocksMap.module.css';
 
