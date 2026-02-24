@@ -76,7 +76,7 @@ interface CleanedFrameworkAgreementResponse {
     previous?: string | null;
     results: FrameworkAgreementData[];
 }
-//
+
 interface FrameworkAgreementSummaryResponse {
     ifrcFrameworkAgreements: number;
     suppliers: number;
@@ -156,10 +156,10 @@ export function Component() {
 
     useEffect(() => {
         setTablePage(0);
+        setError(undefined);
     }, [filters.coverageCountryName, filters.vendorCountryIso3, filters.itemCategory]);
 
     const { pending } = useRequest({
-        skip: Boolean(error),
         url: '/api/v2/fabric/cleaned-framework-agreements/' as never,
         query: {
             page: tablePage + 1,
@@ -295,6 +295,16 @@ export function Component() {
             setHoveredCountry(feature.properties as AdminZeroFeatureProperties);
             setHoveredCoords(coords);
         }, MAP_HOVER_DELAY_MS);
+    }, []);
+
+    // Cleanup hover timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) {
+                window.clearTimeout(hoverTimeoutRef.current);
+                hoverTimeoutRef.current = undefined;
+            }
+        };
     }, []);
 
     // Handle country click on map
@@ -438,6 +448,10 @@ export function Component() {
                             <MapPopup
                                 coordinates={hoveredCoords}
                                 onCloseButtonClick={() => {
+                                    if (hoverTimeoutRef.current) {
+                                        window.clearTimeout(hoverTimeoutRef.current);
+                                        hoverTimeoutRef.current = undefined;
+                                    }
                                     setHoveredCountry(undefined);
                                     setHoveredCoords(undefined);
                                 }}
