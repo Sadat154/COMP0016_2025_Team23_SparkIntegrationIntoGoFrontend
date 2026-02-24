@@ -76,7 +76,7 @@ interface CleanedFrameworkAgreementResponse {
     previous?: string | null;
     results: FrameworkAgreementData[];
 }
-//
+
 interface FrameworkAgreementSummaryResponse {
     ifrcFrameworkAgreements: number;
     suppliers: number;
