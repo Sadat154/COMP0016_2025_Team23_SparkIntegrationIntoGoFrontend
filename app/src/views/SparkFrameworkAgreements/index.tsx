@@ -302,6 +302,7 @@ export function Component() {
         return () => {
             if (hoverTimeoutRef.current) {
                 window.clearTimeout(hoverTimeoutRef.current);
+                hoverTimeoutRef.current = undefined;
             }
         };
     }, []);
