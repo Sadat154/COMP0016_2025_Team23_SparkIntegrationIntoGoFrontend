@@ -297,6 +297,15 @@ export function Component() {
         }, MAP_HOVER_DELAY_MS);
     }, []);
 
+    // Cleanup hover timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) {
+                window.clearTimeout(hoverTimeoutRef.current);
+            }
+        };
+    }, []);
+
     // Handle country click on map
     const handleCountryClick = (feature: AdminZeroFeatureProperties) => {
         const countryName = feature.name;
@@ -438,6 +447,10 @@ export function Component() {
                             <MapPopup
                                 coordinates={hoveredCoords}
                                 onCloseButtonClick={() => {
+                                    if (hoverTimeoutRef.current) {
+                                        window.clearTimeout(hoverTimeoutRef.current);
+                                        hoverTimeoutRef.current = undefined;
+                                    }
                                     setHoveredCountry(undefined);
                                     setHoveredCoords(undefined);
                                 }}
