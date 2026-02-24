@@ -156,10 +156,10 @@ export function Component() {
 
     useEffect(() => {
         setTablePage(0);
+        setError(undefined);
     }, [filters.coverageCountryName, filters.vendorCountryIso3, filters.itemCategory]);
 
     const { pending } = useRequest({
-        skip: Boolean(error),
         url: '/api/v2/fabric/cleaned-framework-agreements/' as never,
         query: {
             page: tablePage + 1,
