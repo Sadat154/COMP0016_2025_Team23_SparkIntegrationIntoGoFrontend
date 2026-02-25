@@ -45,7 +45,9 @@ interface WarehouseStock {
     country: string | null;
     country_iso3?: string | null;
     warehouse_name: string | null;
+    warehouse_id?: string | null;
     item_group: string | null;
+    product_id?: string | null;
     item_name: string | null;
     item_number: string | null;
     item_url?: string | null;
@@ -532,6 +534,12 @@ function WarehouseStocksTable() {
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
+                'warehouse_id',
+                'Warehouse ID',
+                (item) => item.warehouse_id ?? '',
+                { sortable: true },
+            ),
+            createStringColumn<WarehouseStock, string>(
                 'warehouse_managed_by',
                 'Warehouse managed by',
                 () => 'IFRC',
@@ -541,6 +549,12 @@ function WarehouseStocksTable() {
                 'item_group',
                 'Item categories',
                 (item) => item.item_group ?? '',
+                { sortable: true },
+            ),
+            createStringColumn<WarehouseStock, string>(
+                'product_id',
+                'Product ID',
+                (item) => item.product_id ?? '',
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
