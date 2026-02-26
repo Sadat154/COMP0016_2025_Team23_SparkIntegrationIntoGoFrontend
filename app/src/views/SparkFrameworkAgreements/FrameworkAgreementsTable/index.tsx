@@ -74,25 +74,12 @@ function DateCell({ value, className }: DateCellProps) {
     );
 }
 
-interface DescriptionCellProps {
+interface TextCellProps {
     value?: string | null;
     className?: string;
 }
 
-function DescriptionCell({ value, className }: DescriptionCellProps) {
-    return (
-        <div className={className}>
-            {value || PLACEHOLDER_EMPTY}
-        </div>
-    );
-}
-
-interface CategoryCellProps {
-    value?: string | null;
-    className?: string;
-}
-
-function CategoryCell({ value, className }: CategoryCellProps) {
+function TextCell({ value, className }: TextCellProps) {
     return (
         <div className={className}>
             {value || PLACEHOLDER_EMPTY}
@@ -200,10 +187,10 @@ function FrameworkAgreementsTable({
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
             {
-                ...createElementColumn<FrameworkAgreement, string | number, CategoryCellProps>(
+                ...createElementColumn<FrameworkAgreement, string | number, TextCellProps>(
                     'itemCategory',
                     'Item categories',
-                    CategoryCell,
+                    TextCell,
                     (_key, datum) => ({
                         value: datum.itemCategory || datum.paLineProcurementCategory,
                         className: styles.itemCategoryCell,
@@ -224,10 +211,10 @@ function FrameworkAgreementsTable({
                 (item: FrameworkAgreement) => item.itemType,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
-            createElementColumn<FrameworkAgreement, string | number, DescriptionCellProps>(
+            createElementColumn<FrameworkAgreement, string | number, TextCellProps>(
                 'itemServiceShortDescription',
                 'Item Description',
-                DescriptionCell,
+                TextCell,
                 (_key, datum) => ({
                     value: datum.itemServiceShortDescription,
                     className: styles.descriptionCell,
