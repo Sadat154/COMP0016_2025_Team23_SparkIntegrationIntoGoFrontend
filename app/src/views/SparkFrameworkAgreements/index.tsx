@@ -284,10 +284,6 @@ export function Component() {
         return new Set(entries);
     }, [mapStatsByIso3]);
 
-    const handleExport = useCallback(() => {
-        // Placeholder: backend will implement export
-    }, []);
-
     // --------------------------------------------------------------------
     // MAP STYLING & INTERACTION
     // --------------------------------------------------------------------
@@ -479,16 +475,6 @@ export function Component() {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div className={styles.clearAndExportRow}>
-                    <button
-                        type="button"
-                        className={styles.exportLink}
-                        onClick={handleExport}
-                    >
-                        Export
-                    </button>
                 </div>
 
                 {/* Filters */}
