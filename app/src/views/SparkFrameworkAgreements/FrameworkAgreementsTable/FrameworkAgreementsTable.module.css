@@ -47,93 +47,42 @@
     white-space: nowrap;
 }
 
-.tableContainer {
+.tableCard {
+    display: flex;
+    flex-direction: column;
+}
+
+.tableHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--go-ui-width-separator-lg) solid var(--go-ui-color-separator);
+    background-color: var(--go-ui-color-foreground);
+    padding: var(--go-ui-spacing-md);
+    gap: var(--go-ui-spacing-md);
+}
+
+.tableInfo {
+    color: var(--go-ui-color-text-label);
+    font-size: var(--go-ui-font-size-sm);
+    white-space: nowrap;
+}
+
+.tablePagination {
+    display: flex;
+    align-items: center;
+    gap: var(--go-ui-spacing-md);
+}
+
+.tableScroll {
+    flex: 1;
     padding: var(--go-ui-spacing-md);
     max-height: 400px;
     overflow-x: auto;
     overflow-y: auto;
 }
 
-.paginationContainer {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: var(--go-ui-spacing-md);
-    gap: var(--go-ui-spacing-xs);
-}
 
-.navButton {
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
-    border-radius: 999px;
-    background-color: var(--go-ui-color-white);
-    cursor: pointer;
-    padding: 0.35rem 0.65rem;
-    min-width: 2.25rem;
-    line-height: 1;
-    color: var(--go-ui-color-text);
-}
-
-.navButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.pageWrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.pageEllipsis {
-    padding: 0 0.15rem;
-    color: var(--go-ui-color-text-light);
-    font-size: var(--go-ui-font-size-sm);
-}
-
-.pageButton,
-.pageButtonActive {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
-    border-radius: 999px;
-    background-color: var(--go-ui-color-white);
-    cursor: pointer;
-    padding: 0.45rem 0.75rem;
-    min-width: 2.25rem;
-    line-height: 1;
-    color: var(--go-ui-color-text);
-}
-
-.pageButtonActive {
-    border: 2px solid var(--go-ui-color-primary-red);
-    background-color: var(--go-ui-color-primary-red) !important;
-    color: #ffffff !important;
-    font-weight: 600;
-}
-
-.pageButton:focus-visible,
-.pageButtonActive:focus-visible,
-.navButton:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(229, 22, 54, 0.25);
-}
-
-.pageButton:disabled,
-.pageButtonActive:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.pageButton:hover:not(:disabled) {
-    border-color: var(--go-ui-color-separator);
-}
-
-/* Increase specificity to override any button base styles */
-.paginationContainer .pageButtonActive,
-.paginationContainer .pageButtonActive:hover,
-.paginationContainer .pageButtonActive:focus-visible {
-    color: #ffffff !important;
-}
 
 .dateRangeDisplay {
     margin-bottom: var(--go-ui-spacing-sm);

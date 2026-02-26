@@ -7,6 +7,7 @@ import {
 import {
     Container,
     DateOutput,
+    Pager,
     Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
@@ -132,40 +133,7 @@ function FrameworkAgreementsTable({
         },
     }), [sortState]);
 
-    const totalPages = Math.ceil(totalCount / pageSize);
 
-    const displayedPages = useMemo(() => {
-        if (totalPages <= 1) {
-            return totalPages === 1 ? [0] : [];
-        }
-
-        if (totalPages <= 7) {
-            return Array.from({ length: totalPages }, (_val, index) => index);
-        }
-
-        const windowSize = 5;
-        const half = Math.floor(windowSize / 2);
-
-        let start = Math.max(1, page - half);
-        let end = Math.min(totalPages - 2, page + half);
-
-        const visibleCount = end - start + 1;
-        if (visibleCount < windowSize) {
-            const missing = windowSize - visibleCount;
-            if (start === 1) {
-                end = Math.min(totalPages - 2, end + missing);
-            } else if (end === totalPages - 2) {
-                start = Math.max(1, start - missing);
-            }
-        }
-
-        const pages = new Set<number>([0, totalPages - 1]);
-        for (let pageStart = start; pageStart <= end; pageStart += 1) {
-            pages.add(pageStart);
-        }
-
-        return Array.from(pages).sort((a, b) => a - b);
-    }, [page, totalPages]);
 
 
 
@@ -268,81 +236,42 @@ function FrameworkAgreementsTable({
 
     return (
         <Container>
-            <div className={styles.filterSection}>
-                <p className={styles.resultCount}>
-                    Showing
-                    {' '}
-                    {data.length}
-                    {' '}
-                    of
-                    {' '}
-                    {totalCount}
-                    {' '}
-                    results
-                </p>
-            </div>
-
-            <div className={styles.tableContainer}>
-                <SortContext.Provider value={triStateSort}>
-                    <Table
-                        data={sortedData}
-                        keySelector={(_row, index) => index}
-                        columns={columns}
-                        pending={pending}
-                        filtered={false}
-                    />
-                </SortContext.Provider>
-            </div>
-            {totalPages > 0 && (
-                <div className={styles.paginationContainer}>
-                    <button
-                        type="button"
-                        className={styles.navButton}
-                        onClick={() => onPageChange(Math.max(0, page - 1))}
-                        disabled={pending || page === 0}
-                        aria-label="Previous page"
-                    >
-                        &lt;
-                    </button>
-
-                    {displayedPages.map((pageNumber, index) => {
-                        const previousPage = displayedPages[index - 1];
-                        const showEllipsis = index > 0 && previousPage !== undefined && pageNumber - previousPage > 1;
-
-                        return (
-                            <span key={pageNumber} className={styles.pageWrapper}>
-                                {showEllipsis && (
-                                    <span className={styles.pageEllipsis} aria-hidden>
-                                        …
-                                    </span>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => onPageChange(pageNumber)}
-                                    className={pageNumber === page
-                                        ? styles.pageButtonActive
-                                        : styles.pageButton}
-                                    disabled={pending}
-                                    aria-label={`Page ${pageNumber + 1}`}
-                                    aria-current={pageNumber === page ? 'page' : undefined}
-                                >
-                                    {pageNumber + 1}
-                                </button>
-                            </span>
-                        );
-                    })}
-
-                    <button
-                        type="button"
-                        className={styles.navButton}
-                        onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
-                        disabled={pending || page >= totalPages - 1}
-                        aria-label="Next page"
-                    >
-                        &gt;
-                    </button>
+            <div className={styles.tableCard}>
+                <div className={styles.tableHeader}>
+                    <span className={styles.tableInfo}>
+                        {Math.max(1, (page * pageSize) + 1)}
+                        {' '}
+                        –
+                        {' '}
+                        {Math.min((page + 1) * pageSize, totalCount)}
+                        {' '}
+                        of
+                        {' '}
+                        {totalCount}
+                        {' '}
+                        items
+                    </span>
+                    <div className={styles.tablePagination}>
+                        <Pager
+                            activePage={page}
+                            itemsCount={totalCount}
+                            maxItemsPerPage={pageSize}
+                            onActivePageChange={onPageChange}
+                        />
+                    </div>
                 </div>
-            )}
+                <div className={styles.tableScroll}>
+                    <SortContext.Provider value={triStateSort}>
+                        <Table
+                            data={sortedData}
+                            keySelector={(_row, index) => index}
+                            columns={columns}
+                            pending={pending}
+                            filtered={false}
+                        />
+                    </SortContext.Provider>
+                </div>
+            </div>
         </Container>
     );
 }
