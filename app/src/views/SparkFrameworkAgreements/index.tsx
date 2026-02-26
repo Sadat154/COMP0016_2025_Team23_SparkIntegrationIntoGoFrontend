@@ -8,10 +8,16 @@ import {
     useState,
 } from 'react';
 import {
+    Button,
     Container,
     Legend,
+    SelectInput,
     TextOutput,
 } from '@ifrc-go/ui';
+import {
+    numericIdSelector,
+    stringNameSelector,
+} from '@ifrc-go/ui/utils';
 import getBbox from '@turf/bbox';
 import { type MapboxGeoJSONFeature } from 'mapbox-gl';
 
@@ -19,8 +25,9 @@ import { type MapboxGeoJSONFeature } from 'mapbox-gl';
 import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
+import CountrySelectInput from '#components/domain/CountrySelectInput';
 import MapPopup from '#components/MapPopup';
-import useCountry from '#hooks/domain/useCountry';
+import useCountry, { type Country } from '#hooks/domain/useCountry';
 import { useRequest } from '#utils/restRequest';
 
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
@@ -107,6 +114,21 @@ interface TableFilters {
     itemCategory?: string;
 }
 
+type CoverageCountryOption = Pick<Country, 'id' | 'name'>;
+type ItemCategoryOption = {
+    id: string;
+    name: string;
+};
+
+interface ItemCategoryOptionsResponse {
+    results: string[];
+}
+
+const GLOBAL_COVERAGE_OPTION: CoverageCountryOption = {
+    id: 0,
+    name: 'Global',
+};
+
 // MAIN COMPONENT
 /** @knipignore */
 // eslint-disable-next-line import/prefer-default-export
@@ -128,6 +150,25 @@ export function Component() {
     const [hoveredCoords, setHoveredCoords] = useState<[number, number] | undefined>();
 
     const countries = useCountry();
+    const coverageCountryOptions = useMemo(() => {
+        if (!countries) {
+            return [GLOBAL_COVERAGE_OPTION];
+        }
+        return [GLOBAL_COVERAGE_OPTION, ...countries];
+    }, [countries]);
+
+    const { response: itemCategoryResponse } = useRequest({
+        url: '/api/v2/fabric/cleaned-framework-agreements/item-categories/' as never,
+    });
+
+    const itemCategoryOptions = useMemo<ItemCategoryOption[]>(() => {
+        const response = itemCategoryResponse as ItemCategoryOptionsResponse | undefined;
+        return (response?.results ?? []).map((value) => ({
+            id: value,
+            name: value,
+        }));
+    }, [itemCategoryResponse]);
+
     const countryByName = useMemo(() => {
         const map: Map<string, (typeof countries)[number]> = new Map();
         countries?.forEach((country) => {
@@ -153,6 +194,32 @@ export function Component() {
     const handleClearFilters = useCallback(() => {
         setFilters({});
     }, []);
+
+    const handleCoverageCountryChange = useCallback((
+        value: number | undefined,
+        _name: string,
+        option: CoverageCountryOption | undefined,
+    ) => {
+        handleFiltersChange({
+            coverageCountryId: value ?? undefined,
+            coverageCountryName: option?.name,
+        });
+    }, [handleFiltersChange]);
+
+    const handleVendorCountryChange = useCallback((
+        value: number | undefined,
+        _name: string,
+        option: { iso3: string } | undefined,
+    ) => {
+        handleFiltersChange({
+            vendorCountryId: value ?? undefined,
+            vendorCountryIso3: option?.iso3,
+        });
+    }, [handleFiltersChange]);
+
+    const handleItemCategoryChange = useCallback((value: string | undefined) => {
+        handleFiltersChange({ itemCategory: value || undefined });
+    }, [handleFiltersChange]);
 
     useEffect(() => {
         setTablePage(0);
@@ -437,6 +504,57 @@ export function Component() {
                     </button>
                 </div>
 
+                {/* Filters */}
+                <div className={styles.filtersCard}>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            name="coverageCountry"
+                            label="FA coverage country"
+                            options={coverageCountryOptions}
+                            keySelector={numericIdSelector}
+                            labelSelector={stringNameSelector}
+                            value={filters.coverageCountryId}
+                            onChange={handleCoverageCountryChange}
+                            disabled={pending}
+                            placeholder="Select country..."
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <CountrySelectInput
+                            name="vendorCountry"
+                            label="Vendor country"
+                            value={filters.vendorCountryId}
+                            onChange={handleVendorCountryChange}
+                            disabled={pending}
+                            placeholder="Select vendor country..."
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            name="itemCategory"
+                            label="Item category"
+                            options={itemCategoryOptions}
+                            keySelector={stringNameSelector}
+                            labelSelector={stringNameSelector}
+                            value={filters.itemCategory}
+                            onChange={handleItemCategoryChange}
+                            disabled={pending}
+                            placeholder="Select item category..."
+                        />
+                    </div>
+
+                    <div className={styles.clearFilters}>
+                        <Button
+                            name="clear_filters"
+                            onClick={handleClearFilters}
+                        >
+                            Clear Filters
+                        </Button>
+                    </div>
+                </div>
+
                 {/* Map */}
                 <div className={styles.mapCard}>
                     <GlobalMap
@@ -509,9 +627,6 @@ export function Component() {
                         page={tablePage}
                         pageSize={PAGE_SIZE}
                         totalCount={totalCount}
-                        filters={filters}
-                        onFiltersChange={handleFiltersChange}
-                        onClearFilters={handleClearFilters}
                         onPageChange={setTablePage}
                     />
                 </div>

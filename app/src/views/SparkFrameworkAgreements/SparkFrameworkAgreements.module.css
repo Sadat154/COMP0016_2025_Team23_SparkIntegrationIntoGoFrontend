@@ -66,6 +66,11 @@
     min-width: 160px;
 }
 
+.clearFilters {
+    display: flex;
+    align-self: flex-end;
+}
+
 .clearAndExportRow {
     display: flex;
     align-items: center;

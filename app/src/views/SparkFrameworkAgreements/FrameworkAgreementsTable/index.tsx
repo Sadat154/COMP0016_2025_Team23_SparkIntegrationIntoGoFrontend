@@ -2,29 +2,22 @@
 
 import {
     type SetStateAction,
-    useCallback,
     useMemo,
 } from 'react';
 import {
-    Button,
     Container,
     DateOutput,
-    SelectInput,
     Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
     createElementColumn,
     createStringColumn,
-    numericIdSelector,
-    stringNameSelector,
 } from '@ifrc-go/ui/utils';
 import { compareDate } from '@togglecorp/fujs';
 
-import CountrySelectInput from '#components/domain/CountrySelectInput';
-import useCountry, { type Country } from '#hooks/domain/useCountry';
+
 import useFilterState from '#hooks/useFilterState';
-import { useRequest } from '#utils/restRequest';
 
 import styles from './FrameworkAgreementsTable.module.css';
 
@@ -102,17 +95,7 @@ interface FrameworkAgreement {
     updatedAt?: string | null;
 }
 
-interface TableFilters {
-    coverageCountryId?: number;
-    coverageCountryName?: string;
-    vendorCountryId?: number;
-    vendorCountryIso3?: string;
-    itemCategory?: string;
-}
 
-interface ItemCategoryOptionsResponse {
-    results: string[];
-}
 
 interface Props {
     data: FrameworkAgreement[];
@@ -120,22 +103,10 @@ interface Props {
     page: number;
     pageSize: number;
     totalCount: number;
-    filters: TableFilters;
-    onFiltersChange: (next: Partial<TableFilters>) => void;
-    onClearFilters: () => void;
     onPageChange: (nextPage: number) => void;
 }
 
-type CoverageCountryOption = Pick<Country, 'id' | 'name'>;
-type ItemCategoryOption = {
-    id: string;
-    name: string;
-};
 
-const GLOBAL_COVERAGE_OPTION: CoverageCountryOption = {
-    id: 0,
-    name: 'Global',
-};
 
 function FrameworkAgreementsTable({
     data,
@@ -143,30 +114,8 @@ function FrameworkAgreementsTable({
     page,
     pageSize,
     totalCount,
-    filters,
-    onFiltersChange,
-    onClearFilters,
     onPageChange,
 }: Props) {
-    const countries = useCountry();
-    const coverageCountryOptions = useMemo(() => {
-        if (!countries) {
-            return [GLOBAL_COVERAGE_OPTION];
-        }
-        return [GLOBAL_COVERAGE_OPTION, ...countries];
-    }, [countries]);
-
-    const { response: itemCategoryResponse } = useRequest({
-        url: '/api/v2/fabric/cleaned-framework-agreements/item-categories/' as never,
-    });
-
-    const itemCategoryOptions = useMemo<ItemCategoryOption[]>(() => {
-        const response = itemCategoryResponse as ItemCategoryOptionsResponse | undefined;
-        return (response?.results ?? []).map((value) => ({
-            id: value,
-            name: value,
-        }));
-    }, [itemCategoryResponse]);
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
         sorting: sortState.sorting,
@@ -218,31 +167,7 @@ function FrameworkAgreementsTable({
         return Array.from(pages).sort((a, b) => a - b);
     }, [page, totalPages]);
 
-    const handleCoverageCountryChange = useCallback((
-        value: number | undefined,
-        _name: string,
-        option: CoverageCountryOption | undefined,
-    ) => {
-        onFiltersChange({
-            coverageCountryId: value ?? undefined,
-            coverageCountryName: option?.name,
-        });
-    }, [onFiltersChange]);
 
-    const handleVendorCountryChange = useCallback((
-        value: number | undefined,
-        _name: string,
-        option: { iso3: string } | undefined,
-    ) => {
-        onFiltersChange({
-            vendorCountryId: value ?? undefined,
-            vendorCountryIso3: option?.iso3,
-        });
-    }, [onFiltersChange]);
-
-    const handleItemCategoryChange = useCallback((value: string | undefined) => {
-        onFiltersChange({ itemCategory: value || undefined });
-    }, [onFiltersChange]);
 
     const columns = useMemo(
         () => [
@@ -344,63 +269,6 @@ function FrameworkAgreementsTable({
     return (
         <Container>
             <div className={styles.filterSection}>
-                <div className={styles.filterHeader}>
-                    <h3>Filter Framework Agreements</h3>
-                    <Button
-                        name="clear_filters"
-                        onClick={onClearFilters}
-                    >
-                        Clear Filters
-                    </Button>
-                </div>
-
-                <div className={styles.filtersContainer}>
-                    <div className={styles.filterGroup}>
-                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                        <label>FA Coverage Country</label>
-                        <SelectInput
-                            className={styles.selectInputWrapper}
-                            name="coverageCountry"
-                            options={coverageCountryOptions}
-                            keySelector={numericIdSelector}
-                            labelSelector={stringNameSelector}
-                            value={filters.coverageCountryId}
-                            onChange={handleCoverageCountryChange}
-                            disabled={pending}
-                            placeholder="Select country..."
-                        />
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                        <label>Vendor Country</label>
-                        <CountrySelectInput
-                            className={styles.selectInputWrapper}
-                            name="vendorCountry"
-                            value={filters.vendorCountryId}
-                            onChange={handleVendorCountryChange}
-                            disabled={pending}
-                            placeholder="Select vendor country..."
-                        />
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                        <label>Item Category</label>
-                        <SelectInput
-                            className={styles.selectInputWrapper}
-                            name="itemCategory"
-                            options={itemCategoryOptions}
-                            keySelector={stringNameSelector}
-                            labelSelector={stringNameSelector}
-                            value={filters.itemCategory}
-                            onChange={handleItemCategoryChange}
-                            disabled={pending}
-                            placeholder="Select item category..."
-                        />
-                    </div>
-                </div>
-
                 <p className={styles.resultCount}>
                     Showing
                     {' '}

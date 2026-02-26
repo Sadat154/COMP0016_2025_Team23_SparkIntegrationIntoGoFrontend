@@ -1,91 +1,31 @@
 .filterSection {
     margin-bottom: var(--go-ui-spacing-md);
-    border-bottom: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     padding: var(--go-ui-spacing-md);
 }
 
-.filterHeader {
+.filtersCard {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--go-ui-spacing-md);
-}
-
-.filterHeader h3 {
-    margin: 0;
-    font-size: 1.2rem;
-}
-
-.filtersContainer {
-    display: grid;
-    margin-bottom: var(--go-ui-spacing-md);
-    border-radius: var(--go-ui-border-radius-md);
-    background-color: var(--go-ui-color-gray-10);
-    padding: var(--go-ui-spacing-md);
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    align-items: end;
+    flex-wrap: wrap;
     gap: var(--go-ui-spacing-md);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-foreground);
+    padding: var(--go-ui-spacing-md);
 }
 
-.filterGroup {
+.filterItem {
+    flex: 1 1 220px;
+    min-width: 220px;
+}
+
+.clearFilters {
     display: flex;
-    flex-direction: column;
-    gap: var(--go-ui-spacing-xs);
-}
-
-.filterGroup label {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-/* Styling for SelectInput pre-built component */
-.selectInputWrapper {
-    width: 100%;
-}
-
-.selectInputWrapper :global(.input-section-container) {
-    width: 100%;
-}
-
-.selectInputWrapper :global(input) {
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
-    border-radius: var(--go-ui-border-radius-md);
-    background-color: var(--go-ui-color-white);
-    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
-    width: 100%;
-    font-size: var(--go-ui-font-size-sm);
-}
-
-.selectInputWrapper :global(input:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Styling for MultiSelectInput pre-built component */
-.multiSelectInputWrapper {
-    width: 100%;
-}
-
-.multiSelectInputWrapper :global(.input-section-container) {
-    width: 100%;
-}
-
-.multiSelectInputWrapper :global(input) {
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
-    border-radius: var(--go-ui-border-radius-md);
-    background-color: var(--go-ui-color-white);
-    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
-    width: 100%;
-    font-size: var(--go-ui-font-size-sm);
-}
-
-.multiSelectInputWrapper :global(input:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
+    align-self: flex-end;
 }
 
 .resultCount {
-    margin: 0;
-    color: var(--go-ui-color-text-light);
+    margin: var(--go-ui-spacing-sm) 0 0;
+    color: var(--go-ui-color-text-label);
     font-size: var(--go-ui-font-size-sm);
 }
 
