@@ -277,48 +277,71 @@ export function Component() {
         itemCategoriesCovered: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.itemCategoriesCovered ?? 0,
     }), [summaryResponse]);
 
-    const iso3WithAgreements = useMemo(() => {
-        const entries = Array.from(mapStatsByIso3.values())
-            .filter((stat) => (stat.exclusiveFrameworkAgreements ?? 0) > 0)
-            .map((stat) => stat.iso3);
-        return new Set(entries);
+    // Calculate max count for gradient scaling
+    const maxAgreementCount = useMemo(() => {
+        const counts = Array.from(mapStatsByIso3.values())
+            .map((stat) => stat.exclusiveFrameworkAgreements ?? 0);
+        return Math.max(...counts, 1); // Ensure minimum of 1
     }, [mapStatsByIso3]);
+
+    // Helper function to get color intensity based on agreement count
+    const getColorForCount = useCallback((count: number) => {
+        if (count === 0) return 'rgba(0, 0, 0, 0)';
+        
+        const minOpacity = 0.25; // Minimum opacity for visibility
+        const maxOpacity = 0.8;
+        
+        // Calculate opacity based on count
+        const normalizedCount = count / maxAgreementCount;
+        const opacity = minOpacity + (normalizedCount * (maxOpacity - minOpacity));
+        
+        return `rgba(220, 53, 69, ${opacity})`;
+    }, [maxAgreementCount]);
 
     // --------------------------------------------------------------------
     // MAP STYLING & INTERACTION
     // --------------------------------------------------------------------
-    // Paint style for country polygons: transparent red by default, opaque red when selected
+    // Paint style for country polygons: gradient-based coloring
     const adminZeroFillPaint = useMemo<mapboxgl.FillPaint>(() => {
-        const localCountryMatchExpression = Array.from(iso3WithAgreements)
-            .flatMap((iso3) => [iso3, true]);
+        // Build color expression based on agreement counts
+        const colorExpression: mapboxgl.Expression = ['case'] as mapboxgl.Expression;
+        
+        // If a country is selected
+        (colorExpression as any[]).push(
+            ['boolean', selectedCountry !== undefined, false],
+            [
+                'case',
+                // Highlight selected country in stronger red
+                ['==', ['get', 'iso3'], selectedIso3 ?? ''],
+                'rgba(220, 53, 69, 0.9)',
+                // Unhighlight all other countries
+                'rgba(0, 0, 0, 0)',
+            ],
+        );
+
+        // No country selected - show gradient based on count
+        const countColorMatches: any[] = [];
+        Array.from(mapStatsByIso3.entries()).forEach(([iso3, stat]) => {
+            const count = stat.exclusiveFrameworkAgreements ?? 0;
+            if (count > 0) {
+                countColorMatches.push(iso3);
+                countColorMatches.push(getColorForCount(count));
+            }
+        });
+        
+        if (countColorMatches.length > 0) {
+            (colorExpression as any[]).push(
+                ['match', ['get', 'iso3'], ...countColorMatches, 'rgba(0, 0, 0, 0)'],
+            );
+        } else {
+            (colorExpression as any[]).push('rgba(0, 0, 0, 0)');
+        }
 
         return {
-            'fill-color': [
-                'case',
-                // If a country is selected
-                ['boolean', selectedCountry !== undefined, false],
-                [
-                    'case',
-                    // Highlight selected country in stronger red
-                    ['==', ['get', 'iso3'], selectedIso3 ?? ''],
-                    'rgba(220, 53, 69, 0.6)', // Stronger red
-                    // Unhighlight all other countries
-                    'rgba(0, 0, 0, 0)', // Transparent
-                ],
-                // No country selected - show countries with agreements
-                [
-                    'case',
-                    // Otherwise, check if country has Local agreement
-                    localCountryMatchExpression.length > 0
-                        ? ['match', ['get', 'iso3'], ...localCountryMatchExpression, false]
-                        : false,
-                    'rgba(220, 53, 69, 0.3)', // Transparent red for countries with Local agreements
-                    'rgba(0, 0, 0, 0)', // Transparent for countries without agreements
-                ],
-            ],
+            'fill-color': colorExpression,
             'fill-opacity': 1,
         };
-    }, [selectedIso3, iso3WithAgreements]);
+    }, [selectedIso3, selectedCountry, mapStatsByIso3, getColorForCount]);
 
     const handleCountryHover = useCallback((feature: MapboxGeoJSONFeature | undefined) => {
         if (hoverTimeoutRef.current) {
@@ -530,6 +553,15 @@ export function Component() {
 
                 {/* Map */}
                 <div className={styles.mapCard}>
+                    {/* Map Legend */}
+                    <div className={styles.mapLegend}>
+                        <div className={styles.legendTitle}>Framework Agreements</div>
+                        <div className={styles.legendGradient}>
+                            <span className={styles.legendLabel}>Few</span>
+                            <div className={styles.gradientBar} />
+                            <span className={styles.legendLabel}>Many</span>
+                        </div>
+                    </div>
                     <GlobalMap
                         adminZeroFillPaint={adminZeroFillPaint}
                         onAdminZeroFillClick={handleCountryClick}
