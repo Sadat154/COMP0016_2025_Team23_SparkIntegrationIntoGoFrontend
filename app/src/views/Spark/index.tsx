@@ -19,7 +19,6 @@ import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
 import styles from './styles.module.css';
 
 type SparkTabKey =
-    | 'spark-dashboard'
     | 'warehouse-stocks'
     | 'framework-agreements'
     | 'pro-bono-services'
@@ -31,7 +30,7 @@ export function Component() {
     const location = useLocation();
     const { navigate } = useRouting();
 
-    const [localActiveTab, setLocalActiveTab] = useState<SparkTabKey>('spark-dashboard');
+    const [localActiveTab, setLocalActiveTab] = useState<SparkTabKey>('warehouse-stocks');
 
     const isFrameworkAgreementsRoute = location.pathname.startsWith('/spark/framework-agreements');
     const isCustomRegulationsRoute = location.pathname.startsWith('/spark/custom-regulations');
@@ -72,23 +71,11 @@ export function Component() {
                     styleVariant="tab"
                 >
                     <TabList>
-                        <Tab name="spark-dashboard">SPARK Dashboard</Tab>
                         <Tab name="warehouse-stocks">Stock Inventory</Tab>
                         <Tab name="framework-agreements">Framework Agreements</Tab>
                         <Tab name="pro-bono-services">Pro Bono Services</Tab>
                         <Tab name="custom-regulations">Custom Regulations</Tab>
                     </TabList>
-
-                    <TabPanel name="spark-dashboard">
-                        <div className={styles.tabContent}>
-                            <div className={styles.placeholder}>
-                                <h2 className={styles.placeholderTitle}>SPARK Dashboard</h2>
-                                <p className={styles.placeholderText}>
-                                    Overview map and dashboard widgets.
-                                </p>
-                            </div>
-                        </div>
-                    </TabPanel>
 
                     <TabPanel name="warehouse-stocks">
                         <div className={styles.tabContent}>

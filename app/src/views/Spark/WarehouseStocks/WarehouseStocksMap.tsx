@@ -40,6 +40,7 @@ type BubbleFeatureProps = {
     country: string;
     warehouseCount: number;
     qty: number;
+    region?: string | null;
 };
 
 type HoveredBubble = {
@@ -66,11 +67,12 @@ interface WarehouseStock {
 interface Props {
     data: WarehouseStock[];
     selectedCountryNames?: string[] | undefined;
+    selectedRegions?: string[] | undefined;
     onCountrySelect?: (countryNames: string[] | undefined) => void;
 }
 
 function WarehouseStocksMap(props: Props) {
-    const { data, selectedCountryNames, onCountrySelect } = props;
+    const { data, selectedCountryNames, selectedRegions, onCountrySelect } = props;
 
     const tokenRaw = (mbtoken ?? '').trim();
     const hasToken = /^pk\./.test(tokenRaw);
@@ -134,7 +136,6 @@ function WarehouseStocksMap(props: Props) {
             if (!iso3) {
                 return;
             }
-
             const countryName = row.country ?? iso3ToName.get(iso3) ?? iso3;
             const warehouseName = row.warehouse_name ?? '';
             const qty = parseQty(row.quantity);
@@ -144,11 +145,13 @@ function WarehouseStocksMap(props: Props) {
             if (!current) {
                 const entry: {
                     country: string;
+                    region?: string | null;
                     warehouses?: Set<string>;
                     warehousesCount?: number;
                     qty: number;
                 } = {
                     country: countryName,
+                    region: row.region ?? null,
                     qty,
                 };
                 if (typeof explicitCount === 'number') {
@@ -165,6 +168,10 @@ function WarehouseStocksMap(props: Props) {
                         current.warehouses = new Set();
                     }
                     current.warehouses.add(warehouseName);
+                }
+                // preserve existing region if present, otherwise set from row
+                if (!current.region) {
+                    current.region = row.region ?? null;
                 }
                 current.qty += qty;
             }
@@ -191,12 +198,14 @@ function WarehouseStocksMap(props: Props) {
                     type: 'Point',
                     coordinates: centroid,
                 },
-                properties: {
-                    iso3,
-                    country: v.country,
-                    warehouseCount,
-                    qty: v.qty,
-                },
+                    properties: {
+                        iso3,
+                        country: v.country,
+                        region: v.region ?? null,
+                        region_lc: (v.region ?? '') ? String(v.region).toLowerCase() : '',
+                        warehouseCount,
+                        qty: v.qty,
+                    },
             });
         });
 
@@ -246,32 +255,44 @@ function WarehouseStocksMap(props: Props) {
         data: bubbleGeoJson,
     }), [bubbleGeoJson]);
 
-    const bubblePaint = useMemo<CirclePaint>(() => ({
-        'circle-color': '#F5333F',
-        'circle-opacity': [
-            'case',
-            ['in', ['get', 'iso3'], ['literal', selectedCountryNames ?? []]],
-            0.85, // Higher opacity for selected
-            0.55, // Normal opacity
-        ],
-        'circle-stroke-color': '#F5333F',
-        'circle-stroke-width': [
-            'case',
-            ['in', ['get', 'iso3'], ['literal', selectedCountryNames ?? []]],
-            3, // Thicker stroke for selected
-            0.5,
-        ],
-        'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', 'qty'], 0],
-            0, 3,
-            100, 5,
-            1000, 8,
-            10000, 12,
-            100000, 18,
-        ],
-    }), [selectedCountryNames]);
+    const bubblePaint = useMemo<CirclePaint>(() => {
+        const selectedCountries = (selectedCountryNames ?? []).map((c) => String(c ?? '').toUpperCase());
+        const selectedRegs = (selectedRegions ?? []).map((r) => String(r ?? '').toLowerCase());
+        return ({
+            'circle-color': '#F5333F',
+            // selected bubbles are bolder (higher opacity and thicker stroke)
+            // non-selected bubbles remain visible with normal styling
+            'circle-opacity': [
+                'case',
+                ['any',
+                    ['in', ['get', 'iso3'], ['literal', selectedCountries]],
+                    ['in', ['get', 'region_lc'], ['literal', selectedRegs]],
+                ],
+                0.95, // Higher opacity for selected
+                0.55, // Normal opacity for others
+            ],
+            'circle-stroke-color': '#F5333F',
+            'circle-stroke-width': [
+                'case',
+                ['any',
+                    ['in', ['get', 'iso3'], ['literal', selectedCountries]],
+                    ['in', ['get', 'region_lc'], ['literal', selectedRegs]],
+                ],
+                3, // Thicker stroke for selected
+                0.5, // Normal stroke for others
+            ],
+            'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', 'qty'], 0],
+                0, 3,
+                100, 5,
+                1000, 8,
+                10000, 12,
+                100000, 18,
+            ],
+        } as CirclePaint);
+    }, [selectedCountryNames, selectedRegions]);
 
     const bubbleLayer = useMemo<Omit<CircleLayer, 'id'>>(() => ({
         type: 'circle',
@@ -283,19 +304,21 @@ function WarehouseStocksMap(props: Props) {
             <GlobalMap
                 mapOptions={mapOptions}
             >
-                <MapSource
-                    sourceKey="warehouse-bubbles"
-                    sourceOptions={sourceOptions}
-                    geoJson={bubbleGeoJson}
-                >
-                    <MapLayer
-                        layerKey="warehouse-bubble-layer"
-                        layerOptions={bubbleLayer}
-                        onMouseEnter={handleBubbleEnter}
-                        onMouseLeave={handleBubbleLeave}
-                        onClick={handleBubbleClick}
-                    />
-                </MapSource>
+                    <MapSource
+                        sourceKey="warehouse-bubbles"
+                        sourceOptions={sourceOptions}
+                        geoJson={bubbleGeoJson}
+                    >
+                        <MapLayer
+                            layerKey="warehouse-bubble-layer"
+                            layerOptions={bubbleLayer}
+                            onMouseEnter={handleBubbleEnter}
+                            onMouseLeave={handleBubbleLeave}
+                            onClick={handleBubbleClick}
+                        />
+                    </MapSource>
+
+                
 
                 {hovered && (
                     <MapPopup

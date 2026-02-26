@@ -45,7 +45,9 @@ interface WarehouseStock {
     country: string | null;
     country_iso3?: string | null;
     warehouse_name: string | null;
+    warehouse_id?: string | null;
     item_group: string | null;
+    product_id?: string | null;
     item_name: string | null;
     item_number: string | null;
     item_url?: string | null;
@@ -118,7 +120,7 @@ function getOwner(): OwnerKey {
 }
 
 function WarehouseStocksTable() {
-    const [filterRegion, setFilterRegion] = useState<string | undefined>();
+    const [filterRegions, setFilterRegions] = useState<string[] | undefined>();
     const [filterCountries, setFilterCountries] = useState<string[] | undefined>();
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
@@ -141,6 +143,15 @@ function WarehouseStocksTable() {
     const [gapsData, setGapsData] = useState<WarehouseStock[] | undefined>();
     const [aggregatedPending, setAggregatedPending] = useState(false);
     const [aggregatedData, setAggregatedData] = useState<Array<{
+        country_iso3?: string | null;
+        country?: string | null;
+        region?: string | null;
+        total_quantity?: string | null;
+        warehouse_count?: number | null;
+    }>>([]);
+    // aggregatedData is fetched with current filters (may include region)
+    // mapAggregatedData is fetched without region filter so the map shows all bubbles
+    const [mapAggregatedData, setMapAggregatedData] = useState<Array<{
         country_iso3?: string | null;
         country?: string | null;
         region?: string | null;
@@ -181,15 +192,12 @@ function WarehouseStocksTable() {
         };
     }, []);
 
-    // Fetch table data (on-demand pagination - single page only)
     useEffect(() => {
         let mounted = true;
         setPending(true);
-        // Detect filter/sort key and clear prefetch cache/controllers if they changed
-        const filtersKey = [filterRegion, (filterCountries || []).join(','), filterItemGroup, filterItemName, sortState.sorting?.name, sortState.sorting?.direction, String(pageSize)].join('|');
+        const filtersKey = [(filterRegions || []).join(','), (filterCountries || []).join(','), filterItemGroup, filterItemName, sortState.sorting?.name, sortState.sorting?.direction, String(pageSize)].join('|');
         const hasFiltersChanged = prevFiltersKeyRef.current !== filtersKey;
         if (hasFiltersChanged) {
-            // abort outstanding prefetches and clear cache
             prefetchControllersRef.current.forEach((c) => {
                 try { c.abort(); } catch { /* ignore */ }
             });
@@ -198,7 +206,6 @@ function WarehouseStocksTable() {
             prevFiltersKeyRef.current = filtersKey;
         }
 
-        // Serve prefetched page if available
         const pref = prefetchCacheRef.current.get(page);
         if (pref) {
             setTableData(pref.rows);
@@ -213,7 +220,7 @@ function WarehouseStocksTable() {
         const params = new URLSearchParams();
         params.set('page', String(page));
         params.set('page_size', String(pageSize));
-        if (filterRegion) params.set('region', filterRegion);
+        if (filterRegions && filterRegions.length > 0) params.set('region', filterRegions.join(','));
         if (filterCountries && filterCountries.length > 0) {
             params.set('country_iso3', filterCountries.join(','));
         }
@@ -231,7 +238,6 @@ function WarehouseStocksTable() {
             .then((data) => {
                 if (!mounted) return;
                 const results: WarehouseStock[] = (data && data.results) || [];
-                // Coerce total to a number when possible. Some backends return total as string.
                 let totalCount: number | undefined;
                 if (data && data.total != null) {
                     const parsed = Number(data.total);
@@ -246,16 +252,13 @@ function WarehouseStocksTable() {
                 setTableData(results);
                 setTotal(totalCount);
 
-                // Prefetch relevant pages: neighbours, first and last (within bounds)
                 if (totalCount && totalCount > 0) {
                     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
                     const toPrefetchSet = new Set<number>();
-                    // neighbours: -2..+2
                     for (let d = -2; d <= 2; d += 1) {
                         const p = page + d;
                         if (p >= 1 && p <= totalPages && p !== page) toPrefetchSet.add(p);
                     }
-                    // include first and last
                     toPrefetchSet.add(1);
                     toPrefetchSet.add(totalPages);
 
@@ -305,14 +308,13 @@ function WarehouseStocksTable() {
     }, [
         page,
         pageSize,
-        filterRegion,
+        filterRegions,
         filterCountries,
         filterItemGroup,
         filterItemName,
         sortState.sorting,
     ]);
 
-    // On component unmount, abort any outstanding prefetch controllers
     useEffect(() => () => {
         prefetchControllersRef.current.forEach((c) => {
             try { c.abort(); } catch { /* ignore */ }
@@ -324,9 +326,8 @@ function WarehouseStocksTable() {
     useEffect(() => {
         let mounted = true;
         setAggregatedPending(true);
-
         const params = new URLSearchParams();
-        if (filterRegion) params.set('region', filterRegion);
+        if (filterRegions && filterRegions.length > 0) params.set('region', filterRegions.join(','));
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
 
@@ -345,34 +346,47 @@ function WarehouseStocksTable() {
                 if (mounted) setAggregatedPending(false);
             });
 
+        // fetch unfiltered aggregated data for map (do not include region filter)
+        const mapParams = new URLSearchParams();
+        if (filterItemGroup) mapParams.set('item_group', filterItemGroup);
+        if (filterItemName) mapParams.set('item_name', filterItemName);
+        const mapUrl = `/api/v1/warehouse-stocks/aggregated/?${mapParams.toString()}`;
+        fetch(mapUrl)
+            .then((r) => r.json())
+            .then((data) => {
+                if (!mounted) return;
+                setMapAggregatedData(Array.isArray(data?.results) ? data.results : []);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setMapAggregatedData([]);
+            });
+
         return () => {
             mounted = false;
         };
-    }, [filterRegion, filterItemGroup, filterItemName]);
+    }, [filterRegions, filterItemGroup, filterItemName]);
 
-    // Reset to first page when filters change
     useEffect(() => {
         setPage(1);
     }, [
-        filterRegion,
+        filterRegions,
         filterCountries,
         filterItemGroup,
         filterItemName,
     ]);
 
-    // Fetch lightweight summary for charts and counts instead of fetching all rows
     useEffect(() => {
         let mounted = true;
         setSummaryData(undefined);
 
         const params = new URLSearchParams();
-        if (filterRegion) params.set('region', filterRegion);
+        if (filterRegions && filterRegions.length > 0) params.set('region', filterRegions.join(','));
         if (filterCountries && filterCountries.length > 0) {
             params.set('country_iso3', filterCountries.join(','));
         }
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
-        // allow frontend to specify low stock threshold if needed
         params.set('low_stock_threshold', '5');
 
         const url = `/api/v1/warehouse-stocks/summary/?${params.toString()}`;
@@ -381,7 +395,6 @@ function WarehouseStocksTable() {
             .then((data) => {
                 if (!mounted) return;
                 setSummaryData(data || undefined);
-                // clear heavy datasets to avoid memory usage
                 setAllData(undefined);
                 setGapsData(undefined);
             })
@@ -393,43 +406,86 @@ function WarehouseStocksTable() {
         return () => {
             mounted = false;
         };
-    }, [filterRegion, filterCountries, filterItemGroup, filterItemName]);
+    }, [filterRegions, filterCountries, filterItemGroup, filterItemName]);
 
     const regionOptions = useMemo(() => {
-        const fromDistinct = (regionsOpt || []).filter(isDefined);
-        const fromAggregated = (aggregatedData || []).map((a) => a.region).filter(isDefined);
-        const fromAll = (allData || []).map((r) => r.region).filter(isDefined);
+        const fromDistinct = (regionsOpt || []).filter((v) => isDefined(v) && String(v).trim() !== '');
+        const fromAggregated = (aggregatedData || []).map((a) => a.region).filter((v) => isDefined(v) && String(v).trim() !== '');
+        const fromAll = (allData || []).map((r) => r.region).filter((v) => isDefined(v) && String(v).trim() !== '');
+        const FALLBACK_REGIONS = [
+            'Americas',
+            'Asia-Pacific',
+            'MENA',
+            'Europe',
+            'Africa',
+        ];
+
         const combined = unique([
             ...fromDistinct,
             ...fromAggregated,
             ...fromAll,
-        ]);
-        return combined.map((r) => ({ key: r as string, label: r as string }));
+            ...FALLBACK_REGIONS,
+        ]).sort((a, b) => String(a).localeCompare(String(b)));
+
+        return combined.map((r) => ({ key: String(r), label: String(r) }));
     }, [regionsOpt, aggregatedData, allData]);
     const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
 
-    // `countriesRaw` is a lightweight list of country objects
-
     const countryOptions = useMemo(() => {
         const results = countriesRaw ?? [];
+
+        const isoSet = new Set<string>();
+
+        (aggregatedData || []).forEach((a) => {
+            const iso = (a.country_iso3 || '').toString().trim();
+            if (!iso) return;
+            const wc = typeof a.warehouse_count === 'number' ? a.warehouse_count : 0;
+            const qty = parseQty(a.total_quantity) ?? 0;
+            if (wc > 0 || qty > 0) {
+                isoSet.add(iso.toUpperCase());
+            }
+        });
+
+        const baseRows = allData ?? tableData;
+        (baseRows || []).forEach((r) => {
+            const iso = (r.country_iso3 || '').toString().trim();
+            if (!iso) return;
+            if (r.warehouse_name) {
+                isoSet.add(iso.toUpperCase());
+            }
+        });
+
         return results
-            .filter((c) => c.iso3 && c.name)
+            .filter((c) => c.iso3 && c.name && isoSet.has((c.iso3 || '').toString().toUpperCase()))
             .map((c) => ({
                 key: c.iso3 as string,
                 label: c.name as string,
             }));
-    }, [countriesRaw]);
-    const itemGroupOptions = useMemo(
-        () => (itemGroupsOpt || []).map((g) => ({ key: g, label: g })),
-        [itemGroupsOpt],
-    );
-    const itemNameOptions = useMemo(
-        () => (itemNamesOpt || []).map((n) => ({ key: n, label: n })),
-        [itemNamesOpt],
-    );
+    }, [countriesRaw, aggregatedData, allData, tableData]);
+    const itemGroupOptions = useMemo(() => {
+        const fromDistinct = (itemGroupsOpt || []).filter(isDefined);
+        const fromSummary = (summaryData?.by_item_group || []).map((g) => g.item_group).filter(isDefined);
+        const fromAll = ((allData ?? tableData) || []).map((r) => r.item_group).filter(isDefined);
+        const combined = unique([
+            ...fromDistinct,
+            ...fromSummary,
+            ...fromAll,
+        ], (v) => String(v).toLowerCase()).sort((a, b) => String(a).localeCompare(String(b)));
+        return combined.map((g) => ({ key: String(g), label: String(g) }));
+    }, [itemGroupsOpt, summaryData, allData, tableData]);
+
+    const itemNameOptions = useMemo(() => {
+        const fromDistinct = (itemNamesOpt || []).filter(isDefined);
+        const fromAll = ((allData ?? tableData) || []).map((r) => r.item_name).filter(isDefined);
+        const combined = unique([
+            ...fromDistinct,
+            ...fromAll,
+        ], (v) => String(v).toLowerCase()).sort((a, b) => String(a).localeCompare(String(b)));
+        return combined.map((n) => ({ key: String(n), label: String(n) }));
+    }, [itemNamesOpt, allData, tableData]);
 
     const mapData = useMemo(
-        () => (aggregatedData || []).map((a) => ({
+        () => (mapAggregatedData || []).map((a) => ({
             id: (a.country_iso3 || a.country || '') as string,
             region: a.region ?? null,
             country: a.country ?? null,
@@ -443,7 +499,7 @@ function WarehouseStocksTable() {
             unit: null,
             quantity: a.total_quantity ?? null,
         } as WarehouseStock)),
-        [aggregatedData],
+        [mapAggregatedData],
     );
 
     const selectedCountryHasData = useMemo(() => {
@@ -478,6 +534,12 @@ function WarehouseStocksTable() {
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
+                'warehouse_id',
+                'Warehouse ID',
+                (item) => item.warehouse_id ?? '',
+                { sortable: true },
+            ),
+            createStringColumn<WarehouseStock, string>(
                 'warehouse_managed_by',
                 'Warehouse managed by',
                 () => 'IFRC',
@@ -487,6 +549,12 @@ function WarehouseStocksTable() {
                 'item_group',
                 'Item categories',
                 (item) => item.item_group ?? '',
+                { sortable: true },
+            ),
+            createStringColumn<WarehouseStock, string>(
+                'product_id',
+                'Product ID',
+                (item) => item.product_id ?? '',
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
@@ -531,8 +599,8 @@ function WarehouseStocksTable() {
     const stringLabelSelector = useCallback((option: SelectOption) => option.label, []);
     const emptyOptions = useMemo<SelectOption[]>(() => [], []);
 
-    const handleRegionChange = useCallback((newValue: string | undefined) => {
-        setFilterRegion(newValue);
+    const handleRegionChange = useCallback((newValue: (string | number)[] | undefined) => {
+        setFilterRegions(newValue as string[] | undefined);
     }, []);
 
     const handleCountriesChange = useCallback((newValue: (string | number)[] | undefined) => {
@@ -548,7 +616,7 @@ function WarehouseStocksTable() {
     }, []);
 
     const handleClearAll = useCallback(() => {
-        setFilterRegion(undefined);
+        setFilterRegions(undefined);
         setFilterCountries(undefined);
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
@@ -572,7 +640,7 @@ function WarehouseStocksTable() {
             base = base.filter(() => getOwner() === owner);
         }
 
-        if (filterRegion) base = base.filter((i) => i.region === filterRegion);
+        if (filterRegions && filterRegions.length > 0) base = base.filter((i) => filterRegions.includes(i.region ?? ''));
         if (filterCountries && filterCountries.length > 0) {
             base = base.filter((i) => filterCountries.includes(i.country_iso3 ?? ''));
         }
@@ -595,7 +663,7 @@ function WarehouseStocksTable() {
         summaryData,
         allData,
         tableData,
-        filterRegion,
+        filterRegions,
         filterCountries,
         filterItemName,
         owner,
@@ -617,7 +685,7 @@ function WarehouseStocksTable() {
             base = base.filter(() => getOwner() === owner);
         }
 
-        if (filterRegion) base = base.filter((i) => i.region === filterRegion);
+        if (filterRegions && filterRegions.length > 0) base = base.filter((i) => filterRegions.includes(i.region ?? ''));
         if (filterCountries && filterCountries.length > 0) {
             base = base.filter((i) => filterCountries.includes(i.country_iso3 ?? ''));
         }
@@ -643,7 +711,7 @@ function WarehouseStocksTable() {
         allData,
         tableData,
         owner,
-        filterRegion,
+        filterRegions,
         filterCountries,
         filterItemName,
     ]);
@@ -764,11 +832,11 @@ function WarehouseStocksTable() {
                 {/* Stock filters (second row) */}
                 <div className={styles.filtersCard}>
                     <div className={styles.filterItem}>
-                        <SelectInput
+                        <MultiSelectInput
                             placeholder="All Regions"
                             label="Region"
                             name="region"
-                            value={filterRegion}
+                            value={filterRegions}
                             onChange={handleRegionChange}
                             keySelector={stringKeySelector}
                             labelSelector={stringLabelSelector}
@@ -839,6 +907,7 @@ function WarehouseStocksTable() {
                     <WarehouseStocksMap
                         data={mapData}
                         selectedCountryNames={filterCountries}
+                        selectedRegions={filterRegions}
                         onCountrySelect={setFilterCountries}
                     />
                 </div>
