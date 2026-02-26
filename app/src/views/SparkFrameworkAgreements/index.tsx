@@ -10,7 +10,6 @@ import {
 import {
     Button,
     Container,
-    Legend,
     SelectInput,
     TextOutput,
 } from '@ifrc-go/ui';
@@ -33,18 +32,6 @@ import { useRequest } from '#utils/restRequest';
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 
 import styles from './SparkFrameworkAgreements.module.css';
-
-interface MapLegendItem {
-    id: string;
-    label: string;
-    color: string;
-}
-
-const MAP_LEGEND_ITEMS: MapLegendItem[] = [
-    { id: 'ifrc', label: 'IFRC FAs', color: '#4a4a4a' },
-    { id: 'icrc', label: 'ICRC FAs', color: '#8a8a8a' },
-    { id: 'ns', label: 'NS FAs', color: '#b8b8b8' },
-];
 
 const PAGE_SIZE = 100;
 const MAP_HOVER_DELAY_MS = 600;
@@ -604,17 +591,6 @@ export function Component() {
                         <GoMapContainer
                             title="Framework Agreements Map"
                             withPresentationMode
-                            footer={(
-                                <div className={styles.mapFooterLegend}>
-                                    <Legend<MapLegendItem>
-                                        items={MAP_LEGEND_ITEMS}
-                                        keySelector={(item) => item.id}
-                                        colorSelector={(item) => item.color}
-                                        labelSelector={(item) => item.label}
-                                        colorElementClassName={styles.mapLegendCircle}
-                                    />
-                                </div>
-                            )}
                         />
                     </GlobalMap>
                 </div>
