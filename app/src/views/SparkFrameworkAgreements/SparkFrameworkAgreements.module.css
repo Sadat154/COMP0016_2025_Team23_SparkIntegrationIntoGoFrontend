@@ -104,7 +104,7 @@
 .mapLegend {
     position: absolute;
     z-index: 10;
-    top: var(--go-ui-spacing-md);
+    top: 25%;
     left: var(--go-ui-spacing-md);
     border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: var(--go-ui-border-radius-md);
