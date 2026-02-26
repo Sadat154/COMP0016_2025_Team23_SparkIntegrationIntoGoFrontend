@@ -87,6 +87,28 @@ function DescriptionCell({ value, className }: DescriptionCellProps) {
     );
 }
 
+interface PriceCellProps {
+    value?: string | null;
+}
+
+function PriceCell({ value }: PriceCellProps) {
+    if (!value) {
+        return PLACEHOLDER_EMPTY;
+    }
+    
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) {
+        return PLACEHOLDER_EMPTY;
+    }
+    
+    return numValue.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+}
+
 interface FrameworkAgreement {
     agreementId: string;
     classification?: string | null;
@@ -192,12 +214,28 @@ function FrameworkAgreementsTable({
                 (item: FrameworkAgreement) => item.vendorName,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
-            createStringColumn(
-                'pricePerUnit',
-                'Unit price',
-                (item: FrameworkAgreement) => item.pricePerUnit,
-                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
-            ),
+            {
+                ...createElementColumn<FrameworkAgreement, string | number, PriceCellProps>(
+                    'pricePerUnit',
+                    'Unit price',
+                    PriceCell,
+                    (_key, datum) => ({
+                        value: datum.pricePerUnit,
+                    }),
+                    { sortable: true },
+                ),
+                valueSelector: (item: FrameworkAgreement) => {
+                    const num = parseFloat(item.pricePerUnit || '0');
+                    return isNaN(num) ? 0 : num;
+                },
+                valueComparator: (a: FrameworkAgreement, b: FrameworkAgreement) => {
+                    const aNum = parseFloat(a.pricePerUnit || '0');
+                    const bNum = parseFloat(b.pricePerUnit || '0');
+                    const aVal = isNaN(aNum) ? 0 : aNum;
+                    const bVal = isNaN(bNum) ? 0 : bNum;
+                    return aVal - bVal;
+                },
+            },
             createStringColumn(
                 'vendorCountry',
                 'Shipping from',
