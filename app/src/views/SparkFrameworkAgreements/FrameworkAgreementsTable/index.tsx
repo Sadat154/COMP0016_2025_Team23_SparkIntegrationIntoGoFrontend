@@ -74,6 +74,19 @@ function DateCell({ value, className }: DateCellProps) {
     );
 }
 
+interface DescriptionCellProps {
+    value?: string | null;
+    className?: string;
+}
+
+function DescriptionCell({ value, className }: DescriptionCellProps) {
+    return (
+        <div className={className}>
+            {value || PLACEHOLDER_EMPTY}
+        </div>
+    );
+}
+
 interface FrameworkAgreement {
     agreementId: string;
     classification?: string | null;
@@ -163,6 +176,16 @@ function FrameworkAgreementsTable({
                 (item: FrameworkAgreement) => item.itemType,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
+            createElementColumn<FrameworkAgreement, string | number, DescriptionCellProps>(
+                'itemServiceShortDescription',
+                'Item Description',
+                DescriptionCell,
+                (_key, datum) => ({
+                    value: datum.itemServiceShortDescription,
+                    className: styles.descriptionCell,
+                }),
+                { sortable: false },
+            ),
             createStringColumn(
                 'vendorName',
                 'Vendor name',
@@ -226,7 +249,7 @@ function FrameworkAgreementsTable({
         }
 
         const columnToSort = columns.find((column) => column.id === sortState.sorting?.name);
-        if (!columnToSort?.valueComparator) {
+        if (!columnToSort || !('valueComparator' in columnToSort)) {
             return data;
         }
 

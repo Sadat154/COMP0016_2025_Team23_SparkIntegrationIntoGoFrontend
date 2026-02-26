@@ -47,6 +47,13 @@
     white-space: nowrap;
 }
 
+.descriptionCell {
+    max-width: 250px;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
 .tableCard {
     display: flex;
     flex-direction: column;
