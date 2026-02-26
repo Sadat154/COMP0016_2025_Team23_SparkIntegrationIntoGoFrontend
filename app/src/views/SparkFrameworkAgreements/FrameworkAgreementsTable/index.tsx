@@ -87,6 +87,19 @@ function DescriptionCell({ value, className }: DescriptionCellProps) {
     );
 }
 
+interface CategoryCellProps {
+    value?: string | null;
+    className?: string;
+}
+
+function CategoryCell({ value, className }: CategoryCellProps) {
+    return (
+        <div className={className}>
+            {value || PLACEHOLDER_EMPTY}
+        </div>
+    );
+}
+
 interface PriceCellProps {
     value?: string | null;
 }
@@ -186,12 +199,25 @@ function FrameworkAgreementsTable({
                 (item: FrameworkAgreement) => item.classification || item.regionCountriesCovered,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
-            createStringColumn(
-                'itemCategory',
-                'Item categories',
-                (item: FrameworkAgreement) => item.itemCategory || item.paLineProcurementCategory,
-                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
-            ),
+            {
+                ...createElementColumn<FrameworkAgreement, string | number, CategoryCellProps>(
+                    'itemCategory',
+                    'Item categories',
+                    CategoryCell,
+                    (_key, datum) => ({
+                        value: datum.itemCategory || datum.paLineProcurementCategory,
+                        className: styles.itemCategoryCell,
+                    }),
+                    { sortable: true },
+                ),
+                valueSelector: (item: FrameworkAgreement) => item.itemCategory || item.paLineProcurementCategory || '',
+                valueComparator: (a: FrameworkAgreement, b: FrameworkAgreement) => {
+                    const aVal = (a.itemCategory || a.paLineProcurementCategory || '').localeCompare(
+                        b.itemCategory || b.paLineProcurementCategory || '',
+                    );
+                    return aVal;
+                },
+            },
             createStringColumn(
                 'itemType',
                 'Item sub-categories',
@@ -322,15 +348,19 @@ function FrameworkAgreementsTable({
                     </div>
                 </div>
                 <div className={styles.tableScroll}>
-                    <SortContext.Provider value={triStateSort}>
-                        <Table
-                            data={sortedData}
-                            keySelector={(_row, index) => index}
-                            columns={columns}
-                            pending={pending}
-                            filtered={false}
-                        />
-                    </SortContext.Provider>
+                    <div className={styles.tableWrapper}>
+                        <div className={styles.tableContent}>
+                            <SortContext.Provider value={triStateSort}>
+                                <Table
+                                    data={sortedData}
+                                    keySelector={(_row, index) => index}
+                                    columns={columns}
+                                    pending={pending}
+                                    filtered={false}
+                                />
+                            </SortContext.Provider>
+                        </div>
+                    </div>
                 </div>
             </div>
         </Container>

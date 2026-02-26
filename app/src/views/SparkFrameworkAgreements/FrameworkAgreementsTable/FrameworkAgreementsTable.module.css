@@ -48,7 +48,14 @@
 }
 
 .descriptionCell {
-    max-width: 250px;
+    max-width: 200px;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+.itemCategoryCell {
+    max-width: 120px;
     word-wrap: break-word;
     white-space: normal;
     overflow-wrap: break-word;
@@ -83,10 +90,62 @@
 
 .tableScroll {
     flex: 1;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    width: 100%;
+    min-width: 0;
+    max-height: 416px;
+}
+
+.tableScroll::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+}
+
+.tableScroll::-webkit-scrollbar-track {
+    background: var(--go-ui-color-background);
+    border-radius: var(--go-ui-border-radius-sm);
+}
+
+.tableScroll::-webkit-scrollbar-thumb {
+    background: var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-sm);
+    border: 3px solid var(--go-ui-color-background);
+}
+
+.tableScroll::-webkit-scrollbar-thumb:hover {
+    background: var(--go-ui-color-text-label);
+}
+
+.tableWrapper {
+    min-width: 1200px;
+    width: fit-content;
+}
+
+.tableContent {
     padding: var(--go-ui-spacing-md);
     max-height: 400px;
-    overflow-x: auto;
     overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.tableContent::-webkit-scrollbar {
+    width: 16px;
+}
+
+.tableContent::-webkit-scrollbar-track {
+    background: var(--go-ui-color-background);
+    border-radius: var(--go-ui-border-radius-sm);
+}
+
+.tableContent::-webkit-scrollbar-thumb {
+    background: var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-sm);
+    border: 3px solid var(--go-ui-color-background);
+}
+
+.tableContent::-webkit-scrollbar-thumb:hover {
+    background: var(--go-ui-color-text-label);
 }
 
 
