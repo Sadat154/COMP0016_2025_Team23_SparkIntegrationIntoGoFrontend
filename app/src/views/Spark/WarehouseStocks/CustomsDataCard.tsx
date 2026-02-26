@@ -11,6 +11,8 @@ import {
 
 import { useRequest } from '#utils/restRequest';
 
+import useCountryRaw from '#hooks/domain/useCountryRaw';
+
 import styles from './CustomsDataCard.module.css';
 
 interface Snippet {
@@ -53,13 +55,22 @@ function CustomsDataCard(props: CustomsDataCardProps) {
     const { countryIso3 } = props;
     const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+    const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
+    const countryName = useMemo(() => {
+        if (!countryIso3) return undefined;
+        const match = (countriesRaw ?? []).find(
+            (c) => (c.iso3 || '').toUpperCase() === countryIso3.toUpperCase(),
+        );
+        return match?.name ?? countryIso3;
+    }, [countriesRaw, countryIso3]);
+
     const {
         pending,
         response,
         error,
     } = useRequest({
-        skip: !countryIso3,
-        url: countryIso3 ? `/api/v2/customs-ai-updates/${encodeURIComponent(countryIso3)}/` : undefined,
+        skip: !countryName,
+        url: countryName ? `/api/v2/customs-ai-updates/${encodeURIComponent(countryName)}/` : undefined,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
@@ -67,11 +78,11 @@ function CustomsDataCard(props: CustomsDataCardProps) {
 
     const formattedDate = useMemo(() => {
         if (!typedResponse) return '';
-        return new Date(typedResponse.generated_at).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
+        const d = new Date(typedResponse.generated_at);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yy = String(d.getFullYear()).slice(-2);
+        return `${dd}-${mm}-${yy}`;
     }, [typedResponse]);
 
     const handleViewDetails = useCallback(() => {
@@ -104,14 +115,12 @@ function CustomsDataCard(props: CustomsDataCardProps) {
 
             {typedResponse && (
                 <div className={styles.contentContainer}>
-                    <div className={styles.header}>
-                        <div>
-                            <p className={styles.generatedDate}>
-                                Last updated:
-                                {' '}
-                                {formattedDate}
-                            </p>
-                        </div>
+                    <div className={styles.headerRow}>
+                        <p className={styles.generatedDate}>
+                            Last update:
+                            {' '}
+                            {formattedDate}
+                        </p>
                         <Button
                             name="view_customs_details"
                             onClick={handleViewDetails}
@@ -120,9 +129,15 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                         </Button>
                     </div>
 
-                    <div className={styles.summarySection}>
-                        <p className={styles.summaryText}>{typedResponse.summary_text}</p>
-                    </div>
+                    <p className={styles.summaryText}>
+                        <strong>Current situation:</strong>
+                        {' '}
+                        {typedResponse.summary_text}
+                    </p>
+
+                    <p className={styles.disclaimer}>
+                        Customs information is indicative and situational. Always confirm with your customs agent or IFRC logistics focal point before shipment
+                    </p>
 
                     {showDetailsModal && (
                         <Modal
@@ -130,21 +145,6 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                             onClose={() => setShowDetailsModal(false)}
                         >
                             <div className={styles.detailsModal}>
-                                {/* Bullet Points Section */}
-                                {typedResponse.current_situation_bullets
-                                    && typedResponse.current_situation_bullets.length > 0 && (
-                                    <div className={styles.modalSection}>
-                                        <h4 className={styles.modalSectionTitle}>Key Points</h4>
-                                        <ul className={styles.bulletList}>
-                                            {typedResponse.current_situation_bullets.map(
-                                                (bullet: string) => (
-                                                    <li key={bullet}>{bullet}</li>
-                                                ),
-                                            )}
-                                        </ul>
-                                    </div>
-                                )}
-
                                 {/* Sources Section */}
                                 <div className={styles.modalSection}>
                                     <h4 className={styles.modalSectionTitle}>Sources & Evidence</h4>
@@ -159,10 +159,6 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                                                 >
                                                     {source.title}
                                                 </a>
-                                                <span className={styles.sourceRank}>
-                                                    Rank
-                                                    {source.rank}
-                                                </span>
                                             </div>
                                             <p className={styles.sourceDetailInfo}>
                                                 <strong>Publisher:</strong>
