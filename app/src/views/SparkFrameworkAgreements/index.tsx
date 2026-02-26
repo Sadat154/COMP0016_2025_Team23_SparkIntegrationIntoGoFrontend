@@ -131,6 +131,8 @@ export function Component() {
     const [filters, setFilters] = useState<TableFilters>({});
     // error: Stores any error message if loading fails
     const [error, setError] = useState<string | undefined>();
+    // Track whether the API has ever successfully completed loading
+    const [hasEverLoaded, setHasEverLoaded] = useState(false);
     const selectedCountry = filters.coverageCountryName;
     const hoverTimeoutRef = useRef<number | undefined>(undefined);
     const [hoveredCountry, setHoveredCountry] = useState<AdminZeroFeatureProperties | undefined>();
@@ -208,11 +210,7 @@ export function Component() {
         handleFiltersChange({ itemCategory: value || undefined });
     }, [handleFiltersChange]);
 
-    useEffect(() => {
-        setTablePage(0);
-        setError(undefined);
-    }, [filters.coverageCountryName, filters.vendorCountryIso3, filters.itemCategory]);
-
+    // Fetch table data
     const { pending } = useRequest({
         url: '/api/v2/fabric/cleaned-framework-agreements/' as never,
         query: {
@@ -227,13 +225,15 @@ export function Component() {
             const results = data.results ?? [];
             setAgreementData(results);
             setTotalCount(data.count ?? 0);
+            setError(undefined);
+            setHasEverLoaded(true);
         },
         onFailure: () => {
             setError('Failed to load framework agreements.');
         },
     });
 
-    const isLoading = pending && agreementData.length === 0;
+    const isLoading = pending && !hasEverLoaded;
 
     const { response: summaryResponse } = useRequest({
         url: '/api/v2/fabric/cleaned-framework-agreements/summary/' as never,
