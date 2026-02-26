@@ -210,6 +210,12 @@ export function Component() {
         handleFiltersChange({ itemCategory: value || undefined });
     }, [handleFiltersChange]);
 
+    // Reset table page when filters change
+    useEffect(() => {
+        setTablePage(0);
+        setError(undefined);
+    }, [filters]);
+
     // Fetch table data
     const { pending } = useRequest({
         url: '/api/v2/fabric/cleaned-framework-agreements/' as never,
