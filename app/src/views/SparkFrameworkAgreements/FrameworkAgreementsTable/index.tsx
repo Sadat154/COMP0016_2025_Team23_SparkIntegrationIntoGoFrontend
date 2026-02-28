@@ -2,29 +2,23 @@
 
 import {
     type SetStateAction,
-    useCallback,
     useMemo,
 } from 'react';
 import {
-    Button,
     Container,
     DateOutput,
-    SelectInput,
+    Pager,
     Table,
 } from '@ifrc-go/ui';
 import { SortContext } from '@ifrc-go/ui/contexts';
 import {
     createElementColumn,
     createStringColumn,
-    numericIdSelector,
-    stringNameSelector,
 } from '@ifrc-go/ui/utils';
 import { compareDate } from '@togglecorp/fujs';
 
-import CountrySelectInput from '#components/domain/CountrySelectInput';
-import useCountry, { type Country } from '#hooks/domain/useCountry';
+
 import useFilterState from '#hooks/useFilterState';
-import { useRequest } from '#utils/restRequest';
 
 import styles from './FrameworkAgreementsTable.module.css';
 
@@ -80,6 +74,41 @@ function DateCell({ value, className }: DateCellProps) {
     );
 }
 
+interface TextCellProps {
+    value?: string | null;
+    className?: string;
+}
+
+function TextCell({ value, className }: TextCellProps) {
+    return (
+        <div className={className}>
+            {value || PLACEHOLDER_EMPTY}
+        </div>
+    );
+}
+
+interface PriceCellProps {
+    value?: string | null;
+}
+
+function PriceCell({ value }: PriceCellProps) {
+    if (!value) {
+        return PLACEHOLDER_EMPTY;
+    }
+    
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) {
+        return PLACEHOLDER_EMPTY;
+    }
+    
+    return numValue.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+}
+
 interface FrameworkAgreement {
     agreementId: string;
     classification?: string | null;
@@ -102,17 +131,7 @@ interface FrameworkAgreement {
     updatedAt?: string | null;
 }
 
-interface TableFilters {
-    coverageCountryId?: number;
-    coverageCountryName?: string;
-    vendorCountryId?: number;
-    vendorCountryIso3?: string;
-    itemCategory?: string;
-}
 
-interface ItemCategoryOptionsResponse {
-    results: string[];
-}
 
 interface Props {
     data: FrameworkAgreement[];
@@ -120,22 +139,10 @@ interface Props {
     page: number;
     pageSize: number;
     totalCount: number;
-    filters: TableFilters;
-    onFiltersChange: (next: Partial<TableFilters>) => void;
-    onClearFilters: () => void;
     onPageChange: (nextPage: number) => void;
 }
 
-type CoverageCountryOption = Pick<Country, 'id' | 'name'>;
-type ItemCategoryOption = {
-    id: string;
-    name: string;
-};
 
-const GLOBAL_COVERAGE_OPTION: CoverageCountryOption = {
-    id: 0,
-    name: 'Global',
-};
 
 function FrameworkAgreementsTable({
     data,
@@ -143,30 +150,8 @@ function FrameworkAgreementsTable({
     page,
     pageSize,
     totalCount,
-    filters,
-    onFiltersChange,
-    onClearFilters,
     onPageChange,
 }: Props) {
-    const countries = useCountry();
-    const coverageCountryOptions = useMemo(() => {
-        if (!countries) {
-            return [GLOBAL_COVERAGE_OPTION];
-        }
-        return [GLOBAL_COVERAGE_OPTION, ...countries];
-    }, [countries]);
-
-    const { response: itemCategoryResponse } = useRequest({
-        url: '/api/v2/fabric/cleaned-framework-agreements/item-categories/' as never,
-    });
-
-    const itemCategoryOptions = useMemo<ItemCategoryOption[]>(() => {
-        const response = itemCategoryResponse as ItemCategoryOptionsResponse | undefined;
-        return (response?.results ?? []).map((value) => ({
-            id: value,
-            name: value,
-        }));
-    }, [itemCategoryResponse]);
     const { sortState } = useFilterState({ filter: {} });
     const triStateSort = useMemo(() => ({
         sorting: sortState.sorting,
@@ -183,66 +168,9 @@ function FrameworkAgreementsTable({
         },
     }), [sortState]);
 
-    const totalPages = Math.ceil(totalCount / pageSize);
 
-    const displayedPages = useMemo(() => {
-        if (totalPages <= 1) {
-            return totalPages === 1 ? [0] : [];
-        }
 
-        if (totalPages <= 7) {
-            return Array.from({ length: totalPages }, (_val, index) => index);
-        }
 
-        const windowSize = 5;
-        const half = Math.floor(windowSize / 2);
-
-        let start = Math.max(1, page - half);
-        let end = Math.min(totalPages - 2, page + half);
-
-        const visibleCount = end - start + 1;
-        if (visibleCount < windowSize) {
-            const missing = windowSize - visibleCount;
-            if (start === 1) {
-                end = Math.min(totalPages - 2, end + missing);
-            } else if (end === totalPages - 2) {
-                start = Math.max(1, start - missing);
-            }
-        }
-
-        const pages = new Set<number>([0, totalPages - 1]);
-        for (let pageStart = start; pageStart <= end; pageStart += 1) {
-            pages.add(pageStart);
-        }
-
-        return Array.from(pages).sort((a, b) => a - b);
-    }, [page, totalPages]);
-
-    const handleCoverageCountryChange = useCallback((
-        value: number | undefined,
-        _name: string,
-        option: CoverageCountryOption | undefined,
-    ) => {
-        onFiltersChange({
-            coverageCountryId: value ?? undefined,
-            coverageCountryName: option?.name,
-        });
-    }, [onFiltersChange]);
-
-    const handleVendorCountryChange = useCallback((
-        value: number | undefined,
-        _name: string,
-        option: { iso3: string } | undefined,
-    ) => {
-        onFiltersChange({
-            vendorCountryId: value ?? undefined,
-            vendorCountryIso3: option?.iso3,
-        });
-    }, [onFiltersChange]);
-
-    const handleItemCategoryChange = useCallback((value: string | undefined) => {
-        onFiltersChange({ itemCategory: value || undefined });
-    }, [onFiltersChange]);
 
     const columns = useMemo(
         () => [
@@ -258,17 +186,40 @@ function FrameworkAgreementsTable({
                 (item: FrameworkAgreement) => item.classification || item.regionCountriesCovered,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
-            createStringColumn(
-                'itemCategory',
-                'Item categories',
-                (item: FrameworkAgreement) => item.itemCategory || item.paLineProcurementCategory,
-                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
-            ),
+            {
+                ...createElementColumn<FrameworkAgreement, string | number, TextCellProps>(
+                    'itemCategory',
+                    'Item categories',
+                    TextCell,
+                    (_key, datum) => ({
+                        value: datum.itemCategory || datum.paLineProcurementCategory,
+                        className: styles.itemCategoryCell,
+                    }),
+                    { sortable: true },
+                ),
+                valueSelector: (item: FrameworkAgreement) => item.itemCategory || item.paLineProcurementCategory || '',
+                valueComparator: (a: FrameworkAgreement, b: FrameworkAgreement) => {
+                    const aVal = (a.itemCategory || a.paLineProcurementCategory || '').localeCompare(
+                        b.itemCategory || b.paLineProcurementCategory || '',
+                    );
+                    return aVal;
+                },
+            },
             createStringColumn(
                 'itemType',
                 'Item sub-categories',
                 (item: FrameworkAgreement) => item.itemType,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
+            ),
+            createElementColumn<FrameworkAgreement, string | number, TextCellProps>(
+                'itemServiceShortDescription',
+                'Item Description',
+                TextCell,
+                (_key, datum) => ({
+                    value: datum.itemServiceShortDescription,
+                    className: styles.descriptionCell,
+                }),
+                { sortable: false },
             ),
             createStringColumn(
                 'vendorName',
@@ -276,12 +227,28 @@ function FrameworkAgreementsTable({
                 (item: FrameworkAgreement) => item.vendorName,
                 { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
             ),
-            createStringColumn(
-                'pricePerUnit',
-                'Unit price',
-                (item: FrameworkAgreement) => item.pricePerUnit,
-                { sortable: true, defaultEmptyValue: PLACEHOLDER_EMPTY },
-            ),
+            {
+                ...createElementColumn<FrameworkAgreement, string | number, PriceCellProps>(
+                    'pricePerUnit',
+                    'Unit price',
+                    PriceCell,
+                    (_key, datum) => ({
+                        value: datum.pricePerUnit,
+                    }),
+                    { sortable: true },
+                ),
+                valueSelector: (item: FrameworkAgreement) => {
+                    const num = parseFloat(item.pricePerUnit || '0');
+                    return isNaN(num) ? 0 : num;
+                },
+                valueComparator: (a: FrameworkAgreement, b: FrameworkAgreement) => {
+                    const aNum = parseFloat(a.pricePerUnit || '0');
+                    const bNum = parseFloat(b.pricePerUnit || '0');
+                    const aVal = isNaN(aNum) ? 0 : aNum;
+                    const bVal = isNaN(bNum) ? 0 : bNum;
+                    return aVal - bVal;
+                },
+            },
             createStringColumn(
                 'vendorCountry',
                 'Shipping from',
@@ -333,7 +300,7 @@ function FrameworkAgreementsTable({
         }
 
         const columnToSort = columns.find((column) => column.id === sortState.sorting?.name);
-        if (!columnToSort?.valueComparator) {
+        if (!columnToSort || !('valueComparator' in columnToSort)) {
             return data;
         }
 
@@ -343,138 +310,46 @@ function FrameworkAgreementsTable({
 
     return (
         <Container>
-            <div className={styles.filterSection}>
-                <div className={styles.filterHeader}>
-                    <h3>Filter Framework Agreements</h3>
-                    <Button
-                        name="clear_filters"
-                        onClick={onClearFilters}
-                    >
-                        Clear Filters
-                    </Button>
-                </div>
-
-                <div className={styles.filtersContainer}>
-                    <div className={styles.filterGroup}>
-                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                        <label>FA Coverage Country</label>
-                        <SelectInput
-                            className={styles.selectInputWrapper}
-                            name="coverageCountry"
-                            options={coverageCountryOptions}
-                            keySelector={numericIdSelector}
-                            labelSelector={stringNameSelector}
-                            value={filters.coverageCountryId}
-                            onChange={handleCoverageCountryChange}
-                            disabled={pending}
-                            placeholder="Select country..."
-                        />
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                        <label>Vendor Country</label>
-                        <CountrySelectInput
-                            className={styles.selectInputWrapper}
-                            name="vendorCountry"
-                            value={filters.vendorCountryId}
-                            onChange={handleVendorCountryChange}
-                            disabled={pending}
-                            placeholder="Select vendor country..."
-                        />
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                        <label>Item Category</label>
-                        <SelectInput
-                            className={styles.selectInputWrapper}
-                            name="itemCategory"
-                            options={itemCategoryOptions}
-                            keySelector={stringNameSelector}
-                            labelSelector={stringNameSelector}
-                            value={filters.itemCategory}
-                            onChange={handleItemCategoryChange}
-                            disabled={pending}
-                            placeholder="Select item category..."
+            <div className={styles.tableCard}>
+                <div className={styles.tableHeader}>
+                    <span className={styles.tableInfo}>
+                        {Math.max(1, (page * pageSize) + 1)}
+                        {' '}
+                        –
+                        {' '}
+                        {Math.min((page + 1) * pageSize, totalCount)}
+                        {' '}
+                        of
+                        {' '}
+                        {totalCount}
+                        {' '}
+                        items
+                    </span>
+                    <div className={styles.tablePagination}>
+                        <Pager
+                            activePage={page}
+                            itemsCount={totalCount}
+                            maxItemsPerPage={pageSize}
+                            onActivePageChange={onPageChange}
                         />
                     </div>
                 </div>
-
-                <p className={styles.resultCount}>
-                    Showing
-                    {' '}
-                    {data.length}
-                    {' '}
-                    of
-                    {' '}
-                    {totalCount}
-                    {' '}
-                    results
-                </p>
+                <div className={styles.tableScroll}>
+                    <div className={styles.tableWrapper}>
+                        <div className={styles.tableContent}>
+                            <SortContext.Provider value={triStateSort}>
+                                <Table
+                                    data={sortedData}
+                                    keySelector={(_row, index) => index}
+                                    columns={columns}
+                                    pending={pending}
+                                    filtered={false}
+                                />
+                            </SortContext.Provider>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div className={styles.tableContainer}>
-                <SortContext.Provider value={triStateSort}>
-                    <Table
-                        data={sortedData}
-                        keySelector={(_row, index) => index}
-                        columns={columns}
-                        pending={pending}
-                        filtered={false}
-                    />
-                </SortContext.Provider>
-            </div>
-            {totalPages > 0 && (
-                <div className={styles.paginationContainer}>
-                    <button
-                        type="button"
-                        className={styles.navButton}
-                        onClick={() => onPageChange(Math.max(0, page - 1))}
-                        disabled={pending || page === 0}
-                        aria-label="Previous page"
-                    >
-                        &lt;
-                    </button>
-
-                    {displayedPages.map((pageNumber, index) => {
-                        const previousPage = displayedPages[index - 1];
-                        const showEllipsis = index > 0 && previousPage !== undefined && pageNumber - previousPage > 1;
-
-                        return (
-                            <span key={pageNumber} className={styles.pageWrapper}>
-                                {showEllipsis && (
-                                    <span className={styles.pageEllipsis} aria-hidden>
-                                        …
-                                    </span>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => onPageChange(pageNumber)}
-                                    className={pageNumber === page
-                                        ? styles.pageButtonActive
-                                        : styles.pageButton}
-                                    disabled={pending}
-                                    aria-label={`Page ${pageNumber + 1}`}
-                                    aria-current={pageNumber === page ? 'page' : undefined}
-                                >
-                                    {pageNumber + 1}
-                                </button>
-                            </span>
-                        );
-                    })}
-
-                    <button
-                        type="button"
-                        className={styles.navButton}
-                        onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
-                        disabled={pending || page >= totalPages - 1}
-                        aria-label="Next page"
-                    >
-                        &gt;
-                    </button>
-                </div>
-            )}
         </Container>
     );
 }
