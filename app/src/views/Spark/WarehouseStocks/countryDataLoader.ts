@@ -4,7 +4,7 @@ const COUNTRIES_LOCAL_URL = '/data/countries.json';
 let cachedCountriesData: CountryDataFromJSON[] | undefined;
 let inflightPromise: Promise<CountryDataFromJSON[]> | undefined;
 
-interface CountryDataFromJSON {
+export interface CountryDataFromJSON {
     iso3: string | null;
     centroid?: {
         type: string;
@@ -13,7 +13,7 @@ interface CountryDataFromJSON {
 }
 
 // Build a map of ISO3 codes to centroids from provided country data
-function buildISO3ToCentroidMapFromData(
+export function buildISO3ToCentroidMapFromData(
     countries: CountryDataFromJSON[],
 ): Map<string, [number, number]> {
     const map = new Map<string, [number, number]>();
