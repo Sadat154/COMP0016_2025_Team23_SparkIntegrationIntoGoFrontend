@@ -1,10 +1,13 @@
 import {
+    render,
+    screen,
+} from '@testing-library/react';
+import {
     beforeEach,
     expect,
     test,
     vi,
 } from 'vitest';
-import { render, screen } from '@testing-library/react';
 
 import ProBonoServicesTable from './index';
 
@@ -31,7 +34,14 @@ const mockResults = [
     },
 ];
 
-const mockUseRequest = vi.fn(() => ({
+type MockRequestReturn = {
+    pending: boolean;
+    response: { results: typeof mockResults } | undefined;
+    error: undefined;
+    retry: ReturnType<typeof vi.fn>;
+};
+
+const mockUseRequest = vi.fn((): MockRequestReturn => ({
     pending: false,
     response: { results: mockResults },
     error: undefined,
@@ -39,7 +49,7 @@ const mockUseRequest = vi.fn(() => ({
 }));
 
 vi.mock('#utils/restRequest', () => ({
-    useRequest: (opts: unknown) => mockUseRequest(opts),
+    useRequest: () => mockUseRequest(),
 }));
 
 beforeEach(() => {

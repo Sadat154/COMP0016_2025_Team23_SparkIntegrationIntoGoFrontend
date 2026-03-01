@@ -23,6 +23,7 @@ import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
 
 import CustomsRegulationsMap from './CustomsMap/CustomsRegulationsMap';
+import type { Option } from './helpers';
 import {
     buildNormalizedNameToIso3FromCountriesJson,
     getAnswerForQuestion,
@@ -32,7 +33,6 @@ import {
     toTitleCase,
     uniqOptions,
 } from './helpers';
-import type { Option } from './helpers';
 
 // eslint-disable-next-line import/no-relative-packages
 import countriesJson from '../../../prototypes/world-dashboard/public/data/countries.json';

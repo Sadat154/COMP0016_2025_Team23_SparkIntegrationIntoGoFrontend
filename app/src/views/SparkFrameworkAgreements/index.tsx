@@ -20,11 +20,11 @@ import {
 import getBbox from '@turf/bbox';
 import { type MapboxGeoJSONFeature } from 'mapbox-gl';
 
+import CountrySelectInput from '#components/domain/CountrySelectInput';
 // GlobalMap: Provides base map with country boundaries and interaction handlers
 import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
-import CountrySelectInput from '#components/domain/CountrySelectInput';
 import MapPopup from '#components/MapPopup';
 import useCountry, { type Country } from '#hooks/domain/useCountry';
 import { useRequest } from '#utils/restRequest';
@@ -293,14 +293,14 @@ export function Component() {
     // Helper function to get color intensity based on agreement count
     const getColorForCount = useCallback((count: number) => {
         if (count === 0) return 'rgba(0, 0, 0, 0)';
-        
+
         const minOpacity = 0.25; // Minimum opacity for visibility
         const maxOpacity = 0.8;
-        
+
         // Calculate opacity based on count
         const normalizedCount = count / maxAgreementCount;
         const opacity = minOpacity + (normalizedCount * (maxOpacity - minOpacity));
-        
+
         return `rgba(220, 53, 69, ${opacity})`;
     }, [maxAgreementCount]);
 
@@ -311,9 +311,9 @@ export function Component() {
     const adminZeroFillPaint = useMemo<mapboxgl.FillPaint>(() => {
         // Build color expression based on agreement counts
         const colorExpression: mapboxgl.Expression = ['case'] as mapboxgl.Expression;
-        
+
         // If a country is selected
-        (colorExpression as any[]).push(
+        (colorExpression as unknown[]).push(
             ['boolean', selectedCountry !== undefined, false],
             [
                 'case',
@@ -326,7 +326,7 @@ export function Component() {
         );
 
         // No country selected - show gradient based on count
-        const countColorMatches: any[] = [];
+        const countColorMatches: unknown[] = [];
         Array.from(mapStatsByIso3.entries()).forEach(([iso3, stat]) => {
             const count = stat.exclusiveFrameworkAgreements ?? 0;
             if (count > 0) {
@@ -334,13 +334,13 @@ export function Component() {
                 countColorMatches.push(getColorForCount(count));
             }
         });
-        
+
         if (countColorMatches.length > 0) {
-            (colorExpression as any[]).push(
+            (colorExpression as unknown[]).push(
                 ['match', ['get', 'iso3'], ...countColorMatches, 'rgba(0, 0, 0, 0)'],
             );
         } else {
-            (colorExpression as any[]).push('rgba(0, 0, 0, 0)');
+            (colorExpression as unknown[]).push('rgba(0, 0, 0, 0)');
         }
 
         return {
@@ -377,14 +377,13 @@ export function Component() {
     }, []);
 
     // Cleanup hover timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (hoverTimeoutRef.current) {
-                window.clearTimeout(hoverTimeoutRef.current);
-                hoverTimeoutRef.current = undefined;
-            }
-        };
-    }, []);
+    const clearHoverTimeout = () => {
+        if (hoverTimeoutRef.current) {
+            window.clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = undefined;
+        }
+    };
+    useEffect(() => clearHoverTimeout, []);
 
     // Handle country click on map
     const handleCountryClick = (feature: AdminZeroFeatureProperties) => {

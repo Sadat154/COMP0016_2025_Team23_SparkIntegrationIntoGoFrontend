@@ -17,7 +17,6 @@ import {
 } from '@ifrc-go/ui/utils';
 import { compareDate } from '@togglecorp/fujs';
 
-
 import useFilterState from '#hooks/useFilterState';
 
 import styles from './FrameworkAgreementsTable.module.css';
@@ -96,12 +95,12 @@ function PriceCell({ value }: PriceCellProps) {
     if (!value) {
         return PLACEHOLDER_EMPTY;
     }
-    
+
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) {
+    if (Number.isNaN(numValue)) {
         return PLACEHOLDER_EMPTY;
     }
-    
+
     return numValue.toLocaleString('en-US', {
         style: 'currency',
         currency: 'EUR',
@@ -132,8 +131,6 @@ interface FrameworkAgreement {
     updatedAt?: string | null;
 }
 
-
-
 interface Props {
     data: FrameworkAgreement[];
     pending?: boolean;
@@ -142,8 +139,6 @@ interface Props {
     totalCount: number;
     onPageChange: (nextPage: number) => void;
 }
-
-
 
 function FrameworkAgreementsTable({
     data,
@@ -168,10 +163,6 @@ function FrameworkAgreementsTable({
             sortState.setSorting(finalValue);
         },
     }), [sortState]);
-
-
-
-
 
     const columns = useMemo(
         () => [
@@ -240,13 +231,13 @@ function FrameworkAgreementsTable({
                 ),
                 valueSelector: (item: FrameworkAgreement) => {
                     const num = parseFloat(item.pricePerUnit || '0');
-                    return isNaN(num) ? 0 : num;
+                    return Number.isNaN(num) ? 0 : num;
                 },
                 valueComparator: (a: FrameworkAgreement, b: FrameworkAgreement) => {
                     const aNum = parseFloat(a.pricePerUnit || '0');
                     const bNum = parseFloat(b.pricePerUnit || '0');
-                    const aVal = isNaN(aNum) ? 0 : aNum;
-                    const bVal = isNaN(bNum) ? 0 : bNum;
+                    const aVal = Number.isNaN(aNum) ? 0 : aNum;
+                    const bVal = Number.isNaN(bNum) ? 0 : bNum;
                     return aVal - bVal;
                 },
             },

@@ -5,7 +5,7 @@
 
 export type Option = { key: string; label: string };
 
-export interface RegulationItemForHelper {
+interface RegulationItemForHelper {
     question: string;
     answer: string;
 }
@@ -93,7 +93,7 @@ export function toTitleCase(value: string): string {
 // countries.json ISO3 mapping (for buildNormalizedNameToIso3FromCountriesJson)
 // ---------------------------------------------------------------------------
 
-export type CountriesJsonEntry = Record<string, unknown>;
+type CountriesJsonEntry = Record<string, unknown>;
 
 export function coerceCountriesJsonArray(input: unknown): CountriesJsonEntry[] {
     if (Array.isArray(input)) return input as CountriesJsonEntry[];
@@ -108,7 +108,7 @@ export function coerceCountriesJsonArray(input: unknown): CountriesJsonEntry[] {
     return [];
 }
 
-export function pickFirstString(v: unknown): string | undefined {
+function pickFirstString(v: unknown): string | undefined {
     if (typeof v === 'string') return v;
     return undefined;
 }

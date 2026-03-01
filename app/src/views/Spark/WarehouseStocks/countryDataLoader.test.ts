@@ -79,7 +79,7 @@ test('buildISO3ToCentroidMapFromData: skips country with invalid coordinates', (
         },
         {
             iso3: 'Z',
-            centroid: { type: 'Point', coordinates: [1] as [number, number] },
+            centroid: { type: 'Point', coordinates: [1] as unknown as [number, number] },
         },
     ];
     const result = buildISO3ToCentroidMapFromData(countries);

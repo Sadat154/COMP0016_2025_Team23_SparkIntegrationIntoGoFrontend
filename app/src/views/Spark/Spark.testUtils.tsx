@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
-export interface SparkRouterWrapperProps {
+interface SparkRouterWrapperProps {
     children: ReactNode;
     /** Initial URL path for the router (e.g. "/spark" or "/spark/framework-agreements"). */
     initialEntry?: string;
