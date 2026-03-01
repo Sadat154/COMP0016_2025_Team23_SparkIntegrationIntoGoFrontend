@@ -14,7 +14,7 @@ import {
 
 import { Component as SparkView } from '#views/Spark';
 
-import { SparkRouterWrapper } from './Spark.testUtils';
+import SparkRouterWrapper from './Spark.testUtils';
 
 const mockNavigate = vi.fn();
 

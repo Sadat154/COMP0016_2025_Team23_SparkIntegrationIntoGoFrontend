@@ -11,7 +11,7 @@ interface SparkRouterWrapperProps {
  * Wraps children in MemoryRouter for SPARK integration tests.
  * Use with vi.mock('#hooks/useRouting') to control navigation in tests.
  */
-export function SparkRouterWrapper({
+export default function SparkRouterWrapper({
     children,
     initialEntry = '/spark',
 }: SparkRouterWrapperProps) {
