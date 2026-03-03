@@ -478,8 +478,6 @@ function WarehouseStocksTable() {
                         is_domestic: s.is_domestic ?? false,
                     }),
                 );
-                // eslint-disable-next-line no-console
-                console.log('Loaded suggestions:', suggestionsList.map((x) => ({ country: x.country, summary: x.export_summary })));
                 setSuggestions(suggestionsList);
             })
             .catch(() => {
@@ -732,8 +730,6 @@ function WarehouseStocksTable() {
     }, []);
 
     const handleSuggestionClick = useCallback((suggestion: WarehouseSuggestion) => {
-        // eslint-disable-next-line no-console
-        console.log('Suggestion clicked:', suggestion.country, suggestion.export_summary);
         setSelectedSuggestion(suggestion);
     }, []);
 
