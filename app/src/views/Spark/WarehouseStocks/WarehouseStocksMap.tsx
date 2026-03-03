@@ -64,15 +64,43 @@ interface WarehouseStock {
     warehouse_count?: number | null;
 }
 
+interface WarehouseSuggestion {
+    warehouse_id: string;
+    warehouse_name: string;
+    country: string;
+    country_iso3: string;
+    distance_km: number | null;
+    distance_score: number;
+    export_penalty: number;
+    export_summary: string;
+    stock_quantity: number;
+    stock_score: number;
+    total_score: number;
+    is_domestic: boolean;
+}
+
 interface Props {
     data: WarehouseStock[];
     selectedCountryNames?: string[] | undefined;
     selectedRegions?: string[] | undefined;
     onCountrySelect?: (countryNames: string[] | undefined) => void;
+    suggestedCountryIso3s?: string[] | undefined;
+    suggestions?: WarehouseSuggestion[];
+    onSuggestionClick?: (suggestion: WarehouseSuggestion) => void;
+    receivingCountryIso3?: string | undefined;
 }
 
 function WarehouseStocksMap(props: Props) {
-    const { data, selectedCountryNames, selectedRegions, onCountrySelect } = props;
+    const {
+        data,
+        selectedCountryNames,
+        selectedRegions,
+        onCountrySelect,
+        suggestedCountryIso3s,
+        suggestions,
+        onSuggestionClick,
+        receivingCountryIso3,
+    } = props;
 
     const tokenRaw = (mbtoken ?? '').trim();
     const hasToken = /^pk\./.test(tokenRaw);
@@ -234,21 +262,37 @@ function WarehouseStocksMap(props: Props) {
 
     const handleBubbleClick = useCallback((feature: MapboxGeoJSONFeature) => {
         const props2 = feature.properties as BubbleFeatureProps | undefined;
-        if (!props2 || !onCountrySelect) {
+        if (!props2) {
             return true;
         }
 
+        const clickedIso3 = props2.iso3?.toUpperCase();
+        const suggestedIso3List = (suggestedCountryIso3s ?? []).map((c) => c.toUpperCase());
         const current = selectedCountryNames ?? [];
-        const exists = current.includes(props2.iso3);
-        if (exists) {
-            const next = current.filter((c) => c !== props2.iso3);
-            onCountrySelect(next.length > 0 ? next : undefined);
-        } else {
-            onCountrySelect([...current, props2.iso3]);
+        const isAlreadySelected = current.includes(props2.iso3);
+
+        // If this is a suggested country and we're SELECTING it (not unselecting), show the summary panel
+        if (clickedIso3 && suggestedIso3List.includes(clickedIso3) && onSuggestionClick && suggestions && !isAlreadySelected) {
+            const matchingSuggestion = suggestions.find(
+                (s) => s.country_iso3?.toUpperCase() === clickedIso3,
+            );
+            if (matchingSuggestion) {
+                onSuggestionClick(matchingSuggestion);
+            }
+        }
+
+        // Always toggle country selection (for both green and red bubbles)
+        if (onCountrySelect) {
+            if (isAlreadySelected) {
+                const next = current.filter((c) => c !== props2.iso3);
+                onCountrySelect(next.length > 0 ? next : undefined);
+            } else {
+                onCountrySelect([...current, props2.iso3]);
+            }
         }
 
         return true;
-    }, [onCountrySelect, selectedCountryNames]);
+    }, [onCountrySelect, selectedCountryNames, suggestedCountryIso3s, suggestions, onSuggestionClick]);
 
     const sourceOptions = useMemo<GeoJSONSourceRaw>(() => ({
         type: 'geojson',
@@ -258,27 +302,49 @@ function WarehouseStocksMap(props: Props) {
     const bubblePaint = useMemo<CirclePaint>(() => {
         const selectedCountries = (selectedCountryNames ?? []).map((c) => String(c ?? '').toUpperCase());
         const selectedRegs = (selectedRegions ?? []).map((r) => String(r ?? '').toLowerCase());
+        const suggestedIso3s = (suggestedCountryIso3s ?? []).map((c) => String(c ?? '').toUpperCase());
+        const receivingIso3 = receivingCountryIso3?.toUpperCase() ?? '';
+
         return ({
-            'circle-color': '#F5333F',
+            // Color: orange for receiving country, green for suggested, red for others
+            'circle-color': [
+                'case',
+                ['==', ['get', 'iso3'], receivingIso3],
+                '#FF9800', // Orange for receiving country
+                ['in', ['get', 'iso3'], ['literal', suggestedIso3s]],
+                '#4CAF50', // Green for suggested
+                '#F5333F', // Red for others
+            ],
             // selected bubbles are bolder (higher opacity and thicker stroke)
             // non-selected bubbles remain visible with normal styling
             'circle-opacity': [
                 'case',
                 ['any',
+                    ['==', ['get', 'iso3'], receivingIso3],
+                    ['in', ['get', 'iso3'], ['literal', suggestedIso3s]],
                     ['in', ['get', 'iso3'], ['literal', selectedCountries]],
                     ['in', ['get', 'region_lc'], ['literal', selectedRegs]],
                 ],
-                0.95, // Higher opacity for selected
+                0.95, // Higher opacity for selected/suggested/receiving
                 0.55, // Normal opacity for others
             ],
-            'circle-stroke-color': '#F5333F',
+            'circle-stroke-color': [
+                'case',
+                ['==', ['get', 'iso3'], receivingIso3],
+                '#FF9800', // Orange stroke for receiving country
+                ['in', ['get', 'iso3'], ['literal', suggestedIso3s]],
+                '#4CAF50', // Green stroke for suggested
+                '#F5333F', // Red stroke for others
+            ],
             'circle-stroke-width': [
                 'case',
                 ['any',
+                    ['==', ['get', 'iso3'], receivingIso3],
+                    ['in', ['get', 'iso3'], ['literal', suggestedIso3s]],
                     ['in', ['get', 'iso3'], ['literal', selectedCountries]],
                     ['in', ['get', 'region_lc'], ['literal', selectedRegs]],
                 ],
-                3, // Thicker stroke for selected
+                3, // Thicker stroke for selected/suggested/receiving
                 0.5, // Normal stroke for others
             ],
             'circle-radius': [
@@ -292,7 +358,7 @@ function WarehouseStocksMap(props: Props) {
                 100000, 18,
             ],
         } as CirclePaint);
-    }, [selectedCountryNames, selectedRegions]);
+    }, [selectedCountryNames, selectedRegions, suggestedCountryIso3s, receivingCountryIso3]);
 
     const bubbleLayer = useMemo<Omit<CircleLayer, 'id'>>(() => ({
         type: 'circle',
