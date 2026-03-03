@@ -39,6 +39,21 @@ type SelectOption = {
     label: string;
 };
 
+interface WarehouseSuggestion {
+    warehouse_id: string;
+    warehouse_name: string;
+    country: string;
+    country_iso3: string;
+    distance_km: number | null;
+    distance_score: number;
+    export_penalty: number;
+    export_summary: string;
+    stock_quantity: number;
+    stock_score: number;
+    total_score: number;
+    is_domestic: boolean;
+}
+
 interface WarehouseStock {
     id: string;
     region: string | null;
@@ -124,6 +139,20 @@ function WarehouseStocksTable() {
     const [filterCountries, setFilterCountries] = useState<string[] | undefined>();
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
+    const [receivingCountry, setReceivingCountry] = useState<string | undefined>();
+    const [suggestions, setSuggestions] = useState<WarehouseSuggestion[]>([]);
+    const [selectedSuggestion, setSelectedSuggestion] = useState<WarehouseSuggestion | null>(null);
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+    // Derived state from suggestions
+    const suggestedWarehouseIds = useMemo(
+        () => suggestions.map((s) => s.warehouse_id),
+        [suggestions],
+    );
+    const suggestedCountryIso3s = useMemo(
+        () => [...new Set<string>(suggestions.map((s) => s.country_iso3).filter(Boolean))],
+        [suggestions],
+    );
 
     const [owner, setOwner] = useState<OwnerKey>('IFRC');
 
@@ -407,6 +436,61 @@ function WarehouseStocksTable() {
             mounted = false;
         };
     }, [filterRegions, filterCountries, filterItemGroup, filterItemName]);
+
+    // Fetch warehouse suggestions when receiving country AND item name are both selected
+    useEffect(() => {
+        // Clear suggestions if either is missing
+        if (!receivingCountry || !filterItemName) {
+            setSuggestions([]);
+            setSelectedSuggestion(null);
+            return;
+        }
+
+        let mounted = true;
+        setSuggestionsLoading(true);
+        setSelectedSuggestion(null);
+
+        const params = new URLSearchParams();
+        params.set('receiving_country', receivingCountry);
+        params.set('item_name', filterItemName);
+
+        fetch(`/api/v1/warehouse-suggestions/?${params.toString()}`)
+            .then((r) => r.json())
+            .then((data) => {
+                if (!mounted) return;
+                const suggestionsList: WarehouseSuggestion[] = (data.suggestions || []).map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (s: any) => ({
+                        warehouse_id: s.warehouse_id ?? '',
+                        warehouse_name: s.warehouse_name ?? '',
+                        country: s.country ?? '',
+                        country_iso3: s.country_iso3 ?? '',
+                        distance_km: s.distance_km ?? null,
+                        distance_score: s.distance_score ?? 0,
+                        export_penalty: s.export_penalty ?? 0,
+                        export_summary: s.export_summary ?? '',
+                        stock_quantity: s.stock_quantity ?? 0,
+                        stock_score: s.stock_score ?? 0,
+                        total_score: s.total_score ?? 0,
+                        is_domestic: s.is_domestic ?? false,
+                    }),
+                );
+                // eslint-disable-next-line no-console
+                console.log('Loaded suggestions:', suggestionsList.map((x) => ({ country: x.country, summary: x.export_summary })));
+                setSuggestions(suggestionsList);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setSuggestions([]);
+            })
+            .finally(() => {
+                if (mounted) setSuggestionsLoading(false);
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, [receivingCountry, filterItemName]);
 
     const regionOptions = useMemo(() => {
         const fromDistinct = (regionsOpt || []).filter((v) => isDefined(v) && String(v).trim() !== '');
