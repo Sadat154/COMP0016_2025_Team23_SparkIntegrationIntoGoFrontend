@@ -8,10 +8,15 @@ import {
     useState,
 } from 'react';
 import {
+    Button,
     Container,
-    Legend,
+    SelectInput,
     TextOutput,
 } from '@ifrc-go/ui';
+import {
+    numericIdSelector,
+    stringNameSelector,
+} from '@ifrc-go/ui/utils';
 import getBbox from '@turf/bbox';
 import { type MapboxGeoJSONFeature } from 'mapbox-gl';
 
@@ -19,25 +24,14 @@ import { type MapboxGeoJSONFeature } from 'mapbox-gl';
 import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/GlobalMap';
 // GoMapContainer: Wraps map with UI controls (title, download button, footer/legend)
 import GoMapContainer from '#components/GoMapContainer';
+import CountrySelectInput from '#components/domain/CountrySelectInput';
 import MapPopup from '#components/MapPopup';
-import useCountry from '#hooks/domain/useCountry';
+import useCountry, { type Country } from '#hooks/domain/useCountry';
 import { useRequest } from '#utils/restRequest';
 
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
 
 import styles from './SparkFrameworkAgreements.module.css';
-
-interface MapLegendItem {
-    id: string;
-    label: string;
-    color: string;
-}
-
-const MAP_LEGEND_ITEMS: MapLegendItem[] = [
-    { id: 'ifrc', label: 'IFRC FAs', color: '#4a4a4a' },
-    { id: 'icrc', label: 'ICRC FAs', color: '#8a8a8a' },
-    { id: 'ns', label: 'NS FAs', color: '#b8b8b8' },
-];
 
 const PAGE_SIZE = 100;
 const MAP_HOVER_DELAY_MS = 600;
@@ -76,7 +70,7 @@ interface CleanedFrameworkAgreementResponse {
     previous?: string | null;
     results: FrameworkAgreementData[];
 }
-//
+
 interface FrameworkAgreementSummaryResponse {
     ifrcFrameworkAgreements: number;
     suppliers: number;
@@ -107,6 +101,21 @@ interface TableFilters {
     itemCategory?: string;
 }
 
+type CoverageCountryOption = Pick<Country, 'id' | 'name'>;
+type ItemCategoryOption = {
+    id: string;
+    name: string;
+};
+
+interface ItemCategoryOptionsResponse {
+    results: string[];
+}
+
+const GLOBAL_COVERAGE_OPTION: CoverageCountryOption = {
+    id: 0,
+    name: 'Global',
+};
+
 // MAIN COMPONENT
 /** @knipignore */
 // eslint-disable-next-line import/prefer-default-export
@@ -122,12 +131,33 @@ export function Component() {
     const [filters, setFilters] = useState<TableFilters>({});
     // error: Stores any error message if loading fails
     const [error, setError] = useState<string | undefined>();
+    // Track whether the API has ever successfully completed loading
+    const [hasEverLoaded, setHasEverLoaded] = useState(false);
     const selectedCountry = filters.coverageCountryName;
     const hoverTimeoutRef = useRef<number | undefined>(undefined);
     const [hoveredCountry, setHoveredCountry] = useState<AdminZeroFeatureProperties | undefined>();
     const [hoveredCoords, setHoveredCoords] = useState<[number, number] | undefined>();
 
     const countries = useCountry();
+    const coverageCountryOptions = useMemo(() => {
+        if (!countries) {
+            return [GLOBAL_COVERAGE_OPTION];
+        }
+        return [GLOBAL_COVERAGE_OPTION, ...countries];
+    }, [countries]);
+
+    const { response: itemCategoryResponse } = useRequest({
+        url: '/api/v2/fabric/cleaned-framework-agreements/item-categories/' as never,
+    });
+
+    const itemCategoryOptions = useMemo<ItemCategoryOption[]>(() => {
+        const response = itemCategoryResponse as ItemCategoryOptionsResponse | undefined;
+        return (response?.results ?? []).map((value) => ({
+            id: value,
+            name: value,
+        }));
+    }, [itemCategoryResponse]);
+
     const countryByName = useMemo(() => {
         const map: Map<string, (typeof countries)[number]> = new Map();
         countries?.forEach((country) => {
@@ -154,12 +184,40 @@ export function Component() {
         setFilters({});
     }, []);
 
+    const handleCoverageCountryChange = useCallback((
+        value: number | undefined,
+        _name: string,
+        option: CoverageCountryOption | undefined,
+    ) => {
+        handleFiltersChange({
+            coverageCountryId: value ?? undefined,
+            coverageCountryName: option?.name,
+        });
+    }, [handleFiltersChange]);
+
+    const handleVendorCountryChange = useCallback((
+        value: number | undefined,
+        _name: string,
+        option: { iso3: string } | undefined,
+    ) => {
+        handleFiltersChange({
+            vendorCountryId: value ?? undefined,
+            vendorCountryIso3: option?.iso3,
+        });
+    }, [handleFiltersChange]);
+
+    const handleItemCategoryChange = useCallback((value: string | undefined) => {
+        handleFiltersChange({ itemCategory: value || undefined });
+    }, [handleFiltersChange]);
+
+    // Reset table page when filters change
     useEffect(() => {
         setTablePage(0);
-    }, [filters.coverageCountryName, filters.vendorCountryIso3, filters.itemCategory]);
+        setError(undefined);
+    }, [filters]);
 
+    // Fetch table data
     const { pending } = useRequest({
-        skip: Boolean(error),
         url: '/api/v2/fabric/cleaned-framework-agreements/' as never,
         query: {
             page: tablePage + 1,
@@ -173,13 +231,15 @@ export function Component() {
             const results = data.results ?? [];
             setAgreementData(results);
             setTotalCount(data.count ?? 0);
+            setError(undefined);
+            setHasEverLoaded(true);
         },
         onFailure: () => {
             setError('Failed to load framework agreements.');
         },
     });
 
-    const isLoading = pending && agreementData.length === 0;
+    const isLoading = pending && !hasEverLoaded;
 
     const { response: summaryResponse } = useRequest({
         url: '/api/v2/fabric/cleaned-framework-agreements/summary/' as never,
@@ -223,52 +283,71 @@ export function Component() {
         itemCategoriesCovered: (summaryResponse as FrameworkAgreementSummaryResponse | undefined)?.itemCategoriesCovered ?? 0,
     }), [summaryResponse]);
 
-    const iso3WithAgreements = useMemo(() => {
-        const entries = Array.from(mapStatsByIso3.values())
-            .filter((stat) => (stat.exclusiveFrameworkAgreements ?? 0) > 0)
-            .map((stat) => stat.iso3);
-        return new Set(entries);
+    // Calculate max count for gradient scaling
+    const maxAgreementCount = useMemo(() => {
+        const counts = Array.from(mapStatsByIso3.values())
+            .map((stat) => stat.exclusiveFrameworkAgreements ?? 0);
+        return Math.max(...counts, 1); // Ensure minimum of 1
     }, [mapStatsByIso3]);
 
-    const handleExport = useCallback(() => {
-        // Placeholder: backend will implement export
-    }, []);
+    // Helper function to get color intensity based on agreement count
+    const getColorForCount = useCallback((count: number) => {
+        if (count === 0) return 'rgba(0, 0, 0, 0)';
+        
+        const minOpacity = 0.25; // Minimum opacity for visibility
+        const maxOpacity = 0.8;
+        
+        // Calculate opacity based on count
+        const normalizedCount = count / maxAgreementCount;
+        const opacity = minOpacity + (normalizedCount * (maxOpacity - minOpacity));
+        
+        return `rgba(220, 53, 69, ${opacity})`;
+    }, [maxAgreementCount]);
 
     // --------------------------------------------------------------------
     // MAP STYLING & INTERACTION
     // --------------------------------------------------------------------
-    // Paint style for country polygons: transparent red by default, opaque red when selected
+    // Paint style for country polygons: gradient-based coloring
     const adminZeroFillPaint = useMemo<mapboxgl.FillPaint>(() => {
-        const localCountryMatchExpression = Array.from(iso3WithAgreements)
-            .flatMap((iso3) => [iso3, true]);
+        // Build color expression based on agreement counts
+        const colorExpression: mapboxgl.Expression = ['case'] as mapboxgl.Expression;
+        
+        // If a country is selected
+        (colorExpression as any[]).push(
+            ['boolean', selectedCountry !== undefined, false],
+            [
+                'case',
+                // Highlight selected country in stronger red
+                ['==', ['get', 'iso3'], selectedIso3 ?? ''],
+                'rgba(220, 53, 69, 0.9)',
+                // Unhighlight all other countries
+                'rgba(0, 0, 0, 0)',
+            ],
+        );
+
+        // No country selected - show gradient based on count
+        const countColorMatches: any[] = [];
+        Array.from(mapStatsByIso3.entries()).forEach(([iso3, stat]) => {
+            const count = stat.exclusiveFrameworkAgreements ?? 0;
+            if (count > 0) {
+                countColorMatches.push(iso3);
+                countColorMatches.push(getColorForCount(count));
+            }
+        });
+        
+        if (countColorMatches.length > 0) {
+            (colorExpression as any[]).push(
+                ['match', ['get', 'iso3'], ...countColorMatches, 'rgba(0, 0, 0, 0)'],
+            );
+        } else {
+            (colorExpression as any[]).push('rgba(0, 0, 0, 0)');
+        }
 
         return {
-            'fill-color': [
-                'case',
-                // If a country is selected
-                ['boolean', selectedCountry !== undefined, false],
-                [
-                    'case',
-                    // Highlight selected country in stronger red
-                    ['==', ['get', 'iso3'], selectedIso3 ?? ''],
-                    'rgba(220, 53, 69, 0.6)', // Stronger red
-                    // Unhighlight all other countries
-                    'rgba(0, 0, 0, 0)', // Transparent
-                ],
-                // No country selected - show countries with agreements
-                [
-                    'case',
-                    // Otherwise, check if country has Local agreement
-                    localCountryMatchExpression.length > 0
-                        ? ['match', ['get', 'iso3'], ...localCountryMatchExpression, false]
-                        : false,
-                    'rgba(220, 53, 69, 0.3)', // Transparent red for countries with Local agreements
-                    'rgba(0, 0, 0, 0)', // Transparent for countries without agreements
-                ],
-            ],
+            'fill-color': colorExpression,
             'fill-opacity': 1,
         };
-    }, [selectedCountry, selectedIso3, iso3WithAgreements]);
+    }, [selectedIso3, selectedCountry, mapStatsByIso3, getColorForCount]);
 
     const handleCountryHover = useCallback((feature: MapboxGeoJSONFeature | undefined) => {
         if (hoverTimeoutRef.current) {
@@ -295,6 +374,16 @@ export function Component() {
             setHoveredCountry(feature.properties as AdminZeroFeatureProperties);
             setHoveredCoords(coords);
         }, MAP_HOVER_DELAY_MS);
+    }, []);
+
+    // Cleanup hover timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) {
+                window.clearTimeout(hoverTimeoutRef.current);
+                hoverTimeoutRef.current = undefined;
+            }
+        };
     }, []);
 
     // Handle country click on map
@@ -417,18 +506,68 @@ export function Component() {
                     </div>
                 </div>
 
-                <div className={styles.clearAndExportRow}>
-                    <button
-                        type="button"
-                        className={styles.exportLink}
-                        onClick={handleExport}
-                    >
-                        Export
-                    </button>
+                {/* Filters */}
+                <div className={styles.filtersCard}>
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            name="coverageCountry"
+                            label="FA coverage country"
+                            options={coverageCountryOptions}
+                            keySelector={numericIdSelector}
+                            labelSelector={stringNameSelector}
+                            value={filters.coverageCountryId}
+                            onChange={handleCoverageCountryChange}
+                            disabled={pending}
+                            placeholder="Select country..."
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <CountrySelectInput
+                            name="vendorCountry"
+                            label="Vendor country"
+                            value={filters.vendorCountryId}
+                            onChange={handleVendorCountryChange}
+                            disabled={pending}
+                            placeholder="Select vendor country..."
+                        />
+                    </div>
+
+                    <div className={styles.filterItem}>
+                        <SelectInput
+                            name="itemCategory"
+                            label="Item category"
+                            options={itemCategoryOptions}
+                            keySelector={stringNameSelector}
+                            labelSelector={stringNameSelector}
+                            value={filters.itemCategory}
+                            onChange={handleItemCategoryChange}
+                            disabled={pending}
+                            placeholder="Select item category..."
+                        />
+                    </div>
+
+                    <div className={styles.clearFilters}>
+                        <Button
+                            name="clear_filters"
+                            onClick={handleClearFilters}
+                        >
+                            Clear Filters
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Map */}
                 <div className={styles.mapCard}>
+                    {/* Map Legend */}
+                    <div className={styles.mapLegend}>
+                        <div className={styles.legendTitle}>Framework Agreements</div>
+                        <div className={styles.legendGradient}>
+                            <span className={styles.legendLabel}>Few</span>
+                            <div className={styles.gradientBar} />
+                            <span className={styles.legendLabel}>Many</span>
+                        </div>
+                    </div>
                     <GlobalMap
                         adminZeroFillPaint={adminZeroFillPaint}
                         onAdminZeroFillClick={handleCountryClick}
@@ -438,6 +577,10 @@ export function Component() {
                             <MapPopup
                                 coordinates={hoveredCoords}
                                 onCloseButtonClick={() => {
+                                    if (hoverTimeoutRef.current) {
+                                        window.clearTimeout(hoverTimeoutRef.current);
+                                        hoverTimeoutRef.current = undefined;
+                                    }
                                     setHoveredCountry(undefined);
                                     setHoveredCoords(undefined);
                                 }}
@@ -472,17 +615,6 @@ export function Component() {
                         <GoMapContainer
                             title="Framework Agreements Map"
                             withPresentationMode
-                            footer={(
-                                <div className={styles.mapFooterLegend}>
-                                    <Legend<MapLegendItem>
-                                        items={MAP_LEGEND_ITEMS}
-                                        keySelector={(item) => item.id}
-                                        colorSelector={(item) => item.color}
-                                        labelSelector={(item) => item.label}
-                                        colorElementClassName={styles.mapLegendCircle}
-                                    />
-                                </div>
-                            )}
                         />
                     </GlobalMap>
                 </div>
@@ -495,9 +627,6 @@ export function Component() {
                         page={tablePage}
                         pageSize={PAGE_SIZE}
                         totalCount={totalCount}
-                        filters={filters}
-                        onFiltersChange={handleFiltersChange}
-                        onClearFilters={handleClearFilters}
                         onPageChange={setTablePage}
                     />
                 </div>
