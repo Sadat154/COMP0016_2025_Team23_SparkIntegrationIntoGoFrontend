@@ -41,6 +41,7 @@ type BubbleFeatureProps = {
     warehouseCount: number;
     qty: number;
     region?: string | null;
+    region_lc?: string;
 };
 
 type HoveredBubble = {
@@ -154,6 +155,7 @@ function WarehouseStocksMap(props: Props) {
     const bubbleGeoJson: BubbleFC = useMemo(() => {
         const perIso3 = new Map<string, {
             country: string;
+            region?: string | null;
             warehouses?: Set<string>;
             warehousesCount?: number;
             qty: number;
