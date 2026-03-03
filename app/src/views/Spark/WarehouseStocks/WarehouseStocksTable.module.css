@@ -116,24 +116,24 @@
 }
 
 .suggestionTitle {
+    color: var(--go-ui-color-text);
     font-size: var(--go-ui-font-size-md);
     font-weight: var(--go-ui-font-weight-bold);
-    color: var(--go-ui-color-text);
 }
 
 .dismissButton {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
     border: none;
     border-radius: 50%;
     background-color: transparent;
+    cursor: pointer;
     width: 28px;
     height: 28px;
-    font-size: var(--go-ui-font-size-md);
     color: var(--go-ui-color-text-description);
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+    font-size: var(--go-ui-font-size-md);
 }
 
 .dismissButton:hover {
@@ -155,46 +155,46 @@
 }
 
 .scoreLabel {
-    font-size: var(--go-ui-font-size-sm);
     color: var(--go-ui-color-text);
+    font-size: var(--go-ui-font-size-sm);
 }
 
 .scoreValue {
+    color: #4caf50;
     font-size: var(--go-ui-font-size-sm);
     font-weight: var(--go-ui-font-weight-medium);
-    color: #4caf50;
 }
 
 .scoreDivider {
-    border-top: 1px solid rgba(76, 175, 80, 0.3);
     margin: var(--go-ui-spacing-xs) 0;
+    border-top: 1px solid rgba(76, 175, 80, 0.3);
 }
 
 .scoreLabelTotal {
+    color: var(--go-ui-color-text);
     font-size: var(--go-ui-font-size-md);
     font-weight: var(--go-ui-font-weight-bold);
-    color: var(--go-ui-color-text);
 }
 
 .scoreValueTotal {
+    color: #4caf50;
     font-size: var(--go-ui-font-size-md);
     font-weight: var(--go-ui-font-weight-bold);
-    color: #4caf50;
 }
 
 .exportSummaryRow {
-    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
-    background-color: rgba(76, 175, 80, 0.05);
-    border-radius: var(--go-ui-border-radius-md);
     margin-top: var(--go-ui-spacing-2xs);
     margin-bottom: var(--go-ui-spacing-xs);
+    border-radius: var(--go-ui-border-radius-md);
+    background-color: rgba(76, 175, 80, 0.05);
+    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
 }
 
 .exportSummaryText {
+    line-height: 1.4;
+    color: var(--go-ui-color-text-description);
     font-size: var(--go-ui-font-size-sm);
     font-style: italic;
-    color: var(--go-ui-color-text-description);
-    line-height: 1.4;
 }
 
 .ownerRow {

@@ -28,9 +28,9 @@
 
 .disclaimer {
     margin: 0;
-    font-style: italic;
     color: var(--color-text-secondary);
     font-size: 0.875rem;
+    font-style: italic;
 }
 
 .loadingContainer {
