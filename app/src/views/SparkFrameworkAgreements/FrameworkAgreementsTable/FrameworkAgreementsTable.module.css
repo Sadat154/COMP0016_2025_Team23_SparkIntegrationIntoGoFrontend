@@ -1,3 +1,4 @@
+/* stylelint-disable csstools/value-no-unknown-custom-properties */
 .filterSection {
     margin-bottom: var(--go-ui-spacing-md);
     padding: var(--go-ui-spacing-md);
@@ -49,15 +50,15 @@
 
 .descriptionCell {
     max-width: 200px;
-    word-wrap: break-word;
     white-space: normal;
+    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
 .itemCategoryCell {
     max-width: 120px;
-    word-wrap: break-word;
     white-space: normal;
+    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
@@ -77,9 +78,9 @@
 }
 
 .tableInfo {
+    white-space: nowrap;
     color: var(--go-ui-color-text-label);
     font-size: var(--go-ui-font-size-sm);
-    white-space: nowrap;
 }
 
 .tablePagination {
@@ -90,11 +91,11 @@
 
 .tableScroll {
     flex: 1;
-    overflow-x: scroll;
-    overflow-y: hidden;
     width: 100%;
     min-width: 0;
     max-height: 416px;
+    overflow-x: scroll;
+    overflow-y: hidden;
 }
 
 .tableScroll::-webkit-scrollbar {
@@ -103,14 +104,14 @@
 }
 
 .tableScroll::-webkit-scrollbar-track {
-    background: var(--go-ui-color-background);
     border-radius: var(--go-ui-border-radius-sm);
+    background: var(--go-ui-color-background);
 }
 
 .tableScroll::-webkit-scrollbar-thumb {
-    background: var(--go-ui-color-separator);
-    border-radius: var(--go-ui-border-radius-sm);
     border: 3px solid var(--go-ui-color-background);
+    border-radius: var(--go-ui-border-radius-sm);
+    background: var(--go-ui-color-separator);
 }
 
 .tableScroll::-webkit-scrollbar-thumb:hover {
@@ -118,15 +119,15 @@
 }
 
 .tableWrapper {
-    min-width: 1200px;
     width: fit-content;
+    min-width: 1200px;
 }
 
 .tableContent {
     padding: var(--go-ui-spacing-md);
     max-height: 400px;
-    overflow-y: auto;
     overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .tableContent::-webkit-scrollbar {
@@ -134,14 +135,14 @@
 }
 
 .tableContent::-webkit-scrollbar-track {
-    background: var(--go-ui-color-background);
     border-radius: var(--go-ui-border-radius-sm);
+    background: var(--go-ui-color-background);
 }
 
 .tableContent::-webkit-scrollbar-thumb {
-    background: var(--go-ui-color-separator);
-    border-radius: var(--go-ui-border-radius-sm);
     border: 3px solid var(--go-ui-color-background);
+    border-radius: var(--go-ui-border-radius-sm);
+    background: var(--go-ui-color-separator);
 }
 
 .tableContent::-webkit-scrollbar-thumb:hover {
