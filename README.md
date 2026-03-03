@@ -107,6 +107,7 @@ pnpm install
 pnpm test --run
 pnpm lint:translation
 pnpm lint:js
+pnpm stylelint "./src/**/*.css" --fix
 pnpm lint:css
 pnpm generate:type
 pnpm typecheck

@@ -144,6 +144,9 @@ function WarehouseStocksTable() {
     const [selectedSuggestion, setSelectedSuggestion] = useState<WarehouseSuggestion | null>(null);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
+    // receivingCountry is already the ISO3 code from the country selector
+    const receivingCountryIso3 = receivingCountry;
+
     // Derived state from suggestions
     const suggestedWarehouseIds = useMemo(
         () => suggestions.map((s) => s.warehouse_id),
@@ -546,6 +549,19 @@ function WarehouseStocksTable() {
                 label: c.name as string,
             }));
     }, [countriesRaw, aggregatedData, allData, tableData]);
+
+    // All countries for receiving country selector (not filtered by warehouse data)
+    const allCountryOptions = useMemo(() => {
+        const results = countriesRaw ?? [];
+        return results
+            .filter((c) => c.iso3 && c.name)
+            .map((c) => ({
+                key: c.iso3 as string,
+                label: c.name as string,
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [countriesRaw]);
+
     const itemGroupOptions = useMemo(() => {
         const fromDistinct = (itemGroupsOpt || []).filter(isDefined);
         const fromSummary = (summaryData?.by_item_group || []).map((g) => g.item_group).filter(isDefined);
