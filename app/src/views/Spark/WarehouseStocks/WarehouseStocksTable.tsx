@@ -699,15 +699,42 @@ function WarehouseStocksTable() {
         setFilterItemName(newValue);
     }, []);
 
+    const handleReceivingCountryChange = useCallback((newValue: string | undefined) => {
+        setReceivingCountry(newValue);
+    }, []);
+
     const handleClearAll = useCallback(() => {
         setFilterRegions(undefined);
         setFilterCountries(undefined);
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
+        setReceivingCountry(undefined);
+        setSuggestions([]);
+        setSelectedSuggestion(null);
         setOwner('IFRC');
     }, []);
 
+    const handleSuggestionClick = useCallback((suggestion: WarehouseSuggestion) => {
+        // eslint-disable-next-line no-console
+        console.log('Suggestion clicked:', suggestion.country, suggestion.export_summary);
+        setSelectedSuggestion(suggestion);
+    }, []);
+
+    const handleDismissSuggestion = useCallback(() => {
+        setSelectedSuggestion(null);
+    }, []);
+
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
+
+    // Row className for green highlighting of suggested warehouses
+    const getRowClassName = useCallback((key: string) => {
+        // Extract warehouse_id from the key (format: "warehouse_id__product_id")
+        const warehouseId = key.split('__')[0] ?? '';
+        if (warehouseId && suggestedWarehouseIds.includes(warehouseId)) {
+            return styles.suggestedRow;
+        }
+        return undefined;
+    }, [suggestedWarehouseIds]);
 
     const chartData = useMemo(() => {
         if (summaryData && Array.isArray(summaryData.by_item_group)) {
@@ -941,6 +968,18 @@ function WarehouseStocksTable() {
                     </div>
                     <div className={styles.filterItem}>
                         <SelectInput
+                            placeholder="Select receiving country"
+                            label="Receiving Country"
+                            name="receiving_country"
+                            value={receivingCountry}
+                            onChange={handleReceivingCountryChange}
+                            keySelector={stringKeySelector}
+                            labelSelector={stringLabelSelector}
+                            options={allCountryOptions}
+                        />
+                    </div>
+                    <div className={styles.filterItem}>
+                        <SelectInput
                             placeholder="All Item categories"
                             label="Item category"
                             name="item_group"
@@ -993,8 +1032,96 @@ function WarehouseStocksTable() {
                         selectedCountryNames={filterCountries}
                         selectedRegions={filterRegions}
                         onCountrySelect={setFilterCountries}
+                        suggestedCountryIso3s={suggestedCountryIso3s}
+                        suggestions={suggestions}
+                        onSuggestionClick={handleSuggestionClick}
+                        receivingCountryIso3={receivingCountryIso3}
                     />
                 </div>
+
+                {/* Suggestion Summary Panel */}
+                {selectedSuggestion && (
+                    <div className={styles.suggestionSummary}>
+                        <div className={styles.suggestionHeader}>
+                            <span className={styles.suggestionTitle}>
+                                📍 Why
+                                {' '}
+                                {selectedSuggestion.warehouse_name || selectedSuggestion.warehouse_id}
+                                {' '}
+                                was suggested
+                                {selectedSuggestion.is_domestic ? ' (Domestic)' : ''}
+                            </span>
+                            <button
+                                type="button"
+                                className={styles.dismissButton}
+                                onClick={handleDismissSuggestion}
+                                aria-label="Dismiss"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className={styles.suggestionDetails}>
+                            <div className={styles.scoreRow}>
+                                <span className={styles.scoreLabel}>
+                                    Distance:
+                                    {' '}
+                                    {selectedSuggestion.is_domestic
+                                        ? 'Same country'
+                                        : `${selectedSuggestion.distance_km?.toLocaleString() ?? 'N/A'} km`}
+                                </span>
+                                <span className={styles.scoreValue}>
+                                    {selectedSuggestion.distance_score}
+                                    /100 pts
+                                </span>
+                            </div>
+                            <div className={styles.scoreRow}>
+                                <span className={styles.scoreLabel}>
+                                    Export Status:
+                                    {' '}
+                                    {selectedSuggestion.is_domestic
+                                        ? 'No export needed'
+                                        : selectedSuggestion.export_penalty === 0
+                                            ? 'No restrictions'
+                                            : selectedSuggestion.export_penalty >= -10
+                                                ? 'Minor bureaucracy'
+                                                : 'Restrictions apply'}
+                                </span>
+                                <span className={styles.scoreValue}>
+                                    {selectedSuggestion.export_penalty}
+                                    {' pts'}
+                                </span>
+                            </div>
+                            {selectedSuggestion.export_summary && (
+                                <div className={styles.exportSummaryRow}>
+                                    <span className={styles.exportSummaryText}>
+                                        {selectedSuggestion.export_summary}
+                                    </span>
+                                </div>
+                            )}
+                            <div className={styles.scoreRow}>
+                                <span className={styles.scoreLabel}>
+                                    Stock Available:
+                                    {' '}
+                                    {Math.round(selectedSuggestion.stock_quantity).toLocaleString()}
+                                    {' '}
+                                    units
+                                </span>
+                                <span className={styles.scoreValue}>
+                                    {selectedSuggestion.stock_score}
+                                    /50 pts
+                                </span>
+                            </div>
+                            <div className={styles.scoreDivider} />
+                            <div className={styles.scoreRow}>
+                                <span className={styles.scoreLabelTotal}>Total Score:</span>
+                                <span className={styles.scoreValueTotal}>
+                                    {selectedSuggestion.total_score}
+                                    /150
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Table */}
                 <div className={styles.tableCard}>
@@ -1042,8 +1169,9 @@ function WarehouseStocksTable() {
                                     data={displayData}
                                     keySelector={keySelector}
                                     columns={columns}
-                                    pending={pending}
+                                    pending={pending || suggestionsLoading}
                                     filtered={false}
+                                    rowClassName={getRowClassName}
                                 />
                             )}
                         </SortContext.Provider>
@@ -1136,9 +1264,9 @@ function WarehouseStocksTable() {
                     </div>
                 </div>
 
-                {/* Customs Data Card - shown when exactly one country is selected */}
-                {filterCountries && filterCountries.length === 1 && (
-                    <CustomsDataCard countryIso3={filterCountries[0]} />
+                {/* Customs Data Card - shown when a receiving country is selected */}
+                {receivingCountryIso3 && (
+                    <CustomsDataCard countryIso3={receivingCountryIso3} />
                 )}
             </div>
         </Container>
