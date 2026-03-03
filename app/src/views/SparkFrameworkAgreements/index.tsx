@@ -268,7 +268,7 @@ export function Component() {
             ],
             'fill-opacity': 1,
         };
-    }, [selectedIso3, iso3WithAgreements]);
+    }, [selectedCountry, selectedIso3, iso3WithAgreements]);
 
     const handleCountryHover = useCallback((feature: MapboxGeoJSONFeature | undefined) => {
         if (hoverTimeoutRef.current) {

@@ -9,9 +9,8 @@ import {
     Modal,
 } from '@ifrc-go/ui';
 
-import { useRequest } from '#utils/restRequest';
-
 import useCountryRaw from '#hooks/domain/useCountryRaw';
+import { useRequest } from '#utils/restRequest';
 
 import styles from './CustomsDataCard.module.css';
 
@@ -55,7 +54,11 @@ function CustomsDataCard(props: CustomsDataCardProps) {
     const { countryIso3 } = props;
     const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-    const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
+    const countriesRaw = useCountryRaw() as
+        Array<{
+            iso3?: string | null;
+            name?: string | null;
+        }> | undefined;
     const countryName = useMemo(() => {
         if (!countryIso3) return undefined;
         const match = (countriesRaw ?? []).find(
@@ -136,7 +139,11 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                     </p>
 
                     <p className={styles.disclaimer}>
-                        Customs information is indicative and situational. Always confirm with your customs agent or IFRC logistics focal point before shipment
+                        Customs information is indicative and situational.
+                        {' '}
+                        Always confirm with your customs agent or IFRC logistics focal point
+                        {' '}
+                        before shipment.
                     </p>
 
                     {showDetailsModal && (

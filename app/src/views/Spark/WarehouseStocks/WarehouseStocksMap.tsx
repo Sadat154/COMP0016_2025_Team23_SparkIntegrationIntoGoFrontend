@@ -226,14 +226,14 @@ function WarehouseStocksMap(props: Props) {
                     type: 'Point',
                     coordinates: centroid,
                 },
-                    properties: {
-                        iso3,
-                        country: v.country,
-                        region: v.region ?? null,
-                        region_lc: (v.region ?? '') ? String(v.region).toLowerCase() : '',
-                        warehouseCount,
-                        qty: v.qty,
-                    },
+                properties: {
+                    iso3,
+                    country: v.country,
+                    region: v.region ?? null,
+                    region_lc: (v.region ?? '') ? String(v.region).toLowerCase() : '',
+                    warehouseCount,
+                    qty: v.qty,
+                },
             });
         });
 
@@ -370,21 +370,19 @@ function WarehouseStocksMap(props: Props) {
             <GlobalMap
                 mapOptions={mapOptions}
             >
-                    <MapSource
-                        sourceKey="warehouse-bubbles"
-                        sourceOptions={sourceOptions}
-                        geoJson={bubbleGeoJson}
-                    >
-                        <MapLayer
-                            layerKey="warehouse-bubble-layer"
-                            layerOptions={bubbleLayer}
-                            onMouseEnter={handleBubbleEnter}
-                            onMouseLeave={handleBubbleLeave}
-                            onClick={handleBubbleClick}
-                        />
-                    </MapSource>
-
-                
+                <MapSource
+                    sourceKey="warehouse-bubbles"
+                    sourceOptions={sourceOptions}
+                    geoJson={bubbleGeoJson}
+                >
+                    <MapLayer
+                        layerKey="warehouse-bubble-layer"
+                        layerOptions={bubbleLayer}
+                        onMouseEnter={handleBubbleEnter}
+                        onMouseLeave={handleBubbleLeave}
+                        onClick={handleBubbleClick}
+                    />
+                </MapSource>
 
                 {hovered && (
                     <MapPopup

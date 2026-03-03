@@ -203,7 +203,7 @@ function WarehouseStocksTable() {
     const prefetchControllersRef = useRef<Map<number, AbortController>>(new Map());
     const prevFiltersKeyRef = useRef<string>('');
 
-    useMemo(() => {
+    useEffect(() => {
         let mounted = true;
         fetch('/api/v1/warehouse-stocks/?distinct=1')
             .then((r) => r.json())
@@ -446,7 +446,7 @@ function WarehouseStocksTable() {
         if (!receivingCountry || !filterItemName) {
             setSuggestions([]);
             setSelectedSuggestion(null);
-            return;
+            return undefined;
         }
 
         let mounted = true;
@@ -483,8 +483,9 @@ function WarehouseStocksTable() {
                 setSuggestions(suggestionsList);
             })
             .catch(() => {
-                if (!mounted) return;
-                setSuggestions([]);
+                if (mounted) {
+                    setSuggestions([]);
+                }
             })
             .finally(() => {
                 if (mounted) setSuggestionsLoading(false);
@@ -1094,13 +1095,18 @@ function WarehouseStocksTable() {
                                 <span className={styles.scoreLabel}>
                                     Export Status:
                                     {' '}
-                                    {selectedSuggestion.is_domestic
-                                        ? 'No export needed'
-                                        : selectedSuggestion.export_penalty === 0
-                                            ? 'No restrictions'
-                                            : selectedSuggestion.export_penalty >= -10
-                                                ? 'Minor bureaucracy'
-                                                : 'Restrictions apply'}
+                                    {(() => {
+                                        if (selectedSuggestion.is_domestic) {
+                                            return 'No export needed';
+                                        }
+                                        if (selectedSuggestion.export_penalty === 0) {
+                                            return 'No restrictions';
+                                        }
+                                        if (selectedSuggestion.export_penalty >= -10) {
+                                            return 'Minor bureaucracy';
+                                        }
+                                        return 'Restrictions apply';
+                                    })()}
                                 </span>
                                 <span className={styles.scoreValue}>
                                     {selectedSuggestion.export_penalty}
