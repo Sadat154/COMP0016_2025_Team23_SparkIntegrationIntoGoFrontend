@@ -34,14 +34,9 @@ import {
     uniqOptions,
 } from './helpers';
 
-// eslint-disable-next-line import/no-relative-packages
-import countriesJson from '../../../prototypes/world-dashboard/public/data/countries.json';
-// IMPORTANT: adjust this import path to wherever your countries.json actually lives
-// Example options you might be using in your project:
-// - './countries.json'
-// - '/data/countries.json' (this would not work with import, only fetch)
-// - '#utils/countries.json'
 import styles from './styles.module.css';
+
+const COUNTRIES_JSON_URL = '/data/countries.json';
 
 interface RegulationItem {
     question: string;
@@ -229,6 +224,7 @@ function CustomRegulationsMatrix() {
     const [countryNameToRegionLabel, setCountryNameToRegionLabel] = useState<
         Map<string, string>
     >(new Map());
+    const [countriesJsonData, setCountriesJsonData] = useState<unknown>(undefined);
 
     const handleSearchCountryChange = useCallback((value: string | undefined) => {
         setSearchCountry(value ?? '');
@@ -267,6 +263,21 @@ function CustomRegulationsMatrix() {
         };
     }, []);
 
+    useEffect(() => {
+        let mounted = true;
+        fetch(COUNTRIES_JSON_URL, { cache: 'no-store' })
+            .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+            .then((data) => {
+                if (mounted) setCountriesJsonData(data);
+            })
+            .catch(() => {
+                if (mounted) setCountriesJsonData(null);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
     /**
      * Keep your existing useCountryRaw alone, but stop relying on it for ISO3.
      * We build ISO3 mapping from countries.json instead.
@@ -274,7 +285,7 @@ function CustomRegulationsMatrix() {
     useCountryRaw();
 
     const normalizedNameToIso3 = useMemo(() => {
-        const mapFromJson = buildNormalizedNameToIso3FromCountriesJson(countriesJson);
+        const mapFromJson = buildNormalizedNameToIso3FromCountriesJson(countriesJsonData);
 
         // Optional: add a few targeted aliases if your API uses variants
         // Only add if you actually need them.
@@ -288,7 +299,7 @@ function CustomRegulationsMatrix() {
         });
 
         return mapFromJson;
-    }, []);
+    }, [countriesJsonData]);
 
     const baseRows: MatrixRow[] = useMemo(
         () => countries
