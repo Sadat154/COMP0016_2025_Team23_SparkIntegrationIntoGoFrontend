@@ -377,13 +377,12 @@ export function Component() {
     }, []);
 
     // Cleanup hover timeout on unmount
-    const clearHoverTimeout = () => {
+    useEffect(() => () => {
         if (hoverTimeoutRef.current) {
             window.clearTimeout(hoverTimeoutRef.current);
             hoverTimeoutRef.current = undefined;
         }
-    };
-    useEffect(() => clearHoverTimeout, []);
+    }, []);
 
     // Handle country click on map
     const handleCountryClick = (feature: AdminZeroFeatureProperties) => {

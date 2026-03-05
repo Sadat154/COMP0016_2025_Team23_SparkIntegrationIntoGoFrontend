@@ -89,6 +89,114 @@
     overflow-y: visible;
 }
 
+/* Green highlight for suggested warehouses */
+.suggestedRow {
+    background-color: rgba(76, 175, 80, 0.15) !important;
+}
+
+.suggestedRow:hover {
+    background-color: rgba(76, 175, 80, 0.25) !important;
+}
+
+/* Suggestion Summary Panel */
+.suggestionSummary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--go-ui-spacing-sm);
+    border: 2px solid #4caf50;
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: rgba(76, 175, 80, 0.08);
+    padding: var(--go-ui-spacing-md);
+}
+
+.suggestionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.suggestionTitle {
+    color: var(--go-ui-color-text);
+    font-size: var(--go-ui-font-size-md);
+    font-weight: var(--go-ui-font-weight-bold);
+}
+
+.dismissButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-md);
+}
+
+.dismissButton:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: var(--go-ui-color-text);
+}
+
+.suggestionDetails {
+    display: flex;
+    flex-direction: column;
+    gap: var(--go-ui-spacing-xs);
+}
+
+.scoreRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--go-ui-spacing-xs) 0;
+}
+
+.scoreLabel {
+    color: var(--go-ui-color-text);
+    font-size: var(--go-ui-font-size-sm);
+}
+
+.scoreValue {
+    color: #4caf50;
+    font-size: var(--go-ui-font-size-sm);
+    font-weight: var(--go-ui-font-weight-medium);
+}
+
+.scoreDivider {
+    margin: var(--go-ui-spacing-xs) 0;
+    border-top: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.scoreLabelTotal {
+    color: var(--go-ui-color-text);
+    font-size: var(--go-ui-font-size-md);
+    font-weight: var(--go-ui-font-weight-bold);
+}
+
+.scoreValueTotal {
+    color: #4caf50;
+    font-size: var(--go-ui-font-size-md);
+    font-weight: var(--go-ui-font-weight-bold);
+}
+
+.exportSummaryRow {
+    margin-top: var(--go-ui-spacing-2xs);
+    margin-bottom: var(--go-ui-spacing-xs);
+    border-radius: var(--go-ui-border-radius-md);
+    background-color: rgba(76, 175, 80, 0.05);
+    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
+}
+
+.exportSummaryText {
+    line-height: 1.4;
+    color: var(--go-ui-color-text-description);
+    font-size: var(--go-ui-font-size-sm);
+    font-style: italic;
+}
+
 .ownerRow {
     display: flex;
     justify-content: stretch;
