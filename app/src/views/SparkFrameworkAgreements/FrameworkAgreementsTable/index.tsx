@@ -24,9 +24,10 @@ import styles from './FrameworkAgreementsTable.module.css';
 const PLACEHOLDER_EMPTY = '—';
 
 /** Days from today beyond which FA expiring is shown as "good" (green); otherwise "soon" (orange) */
-const FA_EXPIRING_GOOD_DAYS_THRESHOLD = 90;
+export const FA_EXPIRING_GOOD_DAYS_THRESHOLD = 90;
 
-function getExpiryStatusClass(dateStr: string | undefined | null): 'good' | 'soon' | undefined {
+/** Returns expiry status for styling: "good" (> threshold days), "soon" (0–threshold days), or undefined (expired or invalid). */
+export function getExpiryStatusClass(dateStr: string | undefined | null): 'good' | 'soon' | undefined {
     if (!dateStr) return undefined;
     const expiry = new Date(dateStr);
     const today = new Date();
