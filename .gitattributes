@@ -1,0 +1,5 @@
+# Enforce LF line endings for all text files
+* text=auto eol=lf
+
+# Binary files
+*.{png,jpg,jpeg,gif,webp,woff,woff2} binary

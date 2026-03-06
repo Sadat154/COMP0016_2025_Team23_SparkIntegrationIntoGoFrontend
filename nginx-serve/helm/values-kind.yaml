@@ -1,0 +1,20 @@
+environment: dev
+
+image:
+  name: ifrcgo-web-app
+  tag: latest
+  pullPolicy: Never
+
+ingress:
+  host: localhost
+
+env:
+  APP_TITLE: IFRC GO
+  APP_ENVIRONMENT: testing
+  APP_API_ENDPOINT: http://localhost:8000
+  APP_MAPBOX_ACCESS_TOKEN: "pk.eyJ1IjoiZ28taWZyYyIsImEiOiJjbWtxc2llYzAwcmRvM2RzZTlvYzB1MWFzIn0.vMsDeoqc4NHaBu5txYd6Ng"
+  APP_TINY_API_KEY: "temp-tiny-api-key"
+  APP_RISK_API_ENDPOINT: https://risk-api.dev.ifrc.org/
+  APP_SDT_URL: "placeholder"
+  APP_SENTRY_DSN: "placeholder"
+

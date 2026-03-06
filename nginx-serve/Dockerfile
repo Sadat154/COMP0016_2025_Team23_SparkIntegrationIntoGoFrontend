@@ -21,6 +21,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 COPY . /code/
 
+# Fix Windows CRLF line endings to LF
+RUN find /code -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.json' -o -name '*.css' -o -name '*.cjs' -o -name '*.mjs' \) -exec sed -i 's/\r$//' {} +
+
 # Dynamic configs. Can be changed with containers. (Placeholder values)
 ENV APP_TITLE=APP_TITLE_PLACEHOLDER
 ENV APP_ENVIRONMENT=APP_ENVIRONMENT_PLACEHOLDER
@@ -48,6 +51,7 @@ LABEL maintainer="IFRC"
 LABEL org.opencontainers.image.source="https://github.com/IFRCGo/go-web-app"
 
 COPY ./nginx-serve/apply-config.sh /docker-entrypoint.d/
+RUN sed -i 's/\r$//' /docker-entrypoint.d/apply-config.sh
 COPY ./nginx-serve/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=nginx-build /code/build /code/build
 

@@ -26,6 +26,7 @@ import {
     unique,
 } from '@togglecorp/fujs';
 
+import { api } from '#config';
 import useCountryRaw from '#hooks/domain/useCountryRaw';
 import useFilterState from '#hooks/useFilterState';
 
@@ -205,7 +206,7 @@ function WarehouseStocksTable() {
 
     useEffect(() => {
         let mounted = true;
-        fetch('/api/v1/warehouse-stocks/?distinct=1')
+        fetch(`${api}/api/v1/warehouse-stocks/?distinct=1`)
             .then((r) => r.json())
             .then((data) => {
                 if (!mounted) return;
@@ -264,7 +265,7 @@ function WarehouseStocksTable() {
             params.set('order', sortState.sorting.direction === 'dsc' ? 'desc' : 'asc');
         }
 
-        const url = `/api/v1/warehouse-stocks/?${params.toString()}`;
+        const url = `${api}/api/v1/warehouse-stocks/?${params.toString()}`;
         fetch(url, { signal })
             .then((r) => r.json())
             .then((data) => {
@@ -301,7 +302,7 @@ function WarehouseStocksTable() {
 
                         const pParams = new URLSearchParams(params.toString());
                         pParams.set('page', String(pnum));
-                        const prefetchUrl = `/api/v1/warehouse-stocks/?${pParams.toString()}`;
+                        const prefetchUrl = `${api}/api/v1/warehouse-stocks/?${pParams.toString()}`;
                         const prefetchController = new AbortController();
                         prefetchControllersRef.current.set(pnum, prefetchController);
                         fetch(prefetchUrl, { signal: prefetchController.signal })
@@ -363,7 +364,7 @@ function WarehouseStocksTable() {
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
 
-        const url = `/api/v1/warehouse-stocks/aggregated/?${params.toString()}`;
+        const url = `${api}/api/v1/warehouse-stocks/aggregated/?${params.toString()}`;
         fetch(url)
             .then((r) => r.json())
             .then((data) => {
@@ -382,7 +383,7 @@ function WarehouseStocksTable() {
         const mapParams = new URLSearchParams();
         if (filterItemGroup) mapParams.set('item_group', filterItemGroup);
         if (filterItemName) mapParams.set('item_name', filterItemName);
-        const mapUrl = `/api/v1/warehouse-stocks/aggregated/?${mapParams.toString()}`;
+        const mapUrl = `${api}/api/v1/warehouse-stocks/aggregated/?${mapParams.toString()}`;
         fetch(mapUrl)
             .then((r) => r.json())
             .then((data) => {
@@ -421,7 +422,7 @@ function WarehouseStocksTable() {
         if (filterItemName) params.set('item_name', filterItemName);
         params.set('low_stock_threshold', '5');
 
-        const url = `/api/v1/warehouse-stocks/summary/?${params.toString()}`;
+        const url = `${api}/api/v1/warehouse-stocks/summary/?${params.toString()}`;
         fetch(url)
             .then((r) => r.json())
             .then((data) => {
@@ -457,7 +458,7 @@ function WarehouseStocksTable() {
         params.set('receiving_country', receivingCountry);
         params.set('item_name', filterItemName);
 
-        fetch(`/api/v1/warehouse-suggestions/?${params.toString()}`)
+        fetch(`${api}/api/v1/warehouse-suggestions/?${params.toString()}`)
             .then((r) => r.json())
             .then((data) => {
                 if (!mounted) return;

@@ -24,13 +24,7 @@ import { useRequest } from '#utils/restRequest';
 
 import CustomsRegulationsMap from './CustomsMap/CustomsRegulationsMap';
 
-// eslint-disable-next-line import/no-relative-packages
-import countriesJson from '../../../prototypes/world-dashboard/public/data/countries.json';
-// IMPORTANT: adjust this import path to wherever your countries.json actually lives
-// Example options you might be using in your project:
-// - './countries.json'
-// - '/data/countries.json' (this would not work with import, only fetch)
-// - '#utils/countries.json'
+import countriesJson from '../../../public/data/countries.json';
 import styles from './styles.module.css';
 
 interface RegulationItem {
