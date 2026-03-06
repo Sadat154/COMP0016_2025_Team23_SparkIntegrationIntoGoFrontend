@@ -144,10 +144,8 @@ function WarehouseStocksTable() {
     const [selectedSuggestion, setSelectedSuggestion] = useState<WarehouseSuggestion | null>(null);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
-    // receivingCountry is already the ISO3 code from the country selector
     const receivingCountryIso3 = receivingCountry;
 
-    // Derived state from suggestions
     const suggestedWarehouseIds = useMemo(
         () => suggestions.map((s) => s.warehouse_id),
         [suggestions],
@@ -181,8 +179,6 @@ function WarehouseStocksTable() {
         total_quantity?: string | null;
         warehouse_count?: number | null;
     }>>([]);
-    // aggregatedData is fetched with current filters (may include region)
-    // mapAggregatedData is fetched without region filter so the map shows all bubbles
     const [mapAggregatedData, setMapAggregatedData] = useState<Array<{
         country_iso3?: string | null;
         country?: string | null;
@@ -258,7 +254,6 @@ function WarehouseStocksTable() {
         }
         if (filterItemGroup) params.set('item_group', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
-        // sort mapping: frontend sorts use column ids like 'quantity' or 'item_name'
         if (sortState.sorting) {
             params.set('sort', sortState.sorting.name);
             params.set('order', sortState.sorting.direction === 'dsc' ? 'desc' : 'asc');
@@ -378,7 +373,6 @@ function WarehouseStocksTable() {
                 if (mounted) setAggregatedPending(false);
             });
 
-        // fetch unfiltered aggregated data for map (do not include region filter)
         const mapParams = new URLSearchParams();
         if (filterItemGroup) mapParams.set('item_group', filterItemGroup);
         if (filterItemName) mapParams.set('item_name', filterItemName);
@@ -440,9 +434,7 @@ function WarehouseStocksTable() {
         };
     }, [filterRegions, filterCountries, filterItemGroup, filterItemName]);
 
-    // Fetch warehouse suggestions when receiving country AND item name are both selected
     useEffect(() => {
-        // Clear suggestions if either is missing
         if (!receivingCountry || !filterItemName) {
             setSuggestions([]);
             setSelectedSuggestion(null);
@@ -515,6 +507,7 @@ function WarehouseStocksTable() {
 
         return combined.map((r) => ({ key: String(r), label: String(r) }));
     }, [regionsOpt, aggregatedData, allData]);
+
     const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
 
     const countryOptions = useMemo(() => {
@@ -549,7 +542,6 @@ function WarehouseStocksTable() {
             }));
     }, [countriesRaw, aggregatedData, allData, tableData]);
 
-    // All countries for receiving country selector (not filtered by warehouse data)
     const allCountryOptions = useMemo(() => {
         const results = countriesRaw ?? [];
         return results
@@ -739,9 +731,7 @@ function WarehouseStocksTable() {
 
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
 
-    // Row className for green highlighting of suggested warehouses
     const getRowClassName = useCallback((key: string) => {
-        // Extract warehouse_id from the key (format: "warehouse_id__product_id")
         const warehouseId = key.split('__')[0] ?? '';
         if (warehouseId && suggestedWarehouseIds.includes(warehouseId)) {
             return styles.suggestedRow;
@@ -878,15 +868,12 @@ function WarehouseStocksTable() {
         && !selectedCountryHasData,
     );
 
-    // pagination removed — table shows all fetched rows on the map
-
     return (
         <Container
             className={styles.page}
             headingLevel={2}
         >
             <div className={styles.layout}>
-                {/* Owner filters (top row) */}
                 <div className={styles.ownerRow}>
                     <div className={styles.ownerCard}>
                         <div className={styles.ownerButtons}>
@@ -953,7 +940,6 @@ function WarehouseStocksTable() {
                     </div>
                 </div>
 
-                {/* Stock filters (second row) */}
                 <div className={styles.filtersCard}>
                     <div className={styles.filterItem}>
                         <MultiSelectInput
@@ -1038,7 +1024,6 @@ function WarehouseStocksTable() {
                     </div>
                 </div>
 
-                {/* MAP */}
                 <div className={styles.mapCard}>
                     <WarehouseStocksMap
                         data={mapData}
@@ -1052,7 +1037,6 @@ function WarehouseStocksTable() {
                     />
                 </div>
 
-                {/* Suggestion Summary Panel */}
                 {selectedSuggestion && (
                     <div className={styles.suggestionSummary}>
                         <div className={styles.suggestionHeader}>
@@ -1141,7 +1125,6 @@ function WarehouseStocksTable() {
                     </div>
                 )}
 
-                {/* Table */}
                 <div className={styles.tableCard}>
                     <div className={styles.tableHeader}>
                         <div className={styles.tableInfo}>
@@ -1196,7 +1179,6 @@ function WarehouseStocksTable() {
                     </div>
                 </div>
 
-                {/* Charts (below table) */}
                 <div className={styles.chartsRow}>
                     <div className={styles.chartCard}>
                         <div className={styles.chartHeader}>
@@ -1282,7 +1264,6 @@ function WarehouseStocksTable() {
                     </div>
                 </div>
 
-                {/* Customs Data Card - shown when a receiving country is selected */}
                 {receivingCountryIso3 && (
                     <CustomsDataCard countryIso3={receivingCountryIso3} />
                 )}

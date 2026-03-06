@@ -115,7 +115,6 @@ function WarehouseStocksMap(props: Props) {
         touchZoomRotate: false,
     }), [hasToken, tokenRaw]);
 
-    // Load country centroids from bundled countries.json via fetch
     useEffect(() => {
         let mounted = true;
         loadISO3ToCentroidMap()
@@ -136,7 +135,6 @@ function WarehouseStocksMap(props: Props) {
         };
     }, []);
 
-    // Keep country names from the API
     const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
 
     const iso3ToName = useMemo(() => {
@@ -199,7 +197,6 @@ function WarehouseStocksMap(props: Props) {
                     }
                     current.warehouses.add(warehouseName);
                 }
-                // preserve existing region if present, otherwise set from row
                 if (!current.region) {
                     current.region = row.region ?? null;
                 }
@@ -273,7 +270,6 @@ function WarehouseStocksMap(props: Props) {
         const current = selectedCountryNames ?? [];
         const isAlreadySelected = current.includes(props2.iso3);
 
-        // If this is a suggested country and we're SELECTING it (not unselecting), show the summary panel
         if (clickedIso3 && suggestedIso3List.includes(clickedIso3) && onSuggestionClick && suggestions && !isAlreadySelected) {
             const matchingSuggestion = suggestions.find(
                 (s) => s.country_iso3?.toUpperCase() === clickedIso3,
@@ -283,7 +279,6 @@ function WarehouseStocksMap(props: Props) {
             }
         }
 
-        // Always toggle country selection (for both green and red bubbles)
         if (onCountrySelect) {
             if (isAlreadySelected) {
                 const next = current.filter((c) => c !== props2.iso3);
@@ -308,17 +303,14 @@ function WarehouseStocksMap(props: Props) {
         const receivingIso3 = receivingCountryIso3?.toUpperCase() ?? '';
 
         return ({
-            // Color: orange for receiving country, green for suggested, red for others
             'circle-color': [
                 'case',
                 ['==', ['get', 'iso3'], receivingIso3],
                 '#FF9800', // Orange for receiving country
                 ['in', ['get', 'iso3'], ['literal', suggestedIso3s]],
                 '#4CAF50', // Green for suggested
-                '#F5333F', // Red for others
+                '#F5333F',
             ],
-            // selected bubbles are bolder (higher opacity and thicker stroke)
-            // non-selected bubbles remain visible with normal styling
             'circle-opacity': [
                 'case',
                 ['any',
@@ -327,16 +319,16 @@ function WarehouseStocksMap(props: Props) {
                     ['in', ['get', 'iso3'], ['literal', selectedCountries]],
                     ['in', ['get', 'region_lc'], ['literal', selectedRegs]],
                 ],
-                0.95, // Higher opacity for selected/suggested/receiving
-                0.55, // Normal opacity for others
+                0.95,
+                0.55,
             ],
             'circle-stroke-color': [
                 'case',
                 ['==', ['get', 'iso3'], receivingIso3],
-                '#FF9800', // Orange stroke for receiving country
+                '#FF9800',
                 ['in', ['get', 'iso3'], ['literal', suggestedIso3s]],
-                '#4CAF50', // Green stroke for suggested
-                '#F5333F', // Red stroke for others
+                '#4CAF50',
+                '#F5333F',
             ],
             'circle-stroke-width': [
                 'case',
@@ -346,8 +338,8 @@ function WarehouseStocksMap(props: Props) {
                     ['in', ['get', 'iso3'], ['literal', selectedCountries]],
                     ['in', ['get', 'region_lc'], ['literal', selectedRegs]],
                 ],
-                3, // Thicker stroke for selected/suggested/receiving
-                0.5, // Normal stroke for others
+                3,
+                0.5,
             ],
             'circle-radius': [
                 'interpolate',
