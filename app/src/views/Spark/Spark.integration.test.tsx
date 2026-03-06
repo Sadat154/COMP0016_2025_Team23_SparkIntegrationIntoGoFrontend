@@ -38,8 +38,8 @@ vi.mock('#utils/restRequest', () => ({
     RequestContext: React.createContext(null),
 }));
 
-vi.mock('#views/Spark/WarehouseStocks/WarehouseStocksTable', () => ({ default: () => null }));
-vi.mock('#views/Spark/tables/ProBonoServicesTable', () => ({ default: () => null }));
+vi.mock('#views/SparkStockInventory/WarehouseStocksTable', () => ({ default: () => null }));
+vi.mock('#views/SparkProBonoServices', () => ({ default: () => null }));
 
 beforeEach(() => {
     mockNavigate.mockClear();
