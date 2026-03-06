@@ -152,7 +152,6 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                             onClose={() => setShowDetailsModal(false)}
                         >
                             <div className={styles.detailsModal}>
-                                {/* Sources Section */}
                                 <div className={styles.modalSection}>
                                     <h4 className={styles.modalSectionTitle}>Sources & Evidence</h4>
                                     {typedResponse.sources?.map((source: Source) => (
