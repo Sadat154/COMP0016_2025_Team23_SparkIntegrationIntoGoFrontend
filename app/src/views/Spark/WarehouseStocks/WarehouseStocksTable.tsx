@@ -39,21 +39,6 @@ type SelectOption = {
     label: string;
 };
 
-interface WarehouseSuggestion {
-    warehouse_id: string;
-    warehouse_name: string;
-    country: string;
-    country_iso3: string;
-    distance_km: number | null;
-    distance_score: number;
-    export_penalty: number;
-    export_summary: string;
-    stock_quantity: number;
-    stock_score: number;
-    total_score: number;
-    is_domestic: boolean;
-}
-
 interface WarehouseStock {
     id: string;
     region: string | null;
@@ -140,23 +125,6 @@ function WarehouseStocksTable() {
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
     const [receivingCountry, setReceivingCountry] = useState<string | undefined>();
-    const [suggestions, setSuggestions] = useState<WarehouseSuggestion[]>([]);
-    const [selectedSuggestion, setSelectedSuggestion] = useState<WarehouseSuggestion | null>(null);
-    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-
-    // receivingCountry is already the ISO3 code from the country selector
-    const receivingCountryIso3 = receivingCountry;
-
-    // Derived state from suggestions
-    const suggestedWarehouseIds = useMemo(
-        () => suggestions.map((s) => s.warehouse_id),
-        [suggestions],
-    );
-    const suggestedCountryIso3s = useMemo(
-        () => [...new Set<string>(suggestions.map((s) => s.country_iso3).filter(Boolean))],
-        [suggestions],
-    );
-
     const [owner, setOwner] = useState<OwnerKey>('IFRC');
 
     const { sortState } = useFilterState({ filter: {} });
@@ -440,60 +408,6 @@ function WarehouseStocksTable() {
         };
     }, [filterRegions, filterCountries, filterItemGroup, filterItemName]);
 
-    // Fetch warehouse suggestions when receiving country AND item name are both selected
-    useEffect(() => {
-        // Clear suggestions if either is missing
-        if (!receivingCountry || !filterItemName) {
-            setSuggestions([]);
-            setSelectedSuggestion(null);
-            return undefined;
-        }
-
-        let mounted = true;
-        setSuggestionsLoading(true);
-        setSelectedSuggestion(null);
-
-        const params = new URLSearchParams();
-        params.set('receiving_country', receivingCountry);
-        params.set('item_name', filterItemName);
-
-        fetch(`/api/v1/warehouse-suggestions/?${params.toString()}`)
-            .then((r) => r.json())
-            .then((data) => {
-                if (!mounted) return;
-                const suggestionsList: WarehouseSuggestion[] = (data.suggestions || []).map(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (s: any) => ({
-                        warehouse_id: s.warehouse_id ?? '',
-                        warehouse_name: s.warehouse_name ?? '',
-                        country: s.country ?? '',
-                        country_iso3: s.country_iso3 ?? '',
-                        distance_km: s.distance_km ?? null,
-                        distance_score: s.distance_score ?? 0,
-                        export_penalty: s.export_penalty ?? 0,
-                        export_summary: s.export_summary ?? '',
-                        stock_quantity: s.stock_quantity ?? 0,
-                        stock_score: s.stock_score ?? 0,
-                        total_score: s.total_score ?? 0,
-                        is_domestic: s.is_domestic ?? false,
-                    }),
-                );
-                setSuggestions(suggestionsList);
-            })
-            .catch(() => {
-                if (mounted) {
-                    setSuggestions([]);
-                }
-            })
-            .finally(() => {
-                if (mounted) setSuggestionsLoading(false);
-            });
-
-        return () => {
-            mounted = false;
-        };
-    }, [receivingCountry, filterItemName]);
-
     const regionOptions = useMemo(() => {
         const fromDistinct = (regionsOpt || []).filter((v) => isDefined(v) && String(v).trim() !== '');
         const fromAggregated = (aggregatedData || []).map((a) => a.region).filter((v) => isDefined(v) && String(v).trim() !== '');
@@ -724,30 +638,10 @@ function WarehouseStocksTable() {
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
         setReceivingCountry(undefined);
-        setSuggestions([]);
-        setSelectedSuggestion(null);
         setOwner('IFRC');
     }, []);
 
-    const handleSuggestionClick = useCallback((suggestion: WarehouseSuggestion) => {
-        setSelectedSuggestion(suggestion);
-    }, []);
-
-    const handleDismissSuggestion = useCallback(() => {
-        setSelectedSuggestion(null);
-    }, []);
-
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
-
-    // Row className for green highlighting of suggested warehouses
-    const getRowClassName = useCallback((key: string) => {
-        // Extract warehouse_id from the key (format: "warehouse_id__product_id")
-        const warehouseId = key.split('__')[0] ?? '';
-        if (warehouseId && suggestedWarehouseIds.includes(warehouseId)) {
-            return styles.suggestedRow;
-        }
-        return undefined;
-    }, [suggestedWarehouseIds]);
 
     const chartData = useMemo(() => {
         if (summaryData && Array.isArray(summaryData.by_item_group)) {
@@ -1045,101 +939,8 @@ function WarehouseStocksTable() {
                         selectedCountryNames={filterCountries}
                         selectedRegions={filterRegions}
                         onCountrySelect={setFilterCountries}
-                        suggestedCountryIso3s={suggestedCountryIso3s}
-                        suggestions={suggestions}
-                        onSuggestionClick={handleSuggestionClick}
-                        receivingCountryIso3={receivingCountryIso3}
                     />
                 </div>
-
-                {/* Suggestion Summary Panel */}
-                {selectedSuggestion && (
-                    <div className={styles.suggestionSummary}>
-                        <div className={styles.suggestionHeader}>
-                            <span className={styles.suggestionTitle}>
-                                📍 Why
-                                {' '}
-                                {selectedSuggestion.warehouse_name || selectedSuggestion.warehouse_id}
-                                {' '}
-                                was suggested
-                                {selectedSuggestion.is_domestic ? ' (Domestic)' : ''}
-                            </span>
-                            <button
-                                type="button"
-                                className={styles.dismissButton}
-                                onClick={handleDismissSuggestion}
-                                aria-label="Dismiss"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className={styles.suggestionDetails}>
-                            <div className={styles.scoreRow}>
-                                <span className={styles.scoreLabel}>
-                                    Distance:
-                                    {' '}
-                                    {selectedSuggestion.is_domestic
-                                        ? 'Same country'
-                                        : `${selectedSuggestion.distance_km?.toLocaleString() ?? 'N/A'} km`}
-                                </span>
-                                <span className={styles.scoreValue}>
-                                    {selectedSuggestion.distance_score}
-                                    /100 pts
-                                </span>
-                            </div>
-                            <div className={styles.scoreRow}>
-                                <span className={styles.scoreLabel}>
-                                    Export Status:
-                                    {' '}
-                                    {(() => {
-                                        if (selectedSuggestion.is_domestic) {
-                                            return 'No export needed';
-                                        }
-                                        if (selectedSuggestion.export_penalty === 0) {
-                                            return 'No restrictions';
-                                        }
-                                        if (selectedSuggestion.export_penalty >= -10) {
-                                            return 'Minor bureaucracy';
-                                        }
-                                        return 'Restrictions apply';
-                                    })()}
-                                </span>
-                                <span className={styles.scoreValue}>
-                                    {selectedSuggestion.export_penalty}
-                                    {' pts'}
-                                </span>
-                            </div>
-                            {selectedSuggestion.export_summary && (
-                                <div className={styles.exportSummaryRow}>
-                                    <span className={styles.exportSummaryText}>
-                                        {selectedSuggestion.export_summary}
-                                    </span>
-                                </div>
-                            )}
-                            <div className={styles.scoreRow}>
-                                <span className={styles.scoreLabel}>
-                                    Stock Available:
-                                    {' '}
-                                    {Math.round(selectedSuggestion.stock_quantity).toLocaleString()}
-                                    {' '}
-                                    units
-                                </span>
-                                <span className={styles.scoreValue}>
-                                    {selectedSuggestion.stock_score}
-                                    /50 pts
-                                </span>
-                            </div>
-                            <div className={styles.scoreDivider} />
-                            <div className={styles.scoreRow}>
-                                <span className={styles.scoreLabelTotal}>Total Score:</span>
-                                <span className={styles.scoreValueTotal}>
-                                    {selectedSuggestion.total_score}
-                                    /150
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Table */}
                 <div className={styles.tableCard}>
@@ -1187,9 +988,8 @@ function WarehouseStocksTable() {
                                     data={displayData}
                                     keySelector={keySelector}
                                     columns={columns}
-                                    pending={pending || suggestionsLoading}
+                                    pending={pending}
                                     filtered={false}
-                                    rowClassName={getRowClassName}
                                 />
                             )}
                         </SortContext.Provider>
@@ -1283,8 +1083,8 @@ function WarehouseStocksTable() {
                 </div>
 
                 {/* Customs Data Card - shown when a receiving country is selected */}
-                {receivingCountryIso3 && (
-                    <CustomsDataCard countryIso3={receivingCountryIso3} />
+                {receivingCountry && (
+                    <CustomsDataCard countryIso3={receivingCountry} />
                 )}
             </div>
         </Container>
