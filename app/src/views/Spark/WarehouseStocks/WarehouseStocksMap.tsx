@@ -70,6 +70,7 @@ interface Props {
     selectedCountryNames?: string[] | undefined;
     selectedRegions?: string[] | undefined;
     onCountrySelect?: (countryNames: string[] | undefined) => void;
+    onCountryClick?: (iso3: string) => void;
 }
 
 function WarehouseStocksMap(props: Props) {
@@ -78,6 +79,7 @@ function WarehouseStocksMap(props: Props) {
         selectedCountryNames,
         selectedRegions,
         onCountrySelect,
+        onCountryClick,
     } = props;
 
     const tokenRaw = (mbtoken ?? '').trim();
@@ -245,6 +247,11 @@ function WarehouseStocksMap(props: Props) {
             return true;
         }
 
+        if (onCountryClick) {
+            onCountryClick(props2.iso3);
+            return true;
+        }
+
         const current = selectedCountryNames ?? [];
         const isAlreadySelected = current.includes(props2.iso3);
 
@@ -259,7 +266,7 @@ function WarehouseStocksMap(props: Props) {
         }
 
         return true;
-    }, [onCountrySelect, selectedCountryNames]);
+    }, [onCountryClick, onCountrySelect, selectedCountryNames]);
 
     const sourceOptions = useMemo<GeoJSONSourceRaw>(() => ({
         type: 'geojson',

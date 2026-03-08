@@ -475,6 +475,35 @@ function WarehouseStocksTable() {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [countriesRaw]);
 
+    const iso3ToRegion = useMemo(() => {
+        const map = new Map<string, string>();
+        (mapAggregatedData || []).forEach((a) => {
+            const iso3 = (a.country_iso3 || '').toUpperCase();
+            const region = a.region;
+            if (iso3 && region) {
+                map.set(iso3, region);
+            }
+        });
+        return map;
+    }, [mapAggregatedData]);
+
+    const regionToIso3s = useMemo(() => {
+        const map = new Map<string, string[]>();
+        (mapAggregatedData || []).forEach((a) => {
+            const iso3 = (a.country_iso3 || '').toUpperCase();
+            const region = a.region;
+            if (iso3 && region) {
+                const arr = map.get(region);
+                if (arr) {
+                    arr.push(iso3);
+                } else {
+                    map.set(region, [iso3]);
+                }
+            }
+        });
+        return map;
+    }, [mapAggregatedData]);
+
     const itemGroupOptions = useMemo(() => {
         const fromDistinct = (itemGroupsOpt || []).filter(isDefined);
         const fromSummary = (summaryData?.by_item_group || []).map((g) => g.item_group).filter(isDefined);
@@ -630,7 +659,72 @@ function WarehouseStocksTable() {
 
     const handleReceivingCountryChange = useCallback((newValue: string | undefined) => {
         setReceivingCountry(newValue);
-    }, []);
+        if (newValue) {
+            const region = iso3ToRegion.get(newValue.toUpperCase());
+            if (region) {
+                setFilterRegions([region]);
+            }
+        }
+    }, [iso3ToRegion]);
+
+    const handleMapCountryClick = useCallback((clickedIso3: string) => {
+        const upperIso3 = clickedIso3.toUpperCase();
+
+        if (filterRegions && filterRegions.length > 0) {
+            const clickedRegion = iso3ToRegion.get(upperIso3);
+            // Explode region into individual countries
+            const regionCountries = new Set<string>();
+            (aggregatedData || []).forEach((a) => {
+                const iso3 = (a.country_iso3 || '').toUpperCase();
+                if (iso3) {
+                    regionCountries.add(iso3);
+                }
+            });
+            // Merge with existing individual country selections
+            (filterCountries ?? []).forEach((c) => regionCountries.add(c.toUpperCase()));
+
+            if (clickedRegion && filterRegions.includes(clickedRegion)) {
+                // Clicked country is within the region — deselect it
+                regionCountries.delete(upperIso3);
+            } else {
+                // Clicked country is outside the region — add it
+                regionCountries.add(upperIso3);
+            }
+
+            const next = Array.from(regionCountries);
+            setFilterCountries(next.length > 0 ? next : undefined);
+            setFilterRegions(undefined);
+            return;
+        }
+
+        // Normal toggle
+        const current = filterCountries ?? [];
+        const isAlreadySelected = current.some(
+            (c) => c.toUpperCase() === upperIso3,
+        );
+        if (isAlreadySelected) {
+            const next = current.filter((c) => c.toUpperCase() !== upperIso3);
+            setFilterCountries(next.length > 0 ? next : undefined);
+        } else {
+            const newCountries = [...current, upperIso3];
+            // Check if adding this country completes a full region
+            const newSet = new Set(newCountries.map((c) => c.toUpperCase()));
+            let matchedRegion: string | undefined;
+            regionToIso3s.forEach((iso3s, region) => {
+                const regionSet = new Set(iso3s);
+                if (regionSet.size === newSet.size
+                    && iso3s.every((c) => newSet.has(c))) {
+                    matchedRegion = region;
+                }
+            });
+            if (matchedRegion) {
+                setFilterRegions([matchedRegion]);
+                setFilterCountries(undefined);
+            } else {
+                setFilterCountries(newCountries);
+            }
+        }
+    }, [filterRegions, filterCountries, iso3ToRegion, regionToIso3s, aggregatedData]);
 
     const handleClearAll = useCallback(() => {
         setFilterRegions(undefined);
@@ -938,7 +1032,7 @@ function WarehouseStocksTable() {
                         data={mapData}
                         selectedCountryNames={filterCountries}
                         selectedRegions={filterRegions}
-                        onCountrySelect={setFilterCountries}
+                        onCountryClick={handleMapCountryClick}
                     />
                 </div>
 
