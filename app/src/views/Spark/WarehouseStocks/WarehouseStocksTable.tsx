@@ -479,7 +479,7 @@ function WarehouseStocksTable() {
         const map = new Map<string, string>();
         (mapAggregatedData || []).forEach((a) => {
             const iso3 = (a.country_iso3 || '').toUpperCase();
-            const region = a.region;
+            const { region } = a;
             if (iso3 && region) {
                 map.set(iso3, region);
             }
@@ -491,7 +491,7 @@ function WarehouseStocksTable() {
         const map = new Map<string, string[]>();
         (mapAggregatedData || []).forEach((a) => {
             const iso3 = (a.country_iso3 || '').toUpperCase();
-            const region = a.region;
+            const { region } = a;
             if (iso3 && region) {
                 const arr = map.get(region);
                 if (arr) {

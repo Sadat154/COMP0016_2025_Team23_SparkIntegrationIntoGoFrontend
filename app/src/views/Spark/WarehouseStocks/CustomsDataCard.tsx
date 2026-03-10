@@ -229,7 +229,6 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                                                 </p>
                                             )}
 
-
                                             {source.snippets && source.snippets.length > 0 && (
                                                 <div className={styles.snippetsContainer}>
                                                     <strong className={styles.snippetsTitle}>
