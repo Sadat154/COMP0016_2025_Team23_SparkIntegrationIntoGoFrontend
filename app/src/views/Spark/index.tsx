@@ -12,9 +12,8 @@ import {
 
 import Page from '#components/Page';
 import useRouting from '#hooks/useRouting';
-
-import ProBonoServicesTable from './tables/ProBonoServicesTable';
-import WarehouseStocksTable from './WarehouseStocks/WarehouseStocksTable';
+import ProBonoServicesTable from '#views/SparkProBonoServices';
+import WarehouseStocksTable from '#views/SparkStockInventory/WarehouseStocksTable';
 
 import styles from './styles.module.css';
 
@@ -24,7 +23,6 @@ type SparkTabKey =
     | 'pro-bono-services'
     | 'custom-regulations';
 
-/** @knipignore */
 // eslint-disable-next-line import/prefer-default-export
 export function Component() {
     const location = useLocation();

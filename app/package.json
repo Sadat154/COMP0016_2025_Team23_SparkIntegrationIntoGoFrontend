@@ -79,6 +79,8 @@
         "@typescript-eslint/typescript-estree": "^8.43.0",
         "@typescript-eslint/visitor-keys": "^8.44.0",
         "@vitejs/plugin-react-swc": "^3.5.0",
+        "@testing-library/react": "^14.3.1",
+        "@testing-library/user-event": "^14.5.2",
         "@vitest/coverage-v8": "^1.2.2",
         "autoprefixer": "^10.4.14",
         "cross-var": "^1.1.0",
