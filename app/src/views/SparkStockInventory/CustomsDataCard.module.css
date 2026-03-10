@@ -124,19 +124,6 @@
     font-size: 0.875rem;
 }
 
-.scoreInfo {
-    margin: 1rem 0;
-    border-radius: 3px;
-    background-color: var(--color-background);
-    padding: 0.75rem;
-    line-height: 1.6;
-    font-size: 0.8rem;
-}
-
-.scoreInfo strong {
-    color: var(--color-text);
-}
-
 .snippetsContainer {
     margin-top: 1rem;
     border-top: 1px solid var(--color-border);
@@ -162,4 +149,29 @@
     line-height: 1.6;
     color: var(--color-text);
     font-size: 0.875rem;
+}
+
+.officialDocCard {
+    border: 1px solid var(--color-primary);
+    border-radius: 4px;
+    background-color: var(--color-background-light);
+    padding: 1.25rem;
+}
+
+.officialDocLink {
+    display: block;
+    text-decoration: none;
+    color: var(--color-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.officialDocLink:hover {
+    text-decoration: underline;
+}
+
+.officialDocNote {
+    margin: 0.5rem 0 0;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
 }

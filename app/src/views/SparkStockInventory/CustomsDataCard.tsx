@@ -44,6 +44,10 @@ interface CustomsSnapshot {
     sources: Source[];
     status: 'success' | 'partial' | 'failed';
     error_message?: string;
+    official_doc_url?: string;
+    official_doc_title?: string;
+    rc_society_url?: string;
+    rc_society_title?: string;
 }
 
 interface CustomsDataCardProps {
@@ -152,6 +156,47 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                             onClose={() => setShowDetailsModal(false)}
                         >
                             <div className={styles.detailsModal}>
+                                {typedResponse.official_doc_url && (
+                                    <div className={styles.modalSection}>
+                                        <h4 className={styles.modalSectionTitle}>
+                                            Official Documentation
+                                        </h4>
+                                        <div className={styles.officialDocCard}>
+                                            <a
+                                                href={typedResponse.official_doc_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={styles.officialDocLink}
+                                            >
+                                                {`Official Customs Documentation ${typedResponse.country_name}`}
+                                            </a>
+                                            <p className={styles.officialDocNote}>
+                                                Official government customs
+                                                documentation for
+                                                {' '}
+                                                {typedResponse.country_name}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {typedResponse.rc_society_url && (
+                                    <div className={styles.modalSection}>
+                                        <h4 className={styles.modalSectionTitle}>
+                                            {`${typedResponse.country_name} Red Cross/Crescent Society Updates`}
+                                        </h4>
+                                        <div className={styles.officialDocCard}>
+                                            <a
+                                                href={typedResponse.rc_society_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={styles.officialDocLink}
+                                            >
+                                                {typedResponse.rc_society_title
+                                                    || typedResponse.rc_society_url}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className={styles.modalSection}>
                                     <h4 className={styles.modalSectionTitle}>Sources & Evidence</h4>
                                     {typedResponse.sources?.map((source: Source) => (
@@ -180,29 +225,6 @@ function CustomsDataCard(props: CustomsDataCardProps) {
                                                     ).toLocaleDateString()}
                                                 </p>
                                             )}
-                                            <p className={styles.scoreInfo}>
-                                                <strong>Credibility Scores:</strong>
-                                                <br />
-                                                Authority:
-                                                {' '}
-                                                {source.authority_score}
-                                                {' '}
-                                                | Freshness:
-                                                {' '}
-                                                {source.freshness_score}
-                                                {' '}
-                                                | Relevance:
-                                                {' '}
-                                                {source.relevance_score}
-                                                {' '}
-                                                | Specificity:
-                                                {' '}
-                                                {source.specificity_score}
-                                                <br />
-                                                <strong>Total:</strong>
-                                                {' '}
-                                                {source.total_score}
-                                            </p>
 
                                             {source.snippets && source.snippets.length > 0 && (
                                                 <div className={styles.snippetsContainer}>
