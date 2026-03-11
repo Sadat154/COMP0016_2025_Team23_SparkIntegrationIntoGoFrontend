@@ -44,15 +44,14 @@ interface WarehouseStock {
     region: string | null;
     country: string | null;
     country_iso3?: string | null;
-    warehouse_name: string | null;
-    warehouse_id?: string | null;
-    item_group: string | null;
-    product_id?: string | null;
+    warehouse_id: string | null;
+    warehouse: string | null;
+    warehouse_country: string | null;
+    warehouse_count?: number | null;
+    product_category: string | null;
     item_name: string | null;
-    item_number: string | null;
-    item_url?: string | null;
-    item_status_name?: string | null;
-    unit: string | null;
+    unit_measurement: string | null;
+    catalogue_link?: string | null;
     quantity: string | null;
 }
 
@@ -105,23 +104,36 @@ function formatQty(v: string | null | undefined): string {
     });
 }
 
-function getPercent(value: number, max: number): number {
-    if (max <= 0) {
-        return 0;
-    }
-    return (value / max) * 100;
-}
-
 type OwnerKey = 'IFRC' | 'ICRC' | 'NS';
 
-// Only IFRC data exists right now
-function getOwner(): OwnerKey {
-    return 'IFRC';
-}
+const MAP_WAREHOUSE_IDS = [
+    'AE1DUB002',
+    'AR1BUE002',
+    'AU1BRI003',
+    'ES1LAS001',
+    'GT1GUA001',
+    'HN1COM002',
+    'MY1SEL001',
+    'PA1ARR001',
+    'TR1ISTA02',
+];
+
+// ISO3 codes corresponding to the 9 warehouse ISO2 prefixes
+const MAP_WAREHOUSE_ISO3S = [
+    'ARE', // AE → United Arab Emirates
+    'ARG', // AR → Argentina
+    'AUS', // AU → Australia
+    'ESP', // ES → Spain
+    'GTM', // GT → Guatemala
+    'HND', // HN → Honduras
+    'MYS', // MY → Malaysia
+    'PAN', // PA → Panama
+    'TUR', // TR → Turkey
+];
 
 function WarehouseStocksTable() {
     const [filterRegions, setFilterRegions] = useState<string[] | undefined>();
-    const [filterCountries, setFilterCountries] = useState<string[] | undefined>();
+    const [filterCountries, setFilterCountries] = useState<string[] | undefined>(MAP_WAREHOUSE_ISO3S);
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
     const [receivingCountry, setReceivingCountry] = useState<string | undefined>();
@@ -133,14 +145,8 @@ function WarehouseStocksTable() {
     const [pageSize] = useState<number>(50);
     const [total, setTotal] = useState<number | undefined>();
 
-    const [regionsOpt, setRegionsOpt] = useState<string[]>([]);
-    const [itemGroupsOpt, setItemGroupsOpt] = useState<string[]>([]);
-    const [itemNamesOpt, setItemNamesOpt] = useState<string[]>([]);
-
     const [pending, setPending] = useState(false);
     const [tableData, setTableData] = useState<WarehouseStock[]>([]);
-    const [allData, setAllData] = useState<WarehouseStock[] | undefined>();
-    const [gapsData, setGapsData] = useState<WarehouseStock[] | undefined>();
     const [aggregatedPending, setAggregatedPending] = useState(false);
     const [aggregatedData, setAggregatedData] = useState<Array<{
         country_iso3?: string | null;
@@ -156,39 +162,9 @@ function WarehouseStocksTable() {
         total_quantity?: string | null;
         warehouse_count?: number | null;
     }>>([]);
-    const [summaryData, setSummaryData] = useState<{
-        total?: number;
-        by_item_group?: Array<{
-            item_group?: string | null;
-            total_quantity?: string | null;
-            product_count?: number | null;
-        }>;
-        low_stock?: { threshold?: number; count?: number };
-    } | undefined>();
     const prefetchCacheRef = useRef<Map<number, { rows: WarehouseStock[]; total?: number }>>(new Map());
     const prefetchControllersRef = useRef<Map<number, AbortController>>(new Map());
     const prevFiltersKeyRef = useRef<string>('');
-
-    useEffect(() => {
-        let mounted = true;
-        fetch('/api/v1/warehouse-stocks/?distinct=1')
-            .then((r) => r.json())
-            .then((data) => {
-                if (!mounted) return;
-                setRegionsOpt(data.regions || []);
-                setItemGroupsOpt(data.item_groups || []);
-                setItemNamesOpt(data.item_names || []);
-            })
-            .catch(() => {
-                // ignore
-            })
-            .finally(() => {
-                // ignore
-            });
-        return () => {
-            mounted = false;
-        };
-    }, []);
 
     useEffect(() => {
         let mounted = true;
@@ -218,18 +194,19 @@ function WarehouseStocksTable() {
         const params = new URLSearchParams();
         params.set('page', String(page));
         params.set('page_size', String(pageSize));
+        params.set('warehouse_ids', MAP_WAREHOUSE_IDS.join(','));
         if (filterRegions && filterRegions.length > 0) params.set('region', filterRegions.join(','));
         if (filterCountries && filterCountries.length > 0) {
             params.set('country_iso3', filterCountries.join(','));
         }
-        if (filterItemGroup) params.set('item_group', filterItemGroup);
+        if (filterItemGroup) params.set('product_category', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
         if (sortState.sorting) {
             params.set('sort', sortState.sorting.name);
             params.set('order', sortState.sorting.direction === 'dsc' ? 'desc' : 'asc');
         }
 
-        const url = `/api/v1/warehouse-stocks/?${params.toString()}`;
+        const url = `/api/v1/stock-inventory/?${params.toString()}`;
         fetch(url, { signal })
             .then((r) => r.json())
             .then((data) => {
@@ -266,7 +243,7 @@ function WarehouseStocksTable() {
 
                         const pParams = new URLSearchParams(params.toString());
                         pParams.set('page', String(pnum));
-                        const prefetchUrl = `/api/v1/warehouse-stocks/?${pParams.toString()}`;
+                        const prefetchUrl = `/api/v1/stock-inventory/?${pParams.toString()}`;
                         const prefetchController = new AbortController();
                         prefetchControllersRef.current.set(pnum, prefetchController);
                         fetch(prefetchUrl, { signal: prefetchController.signal })
@@ -325,10 +302,12 @@ function WarehouseStocksTable() {
         setAggregatedPending(true);
         const params = new URLSearchParams();
         if (filterRegions && filterRegions.length > 0) params.set('region', filterRegions.join(','));
-        if (filterItemGroup) params.set('item_group', filterItemGroup);
+        if (filterItemGroup) params.set('product_category', filterItemGroup);
         if (filterItemName) params.set('item_name', filterItemName);
 
-        const url = `/api/v1/warehouse-stocks/aggregated/?${params.toString()}`;
+        params.set('warehouse_ids', MAP_WAREHOUSE_IDS.join(','));
+
+        const url = `/api/v1/stock-inventory/aggregated/?${params.toString()}`;
         fetch(url)
             .then((r) => r.json())
             .then((data) => {
@@ -344,9 +323,10 @@ function WarehouseStocksTable() {
             });
 
         const mapParams = new URLSearchParams();
-        if (filterItemGroup) mapParams.set('item_group', filterItemGroup);
+        if (filterItemGroup) mapParams.set('product_category', filterItemGroup);
         if (filterItemName) mapParams.set('item_name', filterItemName);
-        const mapUrl = `/api/v1/warehouse-stocks/aggregated/?${mapParams.toString()}`;
+        mapParams.set('warehouse_ids', MAP_WAREHOUSE_IDS.join(','));
+        const mapUrl = `/api/v1/stock-inventory/aggregated/?${mapParams.toString()}`;
         fetch(mapUrl)
             .then((r) => r.json())
             .then((data) => {
@@ -372,42 +352,8 @@ function WarehouseStocksTable() {
         filterItemName,
     ]);
 
-    useEffect(() => {
-        let mounted = true;
-        setSummaryData(undefined);
-
-        const params = new URLSearchParams();
-        if (filterRegions && filterRegions.length > 0) params.set('region', filterRegions.join(','));
-        if (filterCountries && filterCountries.length > 0) {
-            params.set('country_iso3', filterCountries.join(','));
-        }
-        if (filterItemGroup) params.set('item_group', filterItemGroup);
-        if (filterItemName) params.set('item_name', filterItemName);
-        params.set('low_stock_threshold', '5');
-
-        const url = `/api/v1/warehouse-stocks/summary/?${params.toString()}`;
-        fetch(url)
-            .then((r) => r.json())
-            .then((data) => {
-                if (!mounted) return;
-                setSummaryData(data || undefined);
-                setAllData(undefined);
-                setGapsData(undefined);
-            })
-            .catch(() => {
-                if (!mounted) return;
-                setSummaryData(undefined);
-            });
-
-        return () => {
-            mounted = false;
-        };
-    }, [filterRegions, filterCountries, filterItemGroup, filterItemName]);
-
     const regionOptions = useMemo(() => {
-        const fromDistinct = (regionsOpt || []).filter((v) => isDefined(v) && String(v).trim() !== '');
         const fromAggregated = (aggregatedData || []).map((a) => a.region).filter((v) => isDefined(v) && String(v).trim() !== '');
-        const fromAll = (allData || []).map((r) => r.region).filter((v) => isDefined(v) && String(v).trim() !== '');
         const FALLBACK_REGIONS = [
             'Americas',
             'Asia-Pacific',
@@ -417,14 +363,12 @@ function WarehouseStocksTable() {
         ];
 
         const combined = unique([
-            ...fromDistinct,
             ...fromAggregated,
-            ...fromAll,
             ...FALLBACK_REGIONS,
         ]).sort((a, b) => String(a).localeCompare(String(b)));
 
         return combined.map((r) => ({ key: String(r), label: String(r) }));
-    }, [regionsOpt, aggregatedData, allData]);
+    }, [aggregatedData]);
 
     const countriesRaw = useCountryRaw() as Array<{ iso3?: string | null; name?: string | null }> | undefined;
 
@@ -443,22 +387,13 @@ function WarehouseStocksTable() {
             }
         });
 
-        const baseRows = allData ?? tableData;
-        (baseRows || []).forEach((r) => {
-            const iso = (r.country_iso3 || '').toString().trim();
-            if (!iso) return;
-            if (r.warehouse_name) {
-                isoSet.add(iso.toUpperCase());
-            }
-        });
-
         return results
             .filter((c) => c.iso3 && c.name && isoSet.has((c.iso3 || '').toString().toUpperCase()))
             .map((c) => ({
                 key: c.iso3 as string,
                 label: c.name as string,
             }));
-    }, [countriesRaw, aggregatedData, allData, tableData]);
+    }, [countriesRaw, aggregatedData]);
 
     const allCountryOptions = useMemo(() => {
         const results = countriesRaw ?? [];
@@ -483,44 +418,19 @@ function WarehouseStocksTable() {
         return map;
     }, [mapAggregatedData]);
 
-    const regionToIso3s = useMemo(() => {
-        const map = new Map<string, string[]>();
-        (mapAggregatedData || []).forEach((a) => {
-            const iso3 = (a.country_iso3 || '').toUpperCase();
-            const { region } = a;
-            if (iso3 && region) {
-                const arr = map.get(region);
-                if (arr) {
-                    arr.push(iso3);
-                } else {
-                    map.set(region, [iso3]);
-                }
-            }
-        });
-        return map;
-    }, [mapAggregatedData]);
-
     const itemGroupOptions = useMemo(() => {
-        const fromDistinct = (itemGroupsOpt || []).filter(isDefined);
-        const fromSummary = (summaryData?.by_item_group || []).map((g) => g.item_group).filter(isDefined);
-        const fromAll = ((allData ?? tableData) || []).map((r) => r.item_group).filter(isDefined);
-        const combined = unique([
-            ...fromDistinct,
-            ...fromSummary,
-            ...fromAll,
-        ], (v) => String(v).toLowerCase()).sort((a, b) => String(a).localeCompare(String(b)));
+        const fromTable = (tableData || []).map((r) => r.product_category).filter(isDefined);
+        const combined = unique(fromTable, (v) => String(v).toLowerCase())
+            .sort((a, b) => String(a).localeCompare(String(b)));
         return combined.map((g) => ({ key: String(g), label: String(g) }));
-    }, [itemGroupsOpt, summaryData, allData, tableData]);
+    }, [tableData]);
 
     const itemNameOptions = useMemo(() => {
-        const fromDistinct = (itemNamesOpt || []).filter(isDefined);
-        const fromAll = ((allData ?? tableData) || []).map((r) => r.item_name).filter(isDefined);
-        const combined = unique([
-            ...fromDistinct,
-            ...fromAll,
-        ], (v) => String(v).toLowerCase()).sort((a, b) => String(a).localeCompare(String(b)));
+        const fromTable = (tableData || []).map((r) => r.item_name).filter(isDefined);
+        const combined = unique(fromTable, (v) => String(v).toLowerCase())
+            .sort((a, b) => String(a).localeCompare(String(b)));
         return combined.map((n) => ({ key: String(n), label: String(n) }));
-    }, [itemNamesOpt, allData, tableData]);
+    }, [tableData]);
 
     const mapData = useMemo(
         () => (mapAggregatedData || []).map((a) => ({
@@ -528,13 +438,14 @@ function WarehouseStocksTable() {
             region: a.region ?? null,
             country: a.country ?? null,
             country_iso3: a.country_iso3 ?? null,
-            warehouse_name: null,
+            warehouse_id: null,
+            warehouse: null,
+            warehouse_country: a.country ?? null,
             warehouse_count: a.warehouse_count ?? undefined,
-            item_group: null,
+            product_category: null,
             item_name: null,
-            item_number: null,
-            item_status_name: null,
-            unit: null,
+            unit_measurement: null,
+            catalogue_link: null,
             quantity: a.total_quantity ?? null,
         } as WarehouseStock)),
         [mapAggregatedData],
@@ -566,33 +477,27 @@ function WarehouseStocksTable() {
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
-                'country',
-                'Country',
-                (item) => item.country ?? '',
-                { sortable: true },
-            ),
-            createStringColumn<WarehouseStock, string>(
                 'warehouse_id',
                 'Warehouse ID',
                 (item) => item.warehouse_id ?? '',
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
-                'warehouse_managed_by',
-                'Warehouse managed by',
-                () => 'IFRC',
-                { sortable: false },
-            ),
-            createStringColumn<WarehouseStock, string>(
-                'item_group',
-                'Item categories',
-                (item) => item.item_group ?? '',
+                'warehouse',
+                'Warehouse',
+                (item) => item.warehouse ?? '',
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
-                'product_id',
-                'Product ID',
-                (item) => item.product_id ?? '',
+                'warehouse_country',
+                'Warehouse Country',
+                (item) => item.warehouse_country ?? '',
+                { sortable: true },
+            ),
+            createStringColumn<WarehouseStock, string>(
+                'product_category',
+                'Product Category',
+                (item) => item.product_category ?? '',
                 { sortable: true },
             ),
             createStringColumn<WarehouseStock, string>(
@@ -607,25 +512,19 @@ function WarehouseStocksTable() {
                 (item) => formatQty(item.quantity),
                 { sortable: true },
             ),
+            createStringColumn<WarehouseStock, string>(
+                'unit_measurement',
+                'Unit Measurement',
+                (item) => item.unit_measurement ?? '',
+                { sortable: true },
+            ),
             createElementColumn<WarehouseStock, string, DetailsCellProps>(
-                'details',
-                'Details',
+                'catalogue_link',
+                'Catalogue Link',
                 DetailsCell,
                 (_, item) => ({
-                    url: item.item_url,
+                    url: item.catalogue_link,
                 }),
-            ),
-            createStringColumn<WarehouseStock, string>(
-                'contact',
-                'Contact',
-                () => 'ifrcwarehouse@ifrc.org',
-                { sortable: false },
-            ),
-            createStringColumn<WarehouseStock, string>(
-                'status',
-                'Status',
-                (item) => item.item_status_name ?? '',
-                { sortable: false },
             ),
         ],
         [],
@@ -666,9 +565,8 @@ function WarehouseStocksTable() {
     const handleMapCountryClick = useCallback((clickedIso3: string) => {
         const upperIso3 = clickedIso3.toUpperCase();
 
+        // If a region filter is active, explode it into individual countries first
         if (filterRegions && filterRegions.length > 0) {
-            const clickedRegion = iso3ToRegion.get(upperIso3);
-            // Explode region into individual countries
             const regionCountries = new Set<string>();
             (aggregatedData || []).forEach((a) => {
                 const iso3 = (a.country_iso3 || '').toUpperCase();
@@ -676,14 +574,12 @@ function WarehouseStocksTable() {
                     regionCountries.add(iso3);
                 }
             });
-            // Merge with existing individual country selections
             (filterCountries ?? []).forEach((c) => regionCountries.add(c.toUpperCase()));
 
-            if (clickedRegion && filterRegions.includes(clickedRegion)) {
-                // Clicked country is within the region — deselect it
+            // Toggle the clicked country
+            if (regionCountries.has(upperIso3)) {
                 regionCountries.delete(upperIso3);
             } else {
-                // Clicked country is outside the region — add it
                 regionCountries.add(upperIso3);
             }
 
@@ -693,7 +589,7 @@ function WarehouseStocksTable() {
             return;
         }
 
-        // Normal toggle
+        // Simple toggle: select/deselect the clicked country
         const current = filterCountries ?? [];
         const isAlreadySelected = current.some(
             (c) => c.toUpperCase() === upperIso3,
@@ -702,29 +598,13 @@ function WarehouseStocksTable() {
             const next = current.filter((c) => c.toUpperCase() !== upperIso3);
             setFilterCountries(next.length > 0 ? next : undefined);
         } else {
-            const newCountries = [...current, upperIso3];
-            // Check if adding this country completes a full region
-            const newSet = new Set(newCountries.map((c) => c.toUpperCase()));
-            let matchedRegion: string | undefined;
-            regionToIso3s.forEach((iso3s, region) => {
-                const regionSet = new Set(iso3s);
-                if (regionSet.size === newSet.size
-                    && iso3s.every((c) => newSet.has(c))) {
-                    matchedRegion = region;
-                }
-            });
-            if (matchedRegion) {
-                setFilterRegions([matchedRegion]);
-                setFilterCountries(undefined);
-            } else {
-                setFilterCountries(newCountries);
-            }
+            setFilterCountries([...current, upperIso3]);
         }
-    }, [filterRegions, filterCountries, iso3ToRegion, regionToIso3s, aggregatedData]);
+    }, [filterRegions, filterCountries, aggregatedData]);
 
     const handleClearAll = useCallback(() => {
         setFilterRegions(undefined);
-        setFilterCountries(undefined);
+        setFilterCountries(MAP_WAREHOUSE_ISO3S);
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
         setReceivingCountry(undefined);
@@ -733,127 +613,24 @@ function WarehouseStocksTable() {
 
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
 
-    const chartData = useMemo(() => {
-        if (summaryData && Array.isArray(summaryData.by_item_group)) {
-            const rows = summaryData.by_item_group
-                .map((g) => ({ label: g.item_group ?? 'Unknown', value: Number(g.total_quantity ?? 0) }))
-                .sort((a, b) => b.value - a.value);
-            const max = rows[0]?.value ?? 0;
-            return { rows, max };
-        }
-
-        let base = allData ?? tableData;
-
-        if (owner) {
-            base = base.filter(() => getOwner() === owner);
-        }
-
-        if (filterRegions && filterRegions.length > 0) base = base.filter((i) => filterRegions.includes(i.region ?? ''));
-        if (filterCountries && filterCountries.length > 0) {
-            base = base.filter((i) => filterCountries.includes(i.country_iso3 ?? ''));
-        }
-        if (filterItemName) base = base.filter((i) => i.item_name === filterItemName);
-
-        const totals = new Map<string, number>();
-        base.forEach((row) => {
-            const group = row.item_group ?? 'Unknown';
-            const q = parseQty(row.quantity) ?? 0;
-            totals.set(group, (totals.get(group) ?? 0) + q);
-        });
-
-        const rows = Array.from(totals.entries())
-            .map(([label, value]) => ({ label, value }))
-            .sort((a, b) => b.value - a.value);
-
-        const max = rows[0]?.value ?? 0;
-        return { rows, max };
-    }, [
-        summaryData,
-        allData,
-        tableData,
-        filterRegions,
-        filterCountries,
-        filterItemName,
-        owner,
-    ]);
-
-    const lowStockData = useMemo(() => {
-        if (summaryData && Array.isArray(summaryData.by_item_group)) {
-            const rows = summaryData.by_item_group
-                .map((g) => ({ label: g.item_group ?? 'Unknown', value: Number(g.total_quantity ?? 0) }))
-                .sort((a, b) => a.value - b.value)
-                .slice(0, 6);
-            const max = rows[rows.length - 1]?.value ?? 0;
-            return { rows, max };
-        }
-
-        let base = gapsData ?? allData ?? tableData;
-
-        if (owner) {
-            base = base.filter(() => getOwner() === owner);
-        }
-
-        if (filterRegions && filterRegions.length > 0) base = base.filter((i) => filterRegions.includes(i.region ?? ''));
-        if (filterCountries && filterCountries.length > 0) {
-            base = base.filter((i) => filterCountries.includes(i.country_iso3 ?? ''));
-        }
-        if (filterItemName) base = base.filter((i) => i.item_name === filterItemName);
-
-        const totals = new Map<string, number>();
-        base.forEach((row) => {
-            const group = row.item_group ?? 'Unknown';
-            const q = parseQty(row.quantity) ?? 0;
-            totals.set(group, (totals.get(group) ?? 0) + q);
-        });
-
-        const rows = Array.from(totals.entries())
-            .map(([label, value]) => ({ label, value }))
-            .sort((a, b) => a.value - b.value)
-            .slice(0, 6);
-
-        const max = rows[rows.length - 1]?.value ?? 0;
-        return { rows, max };
-    }, [
-        summaryData,
-        gapsData,
-        allData,
-        tableData,
-        owner,
-        filterRegions,
-        filterCountries,
-        filterItemName,
-    ]);
-
     const ownerStats = useMemo(() => {
-        if (summaryData && Array.isArray(summaryData.by_item_group)) {
-            return {
-                ifrcWarehouses: 0,
-                ifrcItemGroups: summaryData.by_item_group.length,
-            };
-        }
+        let warehouseTotal = 0;
+        (aggregatedData || []).forEach((a) => {
+            warehouseTotal += typeof a.warehouse_count === 'number' ? a.warehouse_count : 0;
+        });
 
-        let base = allData ?? tableData;
-        if (owner) {
-            base = base.filter(() => getOwner() === owner);
-        }
-
-        const warehouses = new Set<string>();
         const itemGroups = new Set<string>();
-
-        base.forEach((row) => {
-            if (row.warehouse_name) {
-                warehouses.add(row.warehouse_name);
-            }
-            if (row.item_group) {
-                itemGroups.add(row.item_group);
+        (tableData || []).forEach((row) => {
+            if (row.product_category) {
+                itemGroups.add(row.product_category);
             }
         });
 
         return {
-            ifrcWarehouses: warehouses.size,
+            ifrcWarehouses: warehouseTotal,
             ifrcItemGroups: itemGroups.size,
         };
-    }, [summaryData, allData, tableData, owner]);
+    }, [aggregatedData, tableData]);
 
     const showNoCountryData = Boolean(
         filterCountries
@@ -1077,91 +854,6 @@ function WarehouseStocksTable() {
                                 />
                             )}
                         </SortContext.Provider>
-                    </div>
-                </div>
-
-                <div className={styles.chartsRow}>
-                    <div className={styles.chartCard}>
-                        <div className={styles.chartHeader}>
-                            <div className={styles.chartTitle}>
-                                Most Requested Item Categories
-                            </div>
-                            {filterItemGroup && (
-                                <Button
-                                    name="clear_item_group"
-                                    onClick={() => setFilterItemGroup(undefined)}
-                                >
-                                    Clear
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className={styles.chartBody}>
-                            {chartData.rows.length === 0 ? (
-                                <div className={styles.chartEmpty}>No items</div>
-                            ) : (
-                                chartData.rows.map((r) => (
-                                    <button
-                                        type="button"
-                                        className={styles.chartRow}
-                                        key={r.label}
-                                        data-active={filterItemGroup === r.label}
-                                        onClick={() => setFilterItemGroup(
-                                            filterItemGroup === r.label ? undefined : r.label,
-                                        )}
-                                        title={r.label}
-                                    >
-                                        <div className={styles.chartLabel}>{r.label}</div>
-                                        <div className={styles.chartBarWrap}>
-                                            <div
-                                                className={styles.chartBar}
-                                                style={{
-                                                    width: `${getPercent(r.value, chartData.max)}%`,
-                                                }}
-                                            />
-                                        </div>
-                                        <div className={styles.chartValue}>
-                                            {Math.round(r.value).toLocaleString()}
-                                        </div>
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    <div className={styles.chartCard}>
-                        <div className={styles.chartHeader}>
-                            <div className={styles.chartTitle}>
-                                Key Items Low or Out of Stock
-                            </div>
-                        </div>
-
-                        <div className={styles.verticalChart}>
-                            {lowStockData.rows.length === 0 ? (
-                                <div className={styles.chartEmpty}>No items</div>
-                            ) : (
-                                lowStockData.rows.map((r) => (
-                                    <div
-                                        className={styles.verticalBarItem}
-                                        key={r.label}
-                                        title={r.label}
-                                    >
-                                        <div className={styles.verticalBar}>
-                                            <div
-                                                className={styles.verticalBarFill}
-                                                style={{
-                                                    height: `${getPercent(r.value, lowStockData.max)}%`,
-                                                }}
-                                            />
-                                        </div>
-                                        <div className={styles.verticalBarLabel}>{r.label}</div>
-                                        <div className={styles.verticalBarValue}>
-                                            {Math.round(r.value).toLocaleString()}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
                     </div>
                 </div>
 
