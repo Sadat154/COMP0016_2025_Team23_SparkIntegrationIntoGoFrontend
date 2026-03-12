@@ -104,8 +104,6 @@ function formatQty(v: string | null | undefined): string {
     });
 }
 
-type OwnerKey = 'IFRC' | 'ICRC' | 'NS';
-
 const MAP_WAREHOUSE_IDS = [
     'AE1DUB002',
     'AR1BUE002',
@@ -137,8 +135,6 @@ function WarehouseStocksTable() {
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
     const [receivingCountry, setReceivingCountry] = useState<string | undefined>();
-    const [owner, setOwner] = useState<OwnerKey>('IFRC');
-
     const { sortState } = useFilterState({ filter: {} });
 
     const [page, setPage] = useState<number>(1);
@@ -608,7 +604,6 @@ function WarehouseStocksTable() {
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
         setReceivingCountry(undefined);
-        setOwner('IFRC');
     }, []);
 
     const keySelector = useCallback((item: WarehouseStock) => item.id, []);
@@ -645,68 +640,59 @@ function WarehouseStocksTable() {
             headingLevel={2}
         >
             <div className={styles.layout}>
-                <div className={styles.ownerRow}>
-                    <div className={styles.ownerCard}>
-                        <div className={styles.ownerButtons}>
-                            <button
-                                type="button"
-                                className={styles.ownerBtn}
-                                data-active={owner === 'IFRC'}
-                                onClick={() => setOwner('IFRC')}
-                            >
-                                <div className={styles.ownerLineBig}>IFRC</div>
-                                <div className={styles.ownerLineSmall}>
-                                    {ownerStats.ifrcWarehouses}
-                                    {' '}
-                                    warehouses
-                                    {' '}
-                                    |
-                                    {' '}
-                                    {ownerStats.ifrcItemGroups}
-                                    {' '}
-                                    item categories
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                className={styles.ownerBtn}
-                                data-disabled="true"
-                                title="No data yet"
-                            >
-                                <div className={styles.ownerLineBig}>ICRC</div>
-                                <div className={styles.ownerLineSmall}>
-                                    0
-                                    {' '}
-                                    warehouses
-                                    {' '}
-                                    |
-                                    {' '}
-                                    0
-                                    {' '}
-                                    item categories
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                className={styles.ownerBtn}
-                                data-disabled="true"
-                                title="No data yet"
-                            >
-                                <div className={styles.ownerLineBig}>NS</div>
-                                <div className={styles.ownerLineSmall}>
-                                    0
-                                    {' '}
-                                    warehouses
-                                    {' '}
-                                    |
-                                    {' '}
-                                    0
-                                    {' '}
-                                    item categories
-                                </div>
-                            </button>
+                <div className={styles.summaryCards}>
+                    <div className={styles.summaryCard}>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {ownerStats.ifrcWarehouses}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                IFRC Warehouses
+                            </div>
+                        </div>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                {ownerStats.ifrcItemGroups}
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Item Categories
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.summaryCard}>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                0
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                ICRC Warehouses
+                            </div>
+                        </div>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                0
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Item Categories
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.summaryCard}>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                0
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                NS Warehouses
+                            </div>
+                        </div>
+                        <div className={styles.summaryCardBlock}>
+                            <div className={styles.summaryCardValue}>
+                                0
+                            </div>
+                            <div className={styles.summaryCardLabel}>
+                                Item Categories
+                            </div>
                         </div>
                     </div>
                 </div>

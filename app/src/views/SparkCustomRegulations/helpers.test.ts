@@ -6,8 +6,8 @@ import {
 import {
     buildNormalizedNameToIso3FromCountriesJson,
     coerceCountriesJsonArray,
-    getCountryNameKeysForRegionMapping,
     getAnswerForQuestion,
+    getCountryNameKeysForRegionMapping,
     normalizeName,
     normalizeYesNo,
     parseCsvLine,

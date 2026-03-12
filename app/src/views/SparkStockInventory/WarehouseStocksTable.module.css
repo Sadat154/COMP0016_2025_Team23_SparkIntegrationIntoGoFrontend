@@ -89,73 +89,44 @@
     overflow-y: visible;
 }
 
-.ownerRow {
+.summaryCards {
     display: flex;
-    justify-content: stretch;
+    width: 100%;
+    gap: var(--go-ui-spacing-md);
 }
 
-.ownerCard {
+.summaryCard {
+    display: flex;
+    flex: 1;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     border-radius: var(--go-ui-border-radius-lg);
     background-color: var(--go-ui-color-foreground);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.summaryCardBlock {
+    flex: 1;
+    border-right: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
     padding: var(--go-ui-spacing-md);
-    width: 100%;
+    min-width: 0;
 }
 
-.ownerHeader {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 0;
-    font-weight: var(--go-ui-font-weight-bold);
+.summaryCardBlock:last-child {
+    border-right: none;
 }
 
-.ownerHint {
-    color: var(--go-ui-color-text-description);
-    font-size: var(--go-ui-font-size-xs);
-}
-
-.ownerButtons {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--go-ui-spacing-sm);
-}
-
-.ownerBtn {
-    transition: all var(--go-ui-duration-animation-fast);
-    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
-    border-radius: var(--go-ui-border-radius-md);
-    background-color: var(--go-ui-color-foreground);
-    cursor: pointer;
-    padding: var(--go-ui-spacing-sm) var(--go-ui-spacing-md);
-    width: 100%;
-    text-align: left;
-}
-
-.ownerBtn:hover:not([data-disabled="true"]) {
-    border-color: var(--go-ui-color-primary-red);
-    box-shadow: var(--go-ui-box-shadow-sm);
-}
-
-.ownerBtn[data-active="true"] {
-    border-color: var(--go-ui-color-primary-red);
-    box-shadow: 0 0 0 2px rgba(245, 51, 63, 0.15);
-    background-color: var(--go-ui-color-background);
-}
-
-.ownerBtn[data-disabled="true"] {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.ownerLineBig {
-    line-height: var(--go-ui-line-height-sm);
+.summaryCardValue {
+    line-height: var(--go-ui-line-height-tight);
     color: var(--go-ui-color-text);
-    font-size: var(--go-ui-font-size-lg);
+    font-size: var(--go-ui-font-size-2xl);
     font-weight: var(--go-ui-font-weight-bold);
 }
 
-.ownerLineSmall {
+.summaryCardLabel {
     margin-top: var(--go-ui-spacing-3xs);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
     color: var(--go-ui-color-text-description);
     font-size: var(--go-ui-font-size-xs);
 }
