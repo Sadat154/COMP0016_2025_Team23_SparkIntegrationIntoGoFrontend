@@ -75,56 +75,6 @@ To begin, ensure you have network access. Then, you'll need the following:
 
 ## Contributing
 
-# =========================================
-# Frontend CI Checks (Run Locally)
-# =========================================
-
-```
-# -----------------------------------------
-# 1) UI package checks
-# -----------------------------------------
-cd packages/ui
-pnpm install
-pnpm typecheck
-pnpm stylelint "./src/**/*.css" --fix
-pnpm lint:css
-pnpm lint:js
-pnpm build
-cd ../..
-
-# -----------------------------------------
-# 2) Prepare UI build for app (mimic CI artifact)
-# -----------------------------------------
-mkdir -p app/packages/ui
-rm -rf app/packages/ui/dist
-cp -R packages/ui/dist app/packages/ui/dist
-
-# -----------------------------------------
-# 3) App package checks
-# -----------------------------------------
-cd app
-pnpm install
-pnpm test --run
-pnpm lint:translation
-pnpm lint:js
-pnpm stylelint "./src/**/*.css" --fix
-pnpm lint:css
-pnpm generate:type
-pnpm typecheck
-cd ..
-
-# -----------------------------------------
-# 4) Unused code & dependency checks (Knip)
-# -----------------------------------------
-pnpm lint:unused
-
-# -----------------------------------------
-# 6) Helm chart validation
-# -----------------------------------------
-helm lint ./nginx-serve/helm --values ./nginx-serve/helm/values-test.yaml
-helm template ./nginx-serve/helm --values ./nginx-serve/helm/values-test.yaml
-```
-
 * Check out existing [Issues](https://github.com/IFRCGo/go-web-app/issues) and [Pull Requests](https://github.com/IFRCGo/go-web-app/pulls) to contribute.
 * To request a feature or report a bug, [create a GitHub Issue](https://github.com/IFRCGo/go-web-app/issues/new/choose).
 * [Contribution Guide →](./CONTRIBUTING.md)
