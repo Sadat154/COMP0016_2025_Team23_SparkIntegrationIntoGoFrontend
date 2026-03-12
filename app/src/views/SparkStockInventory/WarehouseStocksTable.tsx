@@ -542,8 +542,14 @@ function WarehouseStocksTable() {
     const emptyOptions = useMemo<SelectOption[]>(() => [], []);
 
     const handleRegionChange = useCallback((newValue: (string | number)[] | undefined) => {
-        setFilterRegions(newValue as string[] | undefined);
-    }, []);
+        const regions = newValue as string[] | undefined;
+        // If a country filter is active and user selects a region,
+        // reset country filters so only the region filter applies.
+        if (regions && regions.length > 0 && filterCountries && filterCountries.length > 0) {
+            setFilterCountries(undefined);
+        }
+        setFilterRegions(regions);
+    }, [filterCountries]);
 
     const handleCountriesChange = useCallback((newValue: (string | number)[] | undefined) => {
         setFilterCountries(newValue as string[] | undefined);
