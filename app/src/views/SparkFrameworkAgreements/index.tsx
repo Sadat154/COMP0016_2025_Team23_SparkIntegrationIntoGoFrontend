@@ -27,6 +27,7 @@ import GlobalMap, { type AdminZeroFeatureProperties } from '#components/domain/G
 import GoMapContainer from '#components/GoMapContainer';
 import MapPopup from '#components/MapPopup';
 import useCountry, { type Country } from '#hooks/domain/useCountry';
+import { COLOR_LIGHT_GREY } from '#utils/constants';
 import { useRequest } from '#utils/restRequest';
 
 import FrameworkAgreementsTable from './FrameworkAgreementsTable';
@@ -321,7 +322,7 @@ export function Component() {
                 ['==', ['get', 'iso3'], selectedIso3 ?? ''],
                 'rgba(220, 53, 69, 0.9)',
                 // Unhighlight all other countries
-                'rgba(0, 0, 0, 0)',
+                COLOR_LIGHT_GREY,
             ],
         );
 
@@ -337,10 +338,10 @@ export function Component() {
 
         if (countColorMatches.length > 0) {
             (colorExpression as unknown[]).push(
-                ['match', ['get', 'iso3'], ...countColorMatches, 'rgba(0, 0, 0, 0)'],
+                ['match', ['get', 'iso3'], ...countColorMatches, COLOR_LIGHT_GREY],
             );
         } else {
-            (colorExpression as unknown[]).push('rgba(0, 0, 0, 0)');
+            (colorExpression as unknown[]).push(COLOR_LIGHT_GREY);
         }
 
         return {

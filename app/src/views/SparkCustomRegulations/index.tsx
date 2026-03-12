@@ -142,11 +142,8 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
         setModalSearch(value ?? '');
     }, []);
 
-    if (!countryData) {
-        return null;
-    }
-
     const filteredSections = useMemo(() => {
+        if (!countryData) return [];
         const searchLower = modalSearch.trim().toLowerCase();
 
         return countryData.sections?.map((section) => {
@@ -160,7 +157,11 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
             }) ?? [];
             return { ...section, items: filteredItems };
         }).filter((section) => section.items.length > 0) ?? [];
-    }, [countryData.sections, modalSearch]);
+    }, [countryData, modalSearch]);
+
+    if (!countryData) {
+        return null;
+    }
 
     return (
         <Modal

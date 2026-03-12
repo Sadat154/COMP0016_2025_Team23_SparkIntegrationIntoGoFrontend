@@ -4,6 +4,7 @@ import type { FillPaint } from 'mapbox-gl';
 import GlobalMap from '#components/domain/GlobalMap';
 import GoMapContainer from '#components/GoMapContainer';
 import { mbtoken } from '#config';
+import { COLOR_LIGHT_GREY } from '#utils/constants';
 
 import styles from './CustomsRegulationsMap.module.css';
 
@@ -54,8 +55,8 @@ function CustomsRegulationsMap(props: Props) {
         });
 
         const colorExpression = colorMatches.length > 0
-            ? ['match', ['get', 'iso3'], ...colorMatches, 'rgba(0,0,0,0)'] as mapboxgl.Expression
-            : 'rgba(0,0,0,0)' as unknown as mapboxgl.Expression;
+            ? ['match', ['get', 'iso3'], ...colorMatches, COLOR_LIGHT_GREY] as mapboxgl.Expression
+            : COLOR_LIGHT_GREY as unknown as mapboxgl.Expression;
 
         return {
             'fill-color': colorExpression,
