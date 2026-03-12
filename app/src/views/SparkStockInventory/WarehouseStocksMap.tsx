@@ -57,6 +57,7 @@ interface WarehouseStock {
     country: string | null;
     country_iso3?: string | null;
     warehouse?: string | null;
+    warehouse_name?: string | null;
     product_category?: string | null;
     item_name?: string | null;
     unit_measurement?: string | null;

@@ -6,7 +6,7 @@ import {
 import {
     FA_EXPIRING_GOOD_DAYS_THRESHOLD,
     getExpiryStatusClass,
-} from './index';
+} from './expiryStatus';
 
 function dateString(d: Date): string {
     return d.toISOString().slice(0, 10);
