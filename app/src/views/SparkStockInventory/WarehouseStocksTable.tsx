@@ -116,19 +116,6 @@ const MAP_WAREHOUSE_IDS = [
     'TR1ISTA02',
 ];
 
-// ISO3 codes corresponding to the 9 warehouse ISO2 prefixes
-const MAP_WAREHOUSE_ISO3S = [
-    'ARE', // AE → United Arab Emirates
-    'ARG', // AR → Argentina
-    'AUS', // AU → Australia
-    'ESP', // ES → Spain
-    'GTM', // GT → Guatemala
-    'HND', // HN → Honduras
-    'MYS', // MY → Malaysia
-    'PAN', // PA → Panama
-    'TUR', // TR → Turkey
-];
-
 function WarehouseStocksTable() {
     const [filterRegions, setFilterRegions] = useState<string[] | undefined>();
     const [filterCountries, setFilterCountries] = useState<string[] | undefined>();
@@ -563,7 +550,6 @@ function WarehouseStocksTable() {
     }, []);
 
     const handleItemGroupChange = useCallback((newValue: string | undefined) => {
-        // Selecting an item category clears any selected item name
         setFilterItemGroup(newValue);
         if (newValue) {
             setFilterItemName(undefined);
@@ -571,7 +557,6 @@ function WarehouseStocksTable() {
     }, []);
 
     const handleItemNameChange = useCallback((newValue: string | undefined) => {
-        // Selecting an item name clears any selected item category
         setFilterItemName(newValue);
         if (newValue) {
             setFilterItemGroup(undefined);
