@@ -390,18 +390,6 @@ function WarehouseStocksTable() {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [countriesRaw]);
 
-    const iso3ToRegion = useMemo(() => {
-        const map = new Map<string, string>();
-        (mapAggregatedData || []).forEach((a) => {
-            const iso3 = (a.country_iso3 || '').toUpperCase();
-            const { region } = a;
-            if (iso3 && region) {
-                map.set(iso3, region);
-            }
-        });
-        return map;
-    }, [mapAggregatedData]);
-
     const itemGroupOptions = useMemo(() => {
         const source = (distinctItemGroups && distinctItemGroups.length > 0)
             ? distinctItemGroups
@@ -413,7 +401,13 @@ function WarehouseStocksTable() {
 
     useEffect(() => {
         let mounted = true;
-        fetch('/api/v1/stock-inventory/?distinct=1')
+        const params = new URLSearchParams();
+        params.set('distinct', '1');
+        if (filterCountries && filterCountries.length > 0) {
+            params.set('country_iso3', filterCountries.map((c) => String(c).toUpperCase()).join(','));
+        }
+
+        fetch(`/api/v1/stock-inventory/?${params.toString()}`)
             .then((r) => r.json())
             .then((data) => {
                 if (!mounted) return;
@@ -428,7 +422,7 @@ function WarehouseStocksTable() {
                 setDistinctItemGroups([]);
             });
         return () => { mounted = false; };
-    }, []);
+    }, [filterCountries]);
 
     const itemNameOptions = useMemo(() => {
         const source = distinctItemNames ?? [];
