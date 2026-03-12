@@ -116,22 +116,9 @@ const MAP_WAREHOUSE_IDS = [
     'TR1ISTA02',
 ];
 
-// ISO3 codes corresponding to the 9 warehouse ISO2 prefixes
-const MAP_WAREHOUSE_ISO3S = [
-    'ARE', // AE → United Arab Emirates
-    'ARG', // AR → Argentina
-    'AUS', // AU → Australia
-    'ESP', // ES → Spain
-    'GTM', // GT → Guatemala
-    'HND', // HN → Honduras
-    'MYS', // MY → Malaysia
-    'PAN', // PA → Panama
-    'TUR', // TR → Turkey
-];
-
 function WarehouseStocksTable() {
     const [filterRegions, setFilterRegions] = useState<string[] | undefined>();
-    const [filterCountries, setFilterCountries] = useState<string[] | undefined>(MAP_WAREHOUSE_ISO3S);
+    const [filterCountries, setFilterCountries] = useState<string[] | undefined>();
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
     const [receivingCountry, setReceivingCountry] = useState<string | undefined>();
@@ -158,6 +145,8 @@ function WarehouseStocksTable() {
         total_quantity?: string | null;
         warehouse_count?: number | null;
     }>>([]);
+    const [distinctItemNames, setDistinctItemNames] = useState<string[] | undefined>();
+    const [distinctItemGroups, setDistinctItemGroups] = useState<string[] | undefined>();
     const prefetchCacheRef = useRef<Map<number, { rows: WarehouseStock[]; total?: number }>>(new Map());
     const prefetchControllersRef = useRef<Map<number, AbortController>>(new Map());
     const prevFiltersKeyRef = useRef<string>('');
@@ -321,7 +310,6 @@ function WarehouseStocksTable() {
         const mapParams = new URLSearchParams();
         if (filterItemGroup) mapParams.set('product_category', filterItemGroup);
         if (filterItemName) mapParams.set('item_name', filterItemName);
-        mapParams.set('warehouse_ids', MAP_WAREHOUSE_IDS.join(','));
         const mapUrl = `/api/v1/stock-inventory/aggregated/?${mapParams.toString()}`;
         fetch(mapUrl)
             .then((r) => r.json())
@@ -402,31 +390,51 @@ function WarehouseStocksTable() {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [countriesRaw]);
 
-    const iso3ToRegion = useMemo(() => {
-        const map = new Map<string, string>();
-        (mapAggregatedData || []).forEach((a) => {
-            const iso3 = (a.country_iso3 || '').toUpperCase();
-            const { region } = a;
-            if (iso3 && region) {
-                map.set(iso3, region);
-            }
-        });
-        return map;
-    }, [mapAggregatedData]);
-
     const itemGroupOptions = useMemo(() => {
-        const fromTable = (tableData || []).map((r) => r.product_category).filter(isDefined);
-        const combined = unique(fromTable, (v) => String(v).toLowerCase())
+        const source = (distinctItemGroups && distinctItemGroups.length > 0)
+            ? distinctItemGroups
+            : (tableData || []).map((r) => r.product_category).filter(isDefined);
+        const combined = unique(source, (v) => String(v).toLowerCase())
             .sort((a, b) => String(a).localeCompare(String(b)));
         return combined.map((g) => ({ key: String(g), label: String(g) }));
-    }, [tableData]);
+    }, [distinctItemGroups, tableData]);
+
+    useEffect(() => {
+        let mounted = true;
+        const params = new URLSearchParams();
+        params.set('distinct', '1');
+        if (filterCountries && filterCountries.length > 0) {
+            params.set('country_iso3', filterCountries.map((c) => String(c).toUpperCase()).join(','));
+        }
+
+        type DistinctResponse = {
+            item_names?: string[];
+            item_groups?: string[];
+        };
+
+        fetch(`/api/v1/stock-inventory/?${params.toString()}`)
+            .then((r) => r.json() as Promise<DistinctResponse>)
+            .then((data) => {
+                if (!mounted) return;
+                const names = Array.isArray(data?.item_names) ? data.item_names : [];
+                const groups = Array.isArray(data?.item_groups) ? data.item_groups : [];
+                setDistinctItemNames(names.filter((n) => n));
+                setDistinctItemGroups(groups.filter((g) => g));
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setDistinctItemNames([]);
+                setDistinctItemGroups([]);
+            });
+        return () => { mounted = false; };
+    }, [filterCountries]);
 
     const itemNameOptions = useMemo(() => {
-        const fromTable = (tableData || []).map((r) => r.item_name).filter(isDefined);
-        const combined = unique(fromTable, (v) => String(v).toLowerCase())
+        const source = distinctItemNames ?? [];
+        const combined = unique(source, (v) => String(v).toLowerCase())
             .sort((a, b) => String(a).localeCompare(String(b)));
         return combined.map((n) => ({ key: String(n), label: String(n) }));
-    }, [tableData]);
+    }, [distinctItemNames]);
 
     const mapData = useMemo(
         () => (mapAggregatedData || []).map((a) => ({
@@ -533,8 +541,14 @@ function WarehouseStocksTable() {
     const emptyOptions = useMemo<SelectOption[]>(() => [], []);
 
     const handleRegionChange = useCallback((newValue: (string | number)[] | undefined) => {
-        setFilterRegions(newValue as string[] | undefined);
-    }, []);
+        const regions = newValue as string[] | undefined;
+        // If a country filter is active and user selects a region,
+        // reset country filters so only the region filter applies.
+        if (regions && regions.length > 0 && filterCountries && filterCountries.length > 0) {
+            setFilterCountries(undefined);
+        }
+        setFilterRegions(regions);
+    }, [filterCountries]);
 
     const handleCountriesChange = useCallback((newValue: (string | number)[] | undefined) => {
         setFilterCountries(newValue as string[] | undefined);
@@ -542,21 +556,23 @@ function WarehouseStocksTable() {
 
     const handleItemGroupChange = useCallback((newValue: string | undefined) => {
         setFilterItemGroup(newValue);
+        if (newValue) {
+            setFilterItemName(undefined);
+        }
     }, []);
 
     const handleItemNameChange = useCallback((newValue: string | undefined) => {
         setFilterItemName(newValue);
+        if (newValue) {
+            setFilterItemGroup(undefined);
+        }
     }, []);
 
     const handleReceivingCountryChange = useCallback((newValue: string | undefined) => {
+        // Receiving country controls only customs retrieval card and
+        // must not affect the map filters.
         setReceivingCountry(newValue);
-        if (newValue) {
-            const region = iso3ToRegion.get(newValue.toUpperCase());
-            if (region) {
-                setFilterRegions([region]);
-            }
-        }
-    }, [iso3ToRegion]);
+    }, []);
 
     const handleMapCountryClick = useCallback((clickedIso3: string) => {
         const upperIso3 = clickedIso3.toUpperCase();
@@ -600,7 +616,7 @@ function WarehouseStocksTable() {
 
     const handleClearAll = useCallback(() => {
         setFilterRegions(undefined);
-        setFilterCountries(MAP_WAREHOUSE_ISO3S);
+        setFilterCountries(undefined);
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
         setReceivingCountry(undefined);
