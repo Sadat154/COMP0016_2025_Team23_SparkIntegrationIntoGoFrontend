@@ -407,8 +407,13 @@ function WarehouseStocksTable() {
             params.set('country_iso3', filterCountries.map((c) => String(c).toUpperCase()).join(','));
         }
 
+        type DistinctResponse = {
+            item_names?: string[];
+            item_groups?: string[];
+        };
+
         fetch(`/api/v1/stock-inventory/?${params.toString()}`)
-            .then((r) => r.json())
+            .then((r) => r.json() as Promise<DistinctResponse>)
             .then((data) => {
                 if (!mounted) return;
                 const names = Array.isArray(data?.item_names) ? data.item_names : [];
