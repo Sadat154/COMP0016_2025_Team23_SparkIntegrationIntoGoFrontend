@@ -564,14 +564,10 @@ function WarehouseStocksTable() {
     }, []);
 
     const handleReceivingCountryChange = useCallback((newValue: string | undefined) => {
+        // Receiving country controls only customs retrieval card and
+        // must not affect the map filters.
         setReceivingCountry(newValue);
-        if (newValue) {
-            const region = iso3ToRegion.get(newValue.toUpperCase());
-            if (region) {
-                setFilterRegions([region]);
-            }
-        }
-    }, [iso3ToRegion]);
+    }, []);
 
     const handleMapCountryClick = useCallback((clickedIso3: string) => {
         const upperIso3 = clickedIso3.toUpperCase();
