@@ -28,6 +28,8 @@ export function normalizeYesNo(value: string): 'Yes' | 'No' | 'N/A' {
 export function normalizeName(value: string | null | undefined): string {
     const normalized = (value ?? '')
         .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
         .split(',')[0];
 
     if (!normalized) return '';
@@ -37,6 +39,29 @@ export function normalizeName(value: string | null | undefined): string {
         .replace(/[^a-z\s]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+}
+
+export function getCountryNameKeysForRegionMapping(value: string): string[] {
+    const base = normalizeName(value);
+    if (!base) {
+        return [];
+    }
+
+    const keys = new Set<string>([base]);
+
+    if (base === 'cote d ivoire') {
+        keys.add('ivory coast');
+        keys.add('cote ivoire');
+        keys.add('cote divoire');
+    }
+
+    if (base === 'central african republic') {
+        keys.add('centrafrique');
+        keys.add('centrafique');
+        keys.add('central african rep');
+    }
+
+    return Array.from(keys);
 }
 
 /** Parses one CSV line handling quoted fields and escaped quotes. */
