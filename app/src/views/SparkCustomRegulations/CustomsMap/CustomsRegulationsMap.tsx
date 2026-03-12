@@ -1,17 +1,10 @@
 import { useMemo } from 'react';
-import {
-    MapLayer,
-    MapSource,
-} from '@togglecorp/re-map';
-import type {
-    FillLayer,
-    LineLayer,
-    VectorSource,
-} from 'mapbox-gl';
+import type { FillPaint } from 'mapbox-gl';
 
 import GlobalMap from '#components/domain/GlobalMap';
 import GoMapContainer from '#components/GoMapContainer';
 import { mbtoken } from '#config';
+import { COLOR_LIGHT_GREY } from '#utils/constants';
 
 import styles from './CustomsRegulationsMap.module.css';
 
@@ -44,81 +37,39 @@ function CustomsRegulationsMap(props: Props) {
         touchZoomRotate: false,
     }), [hasToken, tokenRaw]);
 
-    const iso3Yes = useMemo(
-        () => rows
-            .filter((r) => (r.iso3 ?? '').trim().length > 0)
-            .filter((r) => normalizeYesNo(r.ifrcLegalStatus) === 'Yes')
-            .map((r) => (r.iso3 ?? '').toUpperCase()),
-        [rows],
-    );
+    // Build a match expression mapping iso3 -> color
+    // Uses 'iso3' property from the composite source (same as FrameworkAgreements)
+    const adminZeroFillPaint = useMemo<FillPaint>(() => {
+        const colorMatches: unknown[] = [];
 
-    const iso3No = useMemo(
-        () => rows
-            .filter((r) => (r.iso3 ?? '').trim().length > 0)
-            .filter((r) => normalizeYesNo(r.ifrcLegalStatus) === 'No')
-            .map((r) => (r.iso3 ?? '').toUpperCase()),
-        [rows],
-    );
+        rows.forEach((r) => {
+            const iso3 = (r.iso3 ?? '').trim().toUpperCase();
+            if (iso3.length === 0) return;
 
-    const sourceOptions = useMemo<VectorSource>(() => ({
-        type: 'vector',
-        url: 'mapbox://mapbox.country-boundaries-v1',
-    }), []);
+            const status = normalizeYesNo(r.ifrcLegalStatus);
+            if (status === 'Yes') {
+                colorMatches.push(iso3, '#F6B26B');
+            } else if (status === 'No') {
+                colorMatches.push(iso3, '#4DD0E1');
+            }
+        });
 
-    // Mapbox country boundary features store ISO3 on this property:
-    const ISO3_PROP = 'iso_3166_1_alpha_3';
+        const colorExpression = colorMatches.length > 0
+            ? ['match', ['get', 'iso3'], ...colorMatches, COLOR_LIGHT_GREY] as mapboxgl.Expression
+            : COLOR_LIGHT_GREY as unknown as mapboxgl.Expression;
 
-    const fillLayer = useMemo<Omit<FillLayer, 'id'>>(() => ({
-        type: 'fill',
-        'source-layer': 'country_boundaries',
-        paint: {
-            'fill-color': [
-                'case',
-                ['in', ['get', ISO3_PROP], ['literal', iso3Yes]],
-                '#F6B26B', // light orange for Yes
-                ['in', ['get', ISO3_PROP], ['literal', iso3No]],
-                '#4DD0E1', // cyan for No
-                'rgba(0,0,0,0)', // no data -> transparent
-            ],
-            'fill-opacity': [
-                'case',
-                ['in', ['get', ISO3_PROP], ['literal', iso3Yes]],
-                0.75,
-                ['in', ['get', ISO3_PROP], ['literal', iso3No]],
-                0.75,
-                0, // no data -> fully transparent
-            ],
-        },
-    }), [iso3Yes, iso3No]);
-
-    const outlineLayer = useMemo<Omit<LineLayer, 'id'>>(() => ({
-        type: 'line',
-        'source-layer': 'country_boundaries',
-        paint: {
-            'line-color': '#9CA3AF',
-            'line-width': 0.5,
-            'line-opacity': 0.8,
-        },
-    }), []);
+        return {
+            'fill-color': colorExpression,
+            'fill-opacity': 0.75,
+        };
+    }, [rows]);
 
     return (
         <div className={styles.mapRoot}>
-            <GlobalMap mapOptions={mapOptions}>
-                <MapSource
-                    sourceKey="country-boundaries"
-                    sourceOptions={sourceOptions}
-                >
-                    <MapLayer
-                        layerKey="customs-fill"
-                        layerOptions={fillLayer}
-                    />
-                    <MapLayer
-                        layerKey="customs-outline"
-                        layerOptions={outlineLayer}
-                    />
-
-                </MapSource>
-
+            <GlobalMap
+                mapOptions={mapOptions}
+                adminZeroFillPaint={adminZeroFillPaint}
+            >
                 <GoMapContainer
                     className={styles.mapContainer}
                     title={title}

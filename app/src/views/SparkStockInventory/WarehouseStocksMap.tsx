@@ -56,11 +56,11 @@ interface WarehouseStock {
     region: string | null;
     country: string | null;
     country_iso3?: string | null;
-    warehouse_name: string | null;
-    item_group: string | null;
-    item_name: string | null;
-    item_number: string | null;
-    unit: string | null;
+    warehouse?: string | null;
+    warehouse_name?: string | null;
+    product_category?: string | null;
+    item_name?: string | null;
+    unit_measurement?: string | null;
     quantity: string | null;
     warehouse_count?: number | null;
 }
@@ -69,7 +69,6 @@ interface Props {
     data: WarehouseStock[];
     selectedCountryNames?: string[] | undefined;
     selectedRegions?: string[] | undefined;
-    onCountrySelect?: (countryNames: string[] | undefined) => void;
     onCountryClick?: (iso3: string) => void;
 }
 
@@ -78,7 +77,6 @@ function WarehouseStocksMap(props: Props) {
         data,
         selectedCountryNames,
         selectedRegions,
-        onCountrySelect,
         onCountryClick,
     } = props;
 
@@ -144,7 +142,7 @@ function WarehouseStocksMap(props: Props) {
                 return;
             }
             const countryName = row.country ?? iso3ToName.get(iso3) ?? iso3;
-            const warehouseName = row.warehouse_name ?? '';
+            const warehouseName = row.warehouse ?? row.warehouse_name ?? '';
             const qty = parseQty(row.quantity);
             const explicitCount = row.warehouse_count;
 
@@ -246,24 +244,10 @@ function WarehouseStocksMap(props: Props) {
 
         if (onCountryClick) {
             onCountryClick(props2.iso3);
-            return true;
-        }
-
-        const current = selectedCountryNames ?? [];
-        const isAlreadySelected = current.includes(props2.iso3);
-
-        // Toggle country selection
-        if (onCountrySelect) {
-            if (isAlreadySelected) {
-                const next = current.filter((c) => c !== props2.iso3);
-                onCountrySelect(next.length > 0 ? next : undefined);
-            } else {
-                onCountrySelect([...current, props2.iso3]);
-            }
         }
 
         return true;
-    }, [onCountryClick, onCountrySelect, selectedCountryNames]);
+    }, [onCountryClick]);
 
     const sourceOptions = useMemo<GeoJSONSourceRaw>(() => ({
         type: 'geojson',

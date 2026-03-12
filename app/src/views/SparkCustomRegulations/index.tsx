@@ -18,7 +18,6 @@ import {
     numericIdSelector,
 } from '@ifrc-go/ui/utils';
 
-import useCountryRaw from '#hooks/domain/useCountryRaw';
 import useFilterState from '#hooks/useFilterState';
 import { useRequest } from '#utils/restRequest';
 
@@ -67,6 +66,7 @@ interface MatrixRow {
     humanitarianCargoExemptions: string;
     detailsLabel: string;
     lastUpdated: string;
+    searchableContent: string;
     countryData?: CountryRegulation;
 }
 
@@ -142,22 +142,26 @@ function DetailModal({ countryData, onClose }: DetailModalProps) {
         setModalSearch(value ?? '');
     }, []);
 
+    const filteredSections = useMemo(() => {
+        if (!countryData) return [];
+        const searchLower = modalSearch.trim().toLowerCase();
+
+        return countryData.sections?.map((section) => {
+            const filteredItems = section.items?.filter((item) => {
+                if (!searchLower) {
+                    return true;
+                }
+                return (item.question?.toLowerCase?.().includes(searchLower) ?? false)
+                    || (item.answer?.toLowerCase?.().includes(searchLower) ?? false)
+                    || (item.notes?.toLowerCase?.().includes(searchLower) ?? false);
+            }) ?? [];
+            return { ...section, items: filteredItems };
+        }).filter((section) => section.items.length > 0) ?? [];
+    }, [countryData, modalSearch]);
+
     if (!countryData) {
         return null;
     }
-
-    const filteredSections = countryData.sections?.map((section) => {
-        const filteredItems = section.items?.filter((item) => {
-            if (!modalSearch.trim()) {
-                return true;
-            }
-            const searchLower = modalSearch.toLowerCase();
-            return (item.question?.toLowerCase?.().includes(searchLower) ?? false)
-                || (item.answer?.toLowerCase?.().includes(searchLower) ?? false)
-                || (item.notes?.toLowerCase?.().includes(searchLower) ?? false);
-        }) ?? [];
-        return { ...section, items: filteredItems };
-    }).filter((section) => section.items.length > 0) ?? [];
 
     return (
         <Modal
@@ -278,12 +282,6 @@ function CustomRegulationsMatrix() {
         };
     }, []);
 
-    /**
-     * Keep your existing useCountryRaw alone, but stop relying on it for ISO3.
-     * We build ISO3 mapping from countries.json instead.
-     */
-    useCountryRaw();
-
     const normalizedNameToIso3 = useMemo(() => {
         const mapFromJson = buildNormalizedNameToIso3FromCountriesJson(countriesJsonData);
 
@@ -305,8 +303,9 @@ function CustomRegulationsMatrix() {
         () => countries
             .filter((c) => c.country?.trim())
             .map((country, index) => {
+                const normalizedCountryName = normalizeName(country.country);
                 const countryItems = country.sections?.flatMap((s) => s.items) ?? [];
-                const regionLabel = countryNameToRegionLabel.get(normalizeName(country.country)) ?? 'N/A';
+                const regionLabel = countryNameToRegionLabel.get(normalizedCountryName) ?? 'N/A';
 
                 const legal = getAnswerForQuestion(IFRC_LEGAL_STATUS_QUESTION, countryItems);
                 const cargo = getAnswerForQuestion(
@@ -314,21 +313,42 @@ function CustomRegulationsMatrix() {
                     countryItems,
                 );
 
-                const iso3 = normalizedNameToIso3.get(normalizeName(country.country)) ?? undefined;
+                const iso3 = normalizedNameToIso3.get(normalizedCountryName) ?? undefined;
+                const countryTitle = toTitleCase(country.country ?? '');
+                const legalTitle = legal ? toTitleCase(legal) : 'N/A';
+                const cargoTitle = cargo ? toTitleCase(cargo) : 'N/A';
+
+                const searchableContent = countryItems
+                    .map((item) => `${item.question ?? ''} ${item.answer ?? ''} ${item.notes ?? ''}`)
+                    .join(' ')
+                    .toLowerCase();
 
                 return {
                     id: index + 1,
                     region: regionLabel,
-                    country: toTitleCase(country.country ?? ''),
+                    country: countryTitle,
                     iso3,
-                    ifrcLegalStatus: legal ? toTitleCase(legal) : 'N/A',
-                    humanitarianCargoExemptions: cargo ? toTitleCase(cargo) : 'N/A',
+                    ifrcLegalStatus: legalTitle,
+                    humanitarianCargoExemptions: cargoTitle,
                     detailsLabel: 'More details',
                     lastUpdated: 'N/A',
+                    searchableContent,
                     countryData: country,
                 };
             }),
         [countries, countryNameToRegionLabel, normalizedNameToIso3],
+    );
+
+    const mapFilteredRows = useMemo(
+        () => baseRows
+            .filter((r) => (!regionFilter ? true : r.region === regionFilter))
+            .filter((r) => (!countryFilter ? true : r.country === countryFilter))
+            .filter((r) => (
+                !ifrcLegalStatusFilter
+                    ? true
+                    : normalizeYesNo(r.ifrcLegalStatus) === ifrcLegalStatusFilter
+            )),
+        [baseRows, regionFilter, countryFilter, ifrcLegalStatusFilter],
     );
 
     // options for dropdowns
@@ -355,56 +375,32 @@ function CustomRegulationsMatrix() {
     );
 
     // MAP rows: only filters that should affect map
-    const rowsForMap = useMemo(
-        () => baseRows
-            .filter((r) => (!regionFilter ? true : r.region === regionFilter))
-            .filter((r) => (!countryFilter ? true : r.country === countryFilter))
-            .filter((r) => (
-                !ifrcLegalStatusFilter
-                    ? true
-                    : normalizeYesNo(r.ifrcLegalStatus) === ifrcLegalStatusFilter
-            )),
-        [baseRows, regionFilter, countryFilter, ifrcLegalStatusFilter],
-    );
+    const rowsForMap = mapFilteredRows;
+
+    const searchCountryLower = searchCountry.trim().toLowerCase();
+    const searchAnswerLower = searchAnswer.trim().toLowerCase();
 
     // TABLE rows: all filters including cargo + text searches
     const rows: MatrixRow[] = useMemo(
-        () => baseRows
-            .filter((r) => (!regionFilter ? true : r.region === regionFilter))
-            .filter((r) => (!countryFilter ? true : r.country === countryFilter))
-            .filter((r) => (
-                !ifrcLegalStatusFilter
-                    ? true
-                    : normalizeYesNo(r.ifrcLegalStatus) === ifrcLegalStatusFilter
-            ))
+        () => mapFilteredRows
             .filter((r) => (
                 !cargoExemptionsFilter
                     ? true
                     : r.humanitarianCargoExemptions === cargoExemptionsFilter
             ))
             .filter((r) => {
-                if (!searchCountry.trim()) return true;
-                return r.country?.toLowerCase?.().includes(searchCountry.toLowerCase()) ?? false;
+                if (!searchCountryLower) return true;
+                return r.country?.toLowerCase?.().includes(searchCountryLower) ?? false;
             })
             .filter((r) => {
-                if (!searchAnswer.trim()) return true;
-                const countryItems = r.countryData?.sections?.flatMap((s) => s.items) ?? [];
-                const searchLower = searchAnswer.toLowerCase();
-
-                return countryItems.some((item) => (
-                    (item.question?.toLowerCase?.().includes(searchLower) ?? false)
-                    || (item.answer?.toLowerCase?.().includes(searchLower) ?? false)
-                    || (item.notes?.toLowerCase?.().includes(searchLower) ?? false)
-                ));
+                if (!searchAnswerLower) return true;
+                return r.searchableContent.includes(searchAnswerLower);
             }),
         [
-            baseRows,
-            regionFilter,
-            countryFilter,
-            ifrcLegalStatusFilter,
+            mapFilteredRows,
             cargoExemptionsFilter,
-            searchCountry,
-            searchAnswer,
+            searchCountryLower,
+            searchAnswerLower,
         ],
     );
 
@@ -575,7 +571,6 @@ function CustomRegulationsMatrix() {
                 </div>
 
                 <CustomsRegulationsMap
-                    key={`${regionFilter}|${countryFilter}|${ifrcLegalStatusFilter}|${rowsForMap.length}`}
                     rows={rowsForMap}
                 />
 
