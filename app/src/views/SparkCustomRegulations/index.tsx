@@ -25,8 +25,8 @@ import CustomsRegulationsMap from './CustomsMap/CustomsRegulationsMap';
 import type { Option } from './helpers';
 import {
     buildNormalizedNameToIso3FromCountriesJson,
-    getCountryNameKeysForRegionMapping,
     getAnswerForQuestion,
+    getCountryNameKeysForRegionMapping,
     normalizeName,
     normalizeYesNo,
     parseCsvLine,
