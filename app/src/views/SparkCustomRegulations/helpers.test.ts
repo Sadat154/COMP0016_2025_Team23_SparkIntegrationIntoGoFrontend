@@ -6,6 +6,7 @@ import {
 import {
     buildNormalizedNameToIso3FromCountriesJson,
     coerceCountriesJsonArray,
+    getCountryNameKeysForRegionMapping,
     getAnswerForQuestion,
     normalizeName,
     normalizeYesNo,
@@ -77,6 +78,21 @@ test('normalizeName: null/undefined/empty', () => {
     expect(normalizeName('')).toBe('');
     expect(normalizeName(null)).toBe('');
     expect(normalizeName(undefined)).toBe('');
+});
+
+test('getCountryNameKeysForRegionMapping: adds Ivory Coast aliases', () => {
+    const keys = getCountryNameKeysForRegionMapping("Côte d'Ivoire");
+
+    expect(keys).toContain('cote d ivoire');
+    expect(keys).toContain('ivory coast');
+});
+
+test('getCountryNameKeysForRegionMapping: adds Centrafique alias', () => {
+    const keys = getCountryNameKeysForRegionMapping('Central African Republic');
+
+    expect(keys).toContain('central african republic');
+    expect(keys).toContain('centrafique');
+    expect(keys).toContain('centrafrique');
 });
 
 // -----------------------------------------------------------------------------

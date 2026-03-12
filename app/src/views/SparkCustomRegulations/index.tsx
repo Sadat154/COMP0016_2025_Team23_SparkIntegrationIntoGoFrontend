@@ -25,6 +25,7 @@ import CustomsRegulationsMap from './CustomsMap/CustomsRegulationsMap';
 import type { Option } from './helpers';
 import {
     buildNormalizedNameToIso3FromCountriesJson,
+    getCountryNameKeysForRegionMapping,
     getAnswerForQuestion,
     normalizeName,
     normalizeYesNo,
@@ -115,14 +116,16 @@ async function loadCountryNameToRegionLabelFromCsv(): Promise<Map<string, string
             const name = cols[idxName] ?? '';
             const regionRaw = cols[idxRegion] ?? '';
 
-            const nameKey = normalizeName(name);
+            const nameKeys = getCountryNameKeysForRegionMapping(name);
             const regionId = Number(regionRaw);
             const label = Number.isFinite(regionId)
                 ? REGION_ID_TO_LABEL[regionId]
                 : undefined;
 
-            if (nameKey && Number.isFinite(regionId) && label) {
-                map.set(nameKey, label);
+            if (nameKeys.length > 0 && Number.isFinite(regionId) && label) {
+                nameKeys.forEach((nameKey) => {
+                    map.set(nameKey, label);
+                });
             }
         }
     }
