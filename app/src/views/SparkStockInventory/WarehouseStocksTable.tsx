@@ -131,7 +131,7 @@ const MAP_WAREHOUSE_ISO3S = [
 
 function WarehouseStocksTable() {
     const [filterRegions, setFilterRegions] = useState<string[] | undefined>();
-    const [filterCountries, setFilterCountries] = useState<string[] | undefined>(MAP_WAREHOUSE_ISO3S);
+    const [filterCountries, setFilterCountries] = useState<string[] | undefined>();
     const [filterItemGroup, setFilterItemGroup] = useState<string | undefined>();
     const [filterItemName, setFilterItemName] = useState<string | undefined>();
     const [receivingCountry, setReceivingCountry] = useState<string | undefined>();
@@ -158,6 +158,8 @@ function WarehouseStocksTable() {
         total_quantity?: string | null;
         warehouse_count?: number | null;
     }>>([]);
+    const [distinctItemNames, setDistinctItemNames] = useState<string[] | undefined>();
+    const [distinctItemGroups, setDistinctItemGroups] = useState<string[] | undefined>();
     const prefetchCacheRef = useRef<Map<number, { rows: WarehouseStock[]; total?: number }>>(new Map());
     const prefetchControllersRef = useRef<Map<number, AbortController>>(new Map());
     const prevFiltersKeyRef = useRef<string>('');
@@ -321,7 +323,6 @@ function WarehouseStocksTable() {
         const mapParams = new URLSearchParams();
         if (filterItemGroup) mapParams.set('product_category', filterItemGroup);
         if (filterItemName) mapParams.set('item_name', filterItemName);
-        mapParams.set('warehouse_ids', MAP_WAREHOUSE_IDS.join(','));
         const mapUrl = `/api/v1/stock-inventory/aggregated/?${mapParams.toString()}`;
         fetch(mapUrl)
             .then((r) => r.json())
@@ -415,18 +416,39 @@ function WarehouseStocksTable() {
     }, [mapAggregatedData]);
 
     const itemGroupOptions = useMemo(() => {
-        const fromTable = (tableData || []).map((r) => r.product_category).filter(isDefined);
-        const combined = unique(fromTable, (v) => String(v).toLowerCase())
+        const source = (distinctItemGroups && distinctItemGroups.length > 0)
+            ? distinctItemGroups
+            : (tableData || []).map((r) => r.product_category).filter(isDefined);
+        const combined = unique(source, (v) => String(v).toLowerCase())
             .sort((a, b) => String(a).localeCompare(String(b)));
         return combined.map((g) => ({ key: String(g), label: String(g) }));
-    }, [tableData]);
+    }, [distinctItemGroups, tableData]);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch('/api/v1/stock-inventory/?distinct=1')
+            .then((r) => r.json())
+            .then((data) => {
+                if (!mounted) return;
+                const names = Array.isArray(data?.item_names) ? data.item_names : [];
+                const groups = Array.isArray(data?.item_groups) ? data.item_groups : [];
+                setDistinctItemNames(names.filter((n) => n));
+                setDistinctItemGroups(groups.filter((g) => g));
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setDistinctItemNames([]);
+                setDistinctItemGroups([]);
+            });
+        return () => { mounted = false; };
+    }, []);
 
     const itemNameOptions = useMemo(() => {
-        const fromTable = (tableData || []).map((r) => r.item_name).filter(isDefined);
-        const combined = unique(fromTable, (v) => String(v).toLowerCase())
+        const source = distinctItemNames ?? [];
+        const combined = unique(source, (v) => String(v).toLowerCase())
             .sort((a, b) => String(a).localeCompare(String(b)));
         return combined.map((n) => ({ key: String(n), label: String(n) }));
-    }, [tableData]);
+    }, [distinctItemNames]);
 
     const mapData = useMemo(
         () => (mapAggregatedData || []).map((a) => ({
@@ -541,11 +563,19 @@ function WarehouseStocksTable() {
     }, []);
 
     const handleItemGroupChange = useCallback((newValue: string | undefined) => {
+        // Selecting an item category clears any selected item name
         setFilterItemGroup(newValue);
+        if (newValue) {
+            setFilterItemName(undefined);
+        }
     }, []);
 
     const handleItemNameChange = useCallback((newValue: string | undefined) => {
+        // Selecting an item name clears any selected item category
         setFilterItemName(newValue);
+        if (newValue) {
+            setFilterItemGroup(undefined);
+        }
     }, []);
 
     const handleReceivingCountryChange = useCallback((newValue: string | undefined) => {
@@ -600,7 +630,7 @@ function WarehouseStocksTable() {
 
     const handleClearAll = useCallback(() => {
         setFilterRegions(undefined);
-        setFilterCountries(MAP_WAREHOUSE_ISO3S);
+        setFilterCountries(undefined);
         setFilterItemGroup(undefined);
         setFilterItemName(undefined);
         setReceivingCountry(undefined);
