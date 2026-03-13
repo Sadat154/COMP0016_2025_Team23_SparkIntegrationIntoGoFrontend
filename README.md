@@ -53,7 +53,7 @@ To begin, ensure you have network access. Then, you'll need the following:
    pnpm install
    ```
 
-4. Create a `.env` file in the `app` directory and add variables from [env.ts](https://github.com/IFRCGo/go-web-app/blob/develop/app/env.ts).For spark, refer to [.env-spark]. Any variables marked with `.optional()` are not mandatory for setup and can be skipped.
+4. Create a `.env` file in the `app` directory and add variables from [env.ts](https://github.com/IFRCGo/go-web-app/blob/develop/app/env.ts). For SPARK, refer to [.env-spark](https://github.com/Sadat154/COMP0016_2025_Team23_SparkIntegrationIntoGoFrontend/blob/main/app/.env-spark). Any variables marked with `.optional()` are not mandatory for setup and can be skipped.
 
    ```bash
    cd app
