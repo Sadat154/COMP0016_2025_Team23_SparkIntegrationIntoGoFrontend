@@ -27,6 +27,7 @@ build-ssr
 
 .env*
 !.env.example
+!.env-spark
 .eslintcache
 tsconfig.tsbuildinfo
 
