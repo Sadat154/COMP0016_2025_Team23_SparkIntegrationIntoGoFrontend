@@ -36,9 +36,9 @@ To begin, ensure you have network access. Then, you'll need the following:
 1. Clone the repository using HTTPS, SSH, or GitHub CLI:
 
    ```bash
-   git clone https://github.com/IFRCGo/go-web-app.git # HTTPS
-   git clone git@github.com:IFRCGo/go-web-app.git # SSH
-   gh repo clone IFRCGo/go-web-app # GitHub CLI
+   git clone https://github.com/Sadat154/COMP0016_2025_Team23_SparkIntegrationIntoGoFrontend.git # HTTPS
+   git clone git@github.com:Sadat154/COMP0016_2025_Team23_SparkIntegrationIntoGoFrontend.git # SSH
+   gh repo clone Sadat154/COMP0016_2025_Team23_SparkIntegrationIntoGoFrontend # GitHub CLI
    ```
 
 2. Initialize submodules
