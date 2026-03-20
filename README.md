@@ -73,6 +73,61 @@ To begin, ensure you have network access. Then, you'll need the following:
    pnpm start
    ```
 
+## Project Structure (SPARK)
+
+```
+app/src/
+├── App/routes/
+│   └── index.tsx                                       # SPARK route definitions (/spark, /spark/*)
+│
+├── components/
+│   ├── domain/SparkEmbed/
+│   │   └── styles.module.css                           # SPARK embed styles
+│   └── Navbar/
+│       ├── index.tsx                                   # SPARK navigation menu item
+│       └── i18n.json                                   # SPARK menu label translations
+│
+├── views/
+│   ├── Spark/
+│   │   ├── index.tsx                                   # SPARK hub with tabs (Stock Inventory, Framework Agreements, Pro Bono, Customs)
+│   │   ├── styles.module.css
+│   │   ├── Spark.integration.test.tsx                  # Integration tests for SPARK hub
+│   │   └── Spark.testUtils.tsx                         # Test utilities
+│   │
+│   ├── SparkStockInventory/
+│   │   ├── WarehouseStocksTable.tsx                    # Stock inventory table with filters and pager
+│   │   ├── WarehouseStocksMap.tsx                      # Map visualisation of warehouse stocks by country
+│   │   ├── CustomsDataCard.tsx                         # AI-generated customs data card per country
+│   │   ├── countryDataLoader.ts                        # ISO3-to-centroid mapping for maps
+│   │   └── countryDataLoader.test.ts
+│   │
+│   ├── SparkFrameworkAgreements/
+│   │   ├── index.tsx                                   # Framework agreements view (map, filters, summary)
+│   │   └── FrameworkAgreementsTable/
+│   │       ├── index.tsx                               # Framework agreements data table
+│   │       ├── expiryStatus.ts                         # Agreement expiry status utilities
+│   │       └── FrameworkAgreementsTable.test.ts
+│   │
+│   ├── SparkProBonoServices/
+│   │   ├── index.tsx                                   # Pro-bono logistics services table
+│   │   └── ProBonoServicesTable.integration.test.tsx
+│   │
+│   └── SparkCustomRegulations/
+│       ├── index.tsx                                   # Customs regulations matrix table
+│       ├── helpers.ts                                  # Parsing, normalising, and region mapping
+│       ├── helpers.test.ts
+│       ├── i18n.json                                   # Translations
+│       └── CustomsMap/
+│           └── CustomsRegulationsMap.tsx               # Customs regulations map by country
+│
+app/
+├── .env-spark                                          # SPARK environment variable template
+└── public/data/
+    ├── Countries.csv                                   # Country reference data
+    ├── countries.json                                  # Country metadata
+    └── world.geojson                                   # World geometry for maps
+```
+
 ## Contributing
 
 * Check out existing [Issues](https://github.com/IFRCGo/go-web-app/issues) and [Pull Requests](https://github.com/IFRCGo/go-web-app/pulls) to contribute.
