@@ -30,6 +30,15 @@ To begin, ensure you have network access. Then, you'll need the following:
 
 > \[!NOTE]\
 > Make sure the correct versions of pnpm and Node.js are installed. They are specified under `engines` section in `package.json` file.
+### Report
+Please refer to the following site to view an in depth report on our project. In particular the user manual (with pictures) on the appendices page may prove to be useful.
+
+```https://students.cs.ucl.ac.uk/2025/group23/index.html```
+
+### Live Deployment
+We have deployed our site to reduce the need for setup.
+
+```https://ifrcspark-team23-comp0016.francecentral.cloudapp.azure.com/spark```
 
 ### Local Development
 
